@@ -1,2 +1,2824 @@
-# myahya96.github.io
-A web app to help you learn 1000+ Korean words
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korean Vocab Pop! - Flashcard & Context Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --purple-deep: #3b0764;
+            --purple-main: #7e22ce;
+            --purple-light: #f3e8ff;
+            --yellow-main: #facc15;
+            --yellow-bright: #fef08a;
+            --yellow-dark: #ca8a04;
+        }
+
+        body {
+            font-family: 'Fredoka', 'Noto Sans KR', sans-serif;
+            background: radial-gradient(circle at top left, #581c87, #2e1065 60%, #1e1b4b 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Floating Bubble Background Effect */
+        .bubble-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .bubble {
+            position: absolute;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.18), rgba(168, 85, 247, 0.18));
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.25);
+            animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) scale(0.8); opacity: 0; }
+            20% { opacity: 0.7; }
+            80% { opacity: 0.7; }
+            100% { transform: translateY(-20vh) scale(1.15); opacity: 0; }
+        }
+
+        /* 3D Bubbly Buttons & Cards */
+        .bubbly-card {
+            background: rgba(255, 255, 255, 0.96);
+            color: #2e1065;
+            border-radius: 2rem;
+            border: 5px solid #facc15;
+            box-shadow: 0 12px 0 #ca8a04, 0 20px 35px rgba(0, 0, 0, 0.35);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .bubbly-panel-purple {
+            background: linear-gradient(145deg, #6b21a8, #4c1d95);
+            border-radius: 1.75rem;
+            border: 4px solid #a855f7;
+            box-shadow: 0 10px 0 #3b0764, 0 15px 30px rgba(0,0,0,0.4);
+        }
+
+        .btn-yellow {
+            background: linear-gradient(180deg, #fde047 0%, #facc15 100%);
+            color: #3b0764;
+            font-weight: 700;
+            border-radius: 9999px;
+            border: 3px solid #fef9c3;
+            box-shadow: 0 6px 0 #ca8a04, 0 8px 15px rgba(0, 0, 0, 0.25);
+            transition: all 0.15s ease;
+        }
+        .btn-yellow:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #ca8a04, 0 12px 20px rgba(0, 0, 0, 0.3);
+            filter: brightness(1.03);
+        }
+        .btn-yellow:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #ca8a04;
+        }
+
+        .btn-purple {
+            background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
+            color: #ffffff;
+            font-weight: 700;
+            border-radius: 9999px;
+            border: 3px solid #e9d5ff;
+            box-shadow: 0 6px 0 #4c1d95, 0 8px 15px rgba(0, 0, 0, 0.25);
+            transition: all 0.15s ease;
+        }
+        .btn-purple:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #4c1d95, 0 12px 20px rgba(0, 0, 0, 0.3);
+        }
+        .btn-purple:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #4c1d95;
+        }
+
+        .btn-disabled {
+            background: #475569 !important;
+            color: #94a3b8 !important;
+            border-color: #64748b !important;
+            box-shadow: 0 5px 0 #1e293b !important;
+            cursor: not-allowed;
+        }
+
+        /* Animations for Feedback */
+        @keyframes popBounce {
+            0% { transform: scale(0.85); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+        .animate-pop {
+            animation: popBounce 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px) rotate(-1deg); }
+            40%, 80% { transform: translateX(8px) rotate(1deg); }
+        }
+        .animate-shake {
+            animation: shakeError 0.4s ease-in-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(59, 7, 100, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #facc15;
+            border-radius: 9999px;
+            border: 2px solid #581c87;
+        }
+    </style>
+</head>
+<body class="relative select-none">
+
+    <!-- Floating Decorative Bubbles -->
+    <div id="bubbleContainer" class="bubble-bg"></div>
+
+    <!-- Main Wrapper -->
+    <div class="relative z-10 max-w-6xl mx-auto px-4 py-6 md:py-8 flex flex-col min-h-screen">
+
+        <header class="flex flex-wrap items-center justify-between gap-4 mb-6 bg-purple-950/70 backdrop-blur-md p-4 rounded-3xl border-2 border-purple-400/40 shadow-xl">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="showMapScreen()">
+                <div class="w-12 h-12 rounded-2xl bg-yellow-400 flex items-center justify-center text-purple-950 shadow-inner border-2 border-yellow-200 text-2xl font-extrabold">
+                    한
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow">
+                        K-Vocab <span class="text-white">Pop!</span>
+                    </h1>
+                    <p class="text-xs text-purple-200 font-medium">1,000 TOPIK Guide Words • 50 Topic & Difficulty Levels</p>
+                </div>
+            </div>
+
+            <!-- Stats Pill Bar -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-2 bg-purple-900/90 border-2 border-yellow-400/70 px-3.5 py-1.5 rounded-full">
+                    <i class="ph-fill ph-star text-yellow-400 text-xl"></i>
+                    <span class="text-xs uppercase tracking-wider text-purple-200">Total Score</span>
+                    <span id="headerTotalScore" class="font-extrabold text-yellow-300 text-lg">0</span>
+                </div>
+
+                <div class="flex items-center gap-2 bg-purple-900/90 border-2 border-purple-400/70 px-3.5 py-1.5 rounded-full">
+                    <i class="ph-fill ph-lock-key-open text-purple-300 text-xl"></i>
+                    <span class="text-xs uppercase tracking-wider text-purple-200">Unlocked</span>
+                    <span id="headerUnlockedCount" class="font-extrabold text-white text-lg">1 / 50</span>
+                </div>
+
+                <button onclick="openAiTutorModal()" class="btn-yellow px-3.5 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-md" title="Ask Gemini AI Korean Tutor">
+                    <i class="ph-fill ph-sparkle text-purple-900 text-base"></i>
+                    <span>✨ AI Tutor</span>
+                </button>
+
+                <button id="soundToggleBtn" onclick="toggleSound()" class="w-10 h-10 rounded-full bg-purple-800 hover:bg-purple-700 border-2 border-purple-400 flex items-center justify-center text-yellow-300 transition" title="Toggle Sound Effects">
+                    <i id="soundIcon" class="ph-fill ph-speaker-high text-xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic View Container -->
+        <main id="appContainer" class="flex-1 flex flex-col">
+            <!-- Screens injected via JS -->
+        </main>
+
+        <!-- Gemini AI Interactive Modal (Story Generator, Sentence Checker & Free Q&A Tutor) -->
+        <div id="aiModalOverlay" class="fixed inset-0 z-50 hidden bg-purple-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bubbly-card max-w-2xl w-full p-6 md:p-7 max-h-[90vh] flex flex-col animate-pop relative">
+                <div class="flex items-center justify-between border-b-2 border-purple-100 pb-3 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-700 to-purple-950 text-yellow-300 flex items-center justify-center text-xl shadow border-2 border-yellow-400">
+                            <i class="ph-fill ph-sparkle"></i>
+                        </div>
+                        <div>
+                            <h3 id="aiModalTitle" class="text-xl font-black text-purple-950">✨ Gemini TOPIK AI Coach</h3>
+                            <p id="aiModalSubtitle" class="text-xs font-semibold text-purple-600">Powered by Gemini • Context, Grammar & Mnemonics</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAiModal()" class="w-9 h-9 rounded-full bg-purple-100 hover:bg-rose-100 text-purple-900 hover:text-rose-700 flex items-center justify-center font-bold transition">
+                        <i class="ph-bold ph-x text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="aiModalBody" class="overflow-y-auto pr-1 space-y-4 text-sm text-purple-950 flex-1">
+                    <!-- Dynamic AI Content -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Toast / Alert Modal -->
+        <div id="toastNotification" class="fixed bottom-6 right-6 z-50 hidden transform transition-all duration-300">
+            <div class="bg-yellow-400 text-purple-950 font-bold px-5 py-3 rounded-2xl border-4 border-white shadow-2xl flex items-center gap-3">
+                <i id="toastIcon" class="ph-fill ph-sparkle text-2xl text-purple-800"></i>
+                <span id="toastMessage">Notification</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GEMINI_API_KEY = "";
+        const GEMINI_TEXT_MODEL = "gemini-3-flash-preview";
+        const GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts";
+
+        async function callGeminiWithBackoff(url, payload, maxRetries = 4) {
+            let delay = 1000;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                    if (attempt === maxRetries) {
+                        throw new Error(`API status ${response.status}`);
+                    }
+                } catch (err) {
+                    if (attempt === maxRetries) throw err;
+                }
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+        }
+
+        async function generateGeminiText(userPrompt, systemPrompt, jsonSchema = null) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+            if (jsonSchema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: jsonSchema
+                };
+            }
+            const result = await callGeminiWithBackoff(apiUrl, payload);
+            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("Empty response from Gemini");
+            return jsonSchema ? JSON.parse(text) : text;
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcm16, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            };
+            writeString(0, "RIFF");
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(8, "WAVE");
+            writeString(12, "fmt ");
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, "data");
+            view.setUint32(40, pcm16.length * 2, true);
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(44 + i * 2, pcm16[i], true);
+            }
+            return new Blob([buffer], { type: "audio/wav" });
+        }
+
+        async function speakKoreanWithGemini(koreanText, btnEl = null) {
+            const originalHtml = btnEl ? btnEl.innerHTML : "";
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i>`;
+            }
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `Speak clearly and naturally in standard Korean: ${koreanText}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Kore" }
+                            }
+                        }
+                    },
+                    model: GEMINI_TTS_MODEL
+                };
+                const result = await callGeminiWithBackoff(apiUrl, payload, 2);
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType || "audio/L16;rate=24000";
+                if (audioData) {
+                    const rateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                } else {
+                    throw new Error("No audio data returned");
+                }
+            } catch (e) {
+                // Fallback to browser SpeechSynthesis if available
+                if ('speechSynthesis' in window) {
+                    const utter = new SpeechSynthesisUtterance(koreanText);
+                    utter.lang = 'ko-KR';
+                    window.speechSynthesis.speak(utter);
+                } else {
+                    showToast("Could not play TTS audio right now.", "ph-speaker-slash");
+                }
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = originalHtml;
+                }
+            }
+        }
+
+        function closeAiModal() {
+            const modal = document.getElementById("aiModalOverlay");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        function openAiTutorModal(prefillWordObj = null) {
+            playSound('pop');
+            const modal = document.getElementById("aiModalOverlay");
+            const titleEl = document.getElementById("aiModalTitle");
+            const subEl = document.getElementById("aiModalSubtitle");
+            const bodyEl = document.getElementById("aiModalBody");
+
+            titleEl.textContent = "✨ Gemini TOPIK AI Tutor & Sentence Coach";
+            subEl.textContent = "Ask any Korean grammar/vocabulary question or get your own Korean sentence graded!";
+
+            const defaultPrompt = prefillWordObj
+                ? `Explain the nuance of "${prefillWordObj.kr}" (${prefillWordObj.en}), give a fun memory mnemonic, and show 2 TOPIK-style collocations.`
+                : "";
+
+            bodyEl.innerHTML = `
+                <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
+                    <label class="block text-xs font-extrabold uppercase tracking-wider text-purple-800">
+                        Write a Korean sentence to check, or ask about any word / grammar point (e.g., -(으)ㄹ수록, -(으)ㄹ지라도):
+                    </label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input 
+                            id="aiTutorInput"
+                            type="text"
+                            value="${defaultPrompt.replace(/"/g, '&quot;')}"
+                            placeholder="e.g., How do I use '${prefillWordObj ? prefillWordObj.kr : '영향을 미치다'}' in a sentence?"
+                            class="flex-1 px-4 py-3 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none font-bold text-purple-950 bg-white"
+                        />
+                        <button onclick="submitAiTutorQuery()" id="aiTutorSendBtn" class="btn-yellow px-5 py-3 text-sm shrink-0 flex items-center justify-center gap-1.5">
+                            <i class="ph-fill ph-sparkle"></i>
+                            <span>Ask Gemini</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="quickFillTutor('Give me a short quiz comparing 안 and 못 negation with examples.')" class="text-[11px] font-bold bg-white hover:bg-yellow-200 text-purple-900 px-2.5 py-1 rounded-full border border-purple-300 transition">Compare 안 vs 못</button>
+                        <button type="button" onclick="quickFillTutor('Create a sentence using -(으)ㄹ수록 and Stage ' + activeSession.level + ' vocabulary.')" class="text-[11px] font-bold bg-white hover:bg-yellow-200 text-purple-900 px-2.5 py-1 rounded-full border border-purple-300 transition">Practice -(으)ㄹ수록</button>
+                        <button type="button" onclick="quickFillTutor('Create a sentence using -(으)ㄹ지라도 and explain how it works.')" class="text-[11px] font-bold bg-white hover:bg-yellow-200 text-purple-900 px-2.5 py-1 rounded-full border border-purple-300 transition">Practice -(으)ㄹ지라도</button>
+                    </div>
+                </div>
+                <div id="aiTutorResultBox" class="bg-white rounded-2xl p-4 border-2 border-purple-100 min-h-[120px] flex items-center justify-center text-purple-500 font-semibold text-xs">
+                    <span>Type a question or Korean sentence above and click <strong>Ask Gemini</strong>!</span>
+                </div>
+            `;
+            modal.classList.remove("hidden");
+            if (prefillWordObj) {
+                submitAiTutorQuery();
+            }
+        }
+
+        function quickFillTutor(text) {
+            const inp = document.getElementById("aiTutorInput");
+            if (inp) {
+                inp.value = text;
+                submitAiTutorQuery();
+            }
+        }
+
+        async function submitAiTutorQuery() {
+            const inp = document.getElementById("aiTutorInput");
+            const resBox = document.getElementById("aiTutorResultBox");
+            const btn = document.getElementById("aiTutorSendBtn");
+            if (!inp || !inp.value.trim()) return;
+
+            const query = inp.value.trim();
+            btn.disabled = true;
+            resBox.innerHTML = `
+                <div class="flex items-center gap-2.5 text-purple-800 font-bold py-6">
+                    <i class="ph-bold ph-spinner animate-spin text-2xl text-yellow-500"></i>
+                    <span>Gemini is crafting your Korean study guide...</span>
+                </div>
+            `;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    headline: { type: "STRING" },
+                    explanation: { type: "STRING" },
+                    mnemonicOrTip: { type: "STRING" },
+                    examples: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                kr: { type: "STRING" },
+                                en: { type: "STRING" }
+                            },
+                            propertyOrdering: ["kr", "en"]
+                        }
+                    }
+                },
+                propertyOrdering: ["headline", "explanation", "mnemonicOrTip", "examples"]
+            };
+
+            try {
+                const sysPrompt = "You are an encouraging, expert Korean language and TOPIK I/II tutor. Give clear, concise explanations, helpful memory tips or grammar feedback, and natural Korean example sentences with English translations.";
+                const data = await generateGeminiText(query, sysPrompt, schema);
+
+                const examplesHtml = (data.examples || []).map(ex => `
+                    <div class="bg-purple-50 rounded-xl p-3 border border-purple-200 flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-extrabold text-purple-950 text-sm">${ex.kr}</div>
+                            <div class="text-xs text-purple-700 font-medium mt-0.5">${ex.en}</div>
+                        </div>
+                        <button type="button" onclick="speakKoreanWithGemini('${ex.kr.replace(/'/g, "\\'")}', this)" class="w-8 h-8 rounded-full bg-yellow-400 hover:bg-yellow-300 text-purple-950 flex items-center justify-center shrink-0 shadow" title="Listen with Gemini TTS">
+                            <i class="ph-fill ph-speaker-high"></i>
+                        </button>
+                    </div>
+                `).join("");
+
+                resBox.className = "bg-white rounded-2xl p-4 border-2 border-purple-200 space-y-3 text-left";
+                resBox.innerHTML = `
+                    <div class="text-base font-black text-purple-950 flex items-center gap-1.5">
+                        <i class="ph-fill ph-sparkle text-yellow-500 text-lg"></i>
+                        <span>${data.headline}</span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-purple-900 leading-relaxed whitespace-pre-line font-medium">${data.explanation}</p>
+                    <div class="bg-yellow-100 border border-yellow-400 rounded-xl p-3 text-xs font-bold text-purple-950">
+                        💡 <span class="uppercase tracking-wider text-[10px] bg-yellow-300 px-1.5 py-0.5 rounded mr-1">Memory / TOPIK Tip</span>
+                        ${data.mnemonicOrTip}
+                    </div>
+                    <div class="space-y-2 pt-1">
+                        <div class="text-[11px] font-extrabold uppercase tracking-wider text-purple-600">Example Sentences (Click speaker for AI Audio):</div>
+                        ${examplesHtml}
+                    </div>
+                `;
+            } catch (err) {
+                resBox.innerHTML = `<div class="text-rose-700 font-bold text-xs p-3">Could not reach Gemini right now. Please try again!</div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function openStageStoryModal(levelNum) {
+            playSound('pop');
+            const words = getWordsForLevel(levelNum);
+            const meta = LEVEL_META[levelNum - 1];
+            const modal = document.getElementById("aiModalOverlay");
+            const titleEl = document.getElementById("aiModalTitle");
+            const subEl = document.getElementById("aiModalSubtitle");
+            const bodyEl = document.getElementById("aiModalBody");
+
+            titleEl.textContent = `✨ Stage ${levelNum} AI Mini-Story: ${meta.title}`;
+            subEl.textContent = `Gemini weaves words from Stage ${levelNum} into a memorable Korean passage!`;
+            bodyEl.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 text-purple-900 font-bold gap-3">
+                    <i class="ph-bold ph-spinner animate-spin text-4xl text-yellow-500"></i>
+                    <p>Gemini is writing a custom Korean mini-story using Stage ${levelNum} vocabulary...</p>
+                </div>
+            `;
+            modal.classList.remove("hidden");
+
+            const sampleWords = words.slice(0, 8).map(w => `${w.kr} (${w.en})`).join(", ");
+            const prompt = `Create a short, engaging 4-sentence Korean reading passage or dialogue appropriate for TOPIK learners on the theme "${meta.topic}" that naturally incorporates at least 5 of these words from Stage ${levelNum}: ${sampleWords}. Also include an English translation, a list of the key words used, and 1 comprehension check question.`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    storyTitle: { type: "STRING" },
+                    koreanPassage: { type: "STRING" },
+                    englishTranslation: { type: "STRING" },
+                    featuredWords: {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    },
+                    comprehensionQuestion: { type: "STRING" },
+                    comprehensionAnswer: { type: "STRING" }
+                },
+                propertyOrdering: ["storyTitle", "koreanPassage", "englishTranslation", "featuredWords", "comprehensionQuestion", "comprehensionAnswer"]
+            };
+
+            try {
+                const sys = "You are a creative Korean language teacher writing engaging short stories and dialogues for TOPIK learners.";
+                const story = await generateGeminiText(prompt, sys, schema);
+
+                const badges = (story.featuredWords || []).map(fw => `
+                    <span class="bg-yellow-300 text-purple-950 font-extrabold text-xs px-2.5 py-1 rounded-full border border-yellow-500">${fw}</span>
+                `).join("");
+
+                bodyEl.innerHTML = `
+                    <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <h4 class="text-lg font-black text-purple-950">${story.storyTitle}</h4>
+                            <button type="button" onclick="speakKoreanWithGemini('${story.koreanPassage.replace(/'/g, "\\'").replace(/\n/g, " ")}', this)" class="btn-yellow px-3.5 py-1.5 text-xs flex items-center gap-1.5 shrink-0">
+                                <i class="ph-fill ph-speaker-high"></i> Read Aloud
+                            </button>
+                        </div>
+                        <p class="text-base font-bold text-purple-950 leading-relaxed bg-white p-4 rounded-xl border border-purple-200">${story.koreanPassage}</p>
+                        <p class="text-xs sm:text-sm text-purple-700 font-semibold leading-relaxed">${story.englishTranslation}</p>
+                        <div class="pt-1">
+                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-purple-500 mb-1.5">Featured Stage ${levelNum} Words:</div>
+                            <div class="flex flex-wrap gap-1.5">${badges}</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 rounded-2xl p-4 border-2 border-yellow-300 space-y-2">
+                        <div class="text-xs font-extrabold uppercase tracking-wider text-purple-900">🧠 Quick Comprehension Check:</div>
+                        <p class="text-sm font-bold text-purple-950">${story.comprehensionQuestion}</p>
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-xs font-extrabold text-purple-700 underline">Reveal Answer</button>
+                        <p class="hidden text-xs font-bold text-green-800 bg-green-100 p-2.5 rounded-xl border border-green-300 mt-1">${story.comprehensionAnswer}</p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button onclick="openStageStoryModal(${levelNum})" class="btn-purple px-4 py-2 text-xs flex items-center gap-1.5">
+                            <i class="ph-bold ph-arrows-clockwise"></i> Generate Another Story
+                        </button>
+                    </div>
+                `;
+            } catch (e) {
+                bodyEl.innerHTML = `<div class="p-4 text-rose-700 font-bold">Unable to generate story right now. Please try again in a moment!</div>`;
+            }
+        }
+
+        async function requestAiCardCoach(wordId, containerElementId) {
+            const w = VOCAB_DATABASE.find(item => item.id === wordId);
+            const targetEl = document.getElementById(containerElementId);
+            if (!w || !targetEl) return;
+
+            targetEl.classList.remove("hidden");
+            targetEl.innerHTML = `
+                <div class="flex items-center gap-2 text-purple-900 font-bold text-xs py-1">
+                    <i class="ph-bold ph-spinner animate-spin text-base text-purple-700"></i>
+                    <span>Asking Gemini for a memory trick & fresh example for <strong>${w.kr}</strong>...</span>
+                </div>
+            `;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    mnemonic: { type: "STRING" },
+                    freshSentenceKr: { type: "STRING" },
+                    freshSentenceEn: { type: "STRING" },
+                    collocation: { type: "STRING" }
+                },
+                propertyOrdering: ["mnemonic", "collocation", "freshSentenceKr", "freshSentenceEn"]
+            };
+
+            try {
+                const prompt = `Word: ${w.kr} (Meaning: ${w.fullEn}, Topic: ${w.topic}). Give a short, memorable mnemonic or etymology/hanja/syllable clue, 1 common Korean collocation, and 1 fresh natural Korean sentence with English translation. Do not reveal the Korean word if used as a hint, or keep it brief and helpful.`;
+                const sys = "You are a witty, concise Korean vocabulary coach.";
+                const res = await generateGeminiText(prompt, sys, schema);
+
+                targetEl.innerHTML = `
+                    <div class="space-y-1.5 text-left text-xs">
+                        <div class="font-extrabold text-purple-950 flex items-center justify-between">
+                            <span>✨ Gemini Memory Coach: <span class="text-purple-700">${res.collocation}</span></span>
+                            <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="px-2 py-0.5 rounded-full bg-yellow-300 text-purple-950 font-black text-[11px] flex items-center gap-1">
+                                <i class="ph-fill ph-speaker-high"></i> ${w.kr}
+                            </button>
+                        </div>
+                        <div class="text-purple-900 font-semibold">🧠 <strong>Mnemonic:</strong> ${res.mnemonic}</div>
+                        <div class="bg-white/90 p-2 rounded-lg border border-purple-200">
+                            <div class="font-bold text-purple-950">${res.freshSentenceKr}</div>
+                            <div class="text-purple-600 text-[11px]">${res.freshSentenceEn}</div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                targetEl.innerHTML = `<div class="text-xs text-rose-700 font-bold">Could not load AI coach tip right now.</div>`;
+            }
+        }
+
+        const RAW_TOPIK_1000 = [
+            [1,"것","A thing or an object"],[2,"하다","To do"],[3,"있다","To be"],[4,"수","way, method, Number"],[5,"하다","To do"],
+            [6,"나","I"],[7,"없다","Do not exist, absent"],[8,"않다","To not do"],[9,"사람","Person"],[10,"우리","we, our"],
+            [11,"그","He, That"],[12,"아니다","To not be"],[13,"보다","To try"],[14,"거","thing"],[15,"보다","To see"],
+            [16,"같다","To be similar"],[17,"주다","To give, to do for a person"],[18,"대하다","Face, confront"],[19,"가다","To go"],[20,"년","Year"],
+            [21,"한","One, a single"],[22,"말","words,speaking"],[23,"일","Work"],[24,"이","A person, This"],[25,"말하다","Speak"],
+            [26,"위하다","To do for the sake of"],[27,"그러나","However or but still"],[28,"오다","To come"],[29,"알다","To know"],[30,"씨","~ Mr."],
+            [31,"그렇다","That is right or yes."],[32,"크다","To be big, large"],[33,"일","One day"],[34,"사회","culture,society"],[35,"많다","many, much"],
+            [36,"안","~ not ~ + VERB"],[37,"좋다","To be good"],[38,"더","More"],[39,"받다","Receive"],[40,"그것","That thing"],
+            [41,"집","House"],[42,"나오다","Come out"],[43,"그리고","And or and then"],[44,"문제","question,problem"],[45,"그런","Such a"],
+            [46,"살다","To live"],[47,"저","That"],[48,"못하다","Be impossible"],[49,"생각하다","To think"],[50,"모르다","To not know"],
+            [51,"속","The inside"],[52,"만들다","To make"],[53,"데","Place, point, instance"],[54,"앞","In front of, before"],[55,"경우","A case or an instance"],
+            [56,"중","The center, the middle"],[57,"어떤","What kind of, what sort of"],[58,"잘","Well"],[59,"그녀","She"],[60,"먹다","Eat, chow down on"],
+            [61,"자신","one's own self, one's own body"],[62,"문화","culture"],[63,"원","A unit of south korean money, KRW"],[64,"생각","Thought"],[65,"어떻다","how,what.. do you think of"],
+            [66,"명","Person counter"],[67,"통하다","Run, lead; flow; go through"],[68,"그러다","and so, and then, well"],[69,"그러다","and so, and then, well"],[70,"소리","A sound,noise"],
+            [71,"다시","Again"],[72,"다른","Different"],[73,"이런","Such, like this"],[74,"여자","woman,female"],[75,"개","Unit or piece"],
+            [76,"정도","grade,degree"],[77,"다","All, everything"],[78,"좀","A little"],[79,"싶다","want,hope"],[80,"보이다","see,catch sight of"],
+            [81,"가지다","To have or take or hold"],[82,"함께","Together, with"],[83,"아이","Child"],[84,"지나다","pass,elapse,go on"],[85,"많이","A lot"],
+            [86,"시간","Time"],[87,"너","You"],[88,"인간","A person, a human being"],[89,"사실","The truth, a fact"],[90,"나다","To be born"],
+            [91,"이렇다","Like this"],[92,"어머니","Mom"],[93,"눈","Eyes"],[94,"뭐","Huh? (2) something"],[95,"점","Store"],
+            [96,"의하다","To be due to, owing to"],[97,"시대","An age,period"],[98,"다음","Next"],[99,"이러하다","Be this way, be like follows"],[100,"누구","Who"],
+            [101,"곳","Place"],[102,"여러","many,various"],[103,"안","Inside"],[104,"하나","One"],[105,"세계","World"],
+            [106,"버리다","(following a verb) the verb's action is over, perhaps in a sad way"],[107,"위","The upper part, above"],[108,"운동","Motion, movement"],[109,"퍼센트","Percent"],[110,"학교","School"],
+            [111,"자기","Oneself, number one, numerouno, self"],[112,"가장","Most"],[113,"대통령","The president"],[114,"가지","One of the kind or a sort"],[115,"시작하다","To start,begin"],
+            [116,"바로","Right, correctly"],[117,"어느","Some, a certain"],[118,"그래서","And so accordingly"],[119,"무엇","That thing,whatever"],[120,"정부","Government"],
+            [121,"모든","Every one"],[122,"번","Number, how many times"],[123,"그거","That thing"],[124,"돈","Money"],[125,"국가","A state or a nation"],
+            [126,"그런데","But or however"],[127,"날","Day"],[128,"여기","A hobby"],[129,"모두","Everybody"],[130,"여성","Female"],
+            [131,"친구","A friend"],[132,"마음","Heart"],[133,"후","After"],[134,"놓다","Put, place"],[135,"관계","Connection or relation"],
+            [136,"아버지","Father"],[137,"남자","Boy"],[138,"어디","Where?"],[139,"몸","body,physique"],[140,"얼굴","Face"],
+            [141,"왜","Why?"],[142,"나타나다","Come out, appear"],[143,"지역","An area, region"],[144,"다르다","Be different"],[145,"모습","shape,body"],
+            [146,"물","Water"],[147,"만나다","Meet"],[148,"내다","produce something"],[149,"보이다","show,let see"],[150,"쓰다","To write"],
+            [151,"이것","This thing"],[152,"없이","Without"],[153,"이번","This time"],[154,"길","Road"],[155,"생활","lifestyle,livelihood"],
+            [156,"쓰다","Take (medicine)"],[157,"뿐","only,alone,merely"],[158,"사이","space between 2 points; the relationship between 2 people"],[159,"방법","Way, method"],[160,"새롭다","To be new,novel"],
+            [161,"내다","to see through, to make it through sth"],[162,"앉다","To sit down"],[163,"처음","First"],[164,"손","The hand"],[165,"몇","A few"],
+            [166,"그때","Then or at that time"],[167,"과정","Process or course"],[168,"삶","Life"],[169,"갖다","To hold"],[170,"찾다","seek,look for"],
+            [171,"특히","Especially"],[172,"시","Time"],[173,"이상","More than, above"],[174,"지금","Now"],[175,"나가다","To go out"],
+            [176,"이야기","Conversation, talk"],[177,"교육","Education"],[178,"사다","To buy, purchase"],[179,"경제","Economy"],[180,"아직","Still"],
+            [181,"잡다","seize,catch"],[182,"같이","Together"],[183,"선생님","Teacher"],[184,"예술","Art, an art"],[185,"서다","To stand"],
+            [186,"못","Cannot"],[187,"역사","History"],[188,"읽다","To read"],[189,"결과","Result"],[190,"내용","Contents"],
+            [191,"물론","Of course"],[192,"책","A book"],[193,"일어나다","To rise, get up"],[194,"당신","Formal you"],[195,"시장","market,fair"],
+            [196,"넣다","Put in, set in"],[197,"중요하다","To be important,weighty"],[198,"무슨","What, what kind of"],[199,"느끼다","To feel"],[200,"어렵다","To be hard, difficult"],
+            [201,"힘","Power"],[202,"너무","Too much"],[203,"나라","A country"],[204,"부르다","To call"],[205,"의미","A meaning, a sense"],
+            [206,"자리","seat,spot"],[207,"밝히다","To light up"],[208,"죽다","die,pass away"],[209,"이미","Already"],[210,"쪽","Way, direction"],
+            [211,"정치","Politics"],[212,"국민","The people or a nationality"],[213,"생명","Life"],[214,"얘기","Story"],[215,"학생","Student"],
+            [216,"연구","Research"],[217,"엄마","Mamma"],[218,"이름","Name"],[219,"하나","One"],[220,"내리다","Descend"],
+            [221,"사건","An event,incident"],[222,"및","As well as"],[223,"쉽다","To be easy"],[224,"짓다","To make, build ; to form a line (a group)"],[225,"이유","Reason"],
+            [226,"필요하다","To need"],[227,"글","words, a verse"],[228,"생기다","arise,occur,happen"],[229,"사용하다","To use"],[230,"남편","Husband"],
+            [231,"밖","The outside"],[232,"세상","The world,society"],[233,"작다","Small"],[234,"타다","Ride (bus)"],[235,"대학","University"],
+            [236,"작품","A work of art"],[237,"상황","State of things"],[238,"가운데","In the middle"],[239,"보내다","Send"],[240,"즉","namely,that is to say"],
+            [241,"상태","condition,state"],[242,"이후","After that"],[243,"당시","At that time"],[244,"문학","Literature"],[245,"더욱","More and more"],
+            [246,"아주","Extremely"],[247,"지방","A locality, district"],[248,"밤","Night"],[249,"높다","High"],[250,"최근","Recently"],
+            [251,"채","As it is, no change"],[252,"현실","Actuality, reality"],[253,"환경","Environment"],[254,"컴퓨터","Computer"],[255,"먼저","First"],
+            [256,"다니다","Go to and from a aplace"],[257,"얼마나","How many, how much"],[258,"자체","one's own body"],[259,"열다","Open"],[260,"머리","Head"],
+            [261,"묻다","to Ask"],[262,"남다","Remain, be left over"],[263,"부분","part,portion"],[264,"기업","An enterprise or business"],[265,"변화","Change, transformation"],
+            [266,"아들","son,baby"],[267,"아","Oh dear"],[268,"선거","An election"],[269,"관하다","Refer to or be about"],[270,"분","Minutes"],
+            [271,"그냥","Just because or in that condition"],[272,"나누다","To divide"],[273,"이용하다","To use, make use of"],[274,"거의","Almost or nearly"],[275,"곧","Soon"],
+            [276,"중심","The nucleus, the focus, the heart"],[277,"활동","Activity"],[278,"오늘","Today"],[279,"서로","mutually,one another"],[280,"관심","Concern or interest"],
+            [281,"역시","As expected, likewise"],[282,"이거","This thing"],[283,"애","A baby, or a slightly derogative word for person"],[284,"광고","Advertisement"],[285,"나다","To come out, grow, spring up"],
+            [286,"방","A room"],[287,"정신","mind,spirit"],[288,"이르다","To reach, arrive, get at"],[289,"이루다","Accomplish, complete"],[290,"아침","Morning"],
+            [291,"웃다","To laugh, smile"],[292,"현상","The present situation, state"],[293,"기술","Art or technique or ability"],[294,"전체","The whole, the entire section"],[295,"그래","So or yes or that's right"],
+            [296,"얻다","Get, obtain"],[297,"아름답다","To be beautiful"],[298,"끝","The end"],[299,"민족","race,nation,people"],[300,"간","The interval between"],
+            [301,"조사","investigation,inquiry"],[302,"듯","To be like something"],[303,"입","Mouth"],[304,"뭐","Huh? (2) something"],[305,"그대로","Like that"],
+            [306,"영화","A movie"],[307,"필요","Need, requirement,necessity"],[308,"줄","way,method"],[309,"하늘","The sky"],[310,"년대","Year"],
+            [311,"과학","Science"],[312,"자연","Nature"],[313,"정말","Really"],[314,"구조","Construction or structure"],[315,"결국","After all or in the end"],
+            [316,"밥","Rice, a meal"],[317,"입다","To wear"],[318,"오히려","Rather,preferably"],[319,"프로그램","Program"],[320,"네","Yes"],
+            [321,"이루어지다","Get accomplished, achieved"],[322,"남","Others, other people"],[323,"하루","A day"],[324,"그림","A picture"],[325,"적","The time,the occasion,when"],
+            [326,"터","one's status, one's lot"],[327,"마시다","To drink"],[328,"치다","to attack, assault"],[329,"혼자","Alone"],[330,"나가다","To advance, proceed, go forward"],
+            [331,"이제","Now"],[332,"교수","Teaching or instruction"],[333,"술","Alcohol"],[334,"사랑","Love"],[335,"전화","Telephone"],
+            [336,"끝나다","To draw to a close or to end"],[337,"맞다","Be right, correct; to match, be fitting for"],[338,"아빠","Dad"],[339,"걸리다","To be hung up or suspended"],[340,"지키다","Protect, maintain"],
+            [341,"한번","Once"],[342,"커피","Coffee"],[343,"가슴","Chest"],[344,"길다","To be long"],[345,"바라보다","Look at, watch ; to look forward to, hope for"],
+            [346,"알아보다","To investigate, examine, search"],[347,"맛","Flavor"],[348,"대부분","Most"],[349,"산업","Industry"],[350,"매우","Very"],
+            [351,"오르다","Go up, climb, ascend"],[352,"음식","Food"],[353,"표정","Facial expression, look"],[354,"꼭","For sure"],[355,"일부","A part, a portion"],
+            [356,"요즘","Recently, nowadays"],[357,"계획","A plan or a project"],[358,"느낌","Touch, feel"],[359,"얼마","How many, how much"],[360,"고개","The nape of the neck"],
+            [361,"성격","Personality ; character, nature"],[362,"계속","Continuously"],[363,"세기","Century"],[364,"세우다","Stand up, erect"],[365,"아내","Wife"],
+            [366,"가족","Family"],[367,"현재","The present time, now, at present"],[368,"세","Three"],[369,"발전","Development"],[370,"차","A vehicle, train/auto car"],
+            [371,"놀다","Play, amuse oneself"],[372,"향하다","To face, look out on"],[373,"관련","Relation or connection or reference"],[374,"형태","Form, shape"],[375,"각","Each or every"],
+            [376,"도시","City"],[377,"작업","Work"],[378,"분위기","atmosphere,surroundings"],[379,"그러하다","To be so or right"],[380,"나이","Age"],
+            [381,"우선","First of all, before everything"],[382,"믿다","Believe"],[383,"바꾸다","change,exchange"],[384,"낳다","To give birth"],[385,"바","A thing, what"],
+            [386,"정보","information,intelligence"],[387,"열리다","Open, be opened, be unlocked"],[388,"좋아하다","To like, be fond of"],[389,"그리다","Picture or draw a picture"],[390,"만큼","Of that amount"],
+            [391,"배우다","To learn"],[392,"시","Poetry, lines of verse"],[393,"역할","A part, a role"],[394,"옆","Next to"],[395,"행동","Action, behavior"],
+            [396,"어","Oh, well, why"],[397,"국내","Inside the country"],[398,"비하다","Compare to"],[399,"기관","An engine or a machine"],[400,"입장","A position, situation"],
+            [401,"만하다","Be of the extent of"],[402,"예","Example"],[403,"아래","The bottom, the lower part"],[404,"방식","A form, method, process"],[405,"영향","Influence, consequences"],
+            [406,"그럼","Certainly or of course."],[407,"나서다","Come out, come forth"],[408,"흐르다","Flow, stream"],[409,"저","Uh, well, …"],[410,"깊다","Deep"],
+            [411,"배","A boat (boating)"],[412,"내","Inside"],[413,"모양","A shape, form"],[414,"산","A mountain"],[415,"새","New"],
+            [416,"하지만","But, nevertheless"],[417,"조건","condition,stipulation"],[418,"문","Door"],[419,"꽃","Flower"],[420,"단계","A step, phase"],
+            [421,"올리다","Raise, lift up"],[422,"그동안","During that time"],[423,"교사","Instructor"],[424,"갑자기","Suddenly"],[425,"넘다","Cross or go across"],
+            [426,"지니다","Carry with, hold, possess"],[427,"바람","Wind"],[428,"잘하다","To do well"],[429,"마을","Town"],[430,"어리다","To be very young, juvenile"],
+            [431,"대표","Representative"],[432,"가능성","Possibility"],[433,"방향","Direction"],[434,"대회","A great meeting"],[435,"목소리","Voice"],
+            [436,"노래","Song"],[437,"바다","Sea"],[438,"힘들다","To be hard, difficult"],[439,"공부","Study"],[440,"움직이다","To move, stir"],
+            [441,"의원","A member"],[442,"노력","Effort"],[443,"전혀","entirely,utterly,completely"],[444,"언니","Older sister"],[445,"단체","A corps, a group"],
+            [446,"분","One part"],[447,"알려지다","To become known"],[448,"가능하다","To be possible"],[449,"능력","Ability, capability, how much and how well"],[450,"주장하다","To assert,maintain"],
+            [451,"자식","one's children"],[452,"불","Fire"],[453,"주민","inhabitants,dwellers"],[454,"모으다","gather,get together"],[455,"자료","materials,data"],
+            [456,"존재","Existence"],[457,"학년","A school year"],[458,"신문","A newspaper"],[459,"가지다","Entertain or hold or have"],[460,"이해하다","To understand"],
+            [461,"제품","Manufactured goods"],[462,"분야","Field"],[463,"선생","Teacher"],[464,"사업","Business"],[465,"행위","An act, deed, behavior"],
+            [466,"수준","Level"],[467,"지난해","Last year"],[468,"표현","Verbal expression, representation, manifestation"],[469,"기분","Mood"],[470,"대","Era, period"],
+            [471,"젊다","To be young,youthful"],[472,"옷","Clothes"],[473,"기능","Function or functionality"],[474,"순간","A moment,a second"],[475,"전쟁","War"],
+            [476,"전","Before"],[477,"꿈","A Dream"],[478,"할머니","Grandmother"],[479,"회의","A meeting, a conference"],[480,"방송","Broadcast"],
+            [481,"이야기하다","To talk"],[482,"나무","Tree"],[483,"자다","To sleep"],[484,"연극","drama,a play"],[485,"마찬가지","The same"],
+            [486,"걷다","To walk"],[487,"노동","Labor, work"],[488,"이때","At this time, moment"],[489,"과거","The past"],[490,"가치","Price"],
+            [491,"시간","a Length of time (한시간 동안)"],[492,"집단","A group, a collective body"],[493,"현대","The present age, times"],[494,"살펴보다","Watch closely"],[495,"장관","A government cabinet minister"],
+            [496,"차이","difference,disparity"],[497,"풀다","Untie, loosen ; to melt into"],[498,"시절","season,time,occasion"],[499,"물건","A thing"],[500,"직접","Directly"],
+            [501,"개인","Private or individual"],[502,"근데","But or however"],[503,"발","Foot"],[504,"작가","writer,author"],[505,"효과","Effect, effectiveness"],
+            [506,"불교","Buddhism"],[507,"끌다","Pull"],[508,"대로","Like, according to"],[509,"빨리"," Quickly"],[510,"시작되다","To begin,start"],
+            [511,"말다","Cease"],[512,"설명하다","To explain"],[513,"우주","The universe"],[514,"시기","An opportunity,chance"],[515,"마치","As though, as if"],
+            [516,"살","Years old"],[517,"생산","1) production 2)birth"],[518,"바라다","Wish, hope"],[519,"강하다","To be strong or powerful"],[520,"경험","Experience or undergo or suffer"],
+            [521,"음악","Music"],[522,"최고","The best"],[523,"나타내다","Show, display"],[524,"아프다","To hurt"],[525,"적다","To be small, few in number"],
+            [526,"비","Rain"],[527,"고향","Hometown"],[528,"놀라다","Be surprised"],[529,"다양하다","To be various, diverse"],[530,"울다","To cry, weep"],
+            [531,"농민","A farmer"],[532,"은행","A bank"],[533,"지내다","To pass, spend time"],[534,"결혼","Marriage"],[535,"법","A law, the law"],
+            [536,"소설","A novel, fiction story"],[537,"예","Yes, certainly, right"],[538,"오후","The afternoon"],[539,"질서","Order, system"],[540,"담다","Put in a bottle"],
+            [541,"모이다","Meet, assemble"],[542,"시민","Residents of a city"],[543,"회장","Chariman, the president"],[544,"빠르다","Be fast, quick"],[545,"스스로","On its own, of its own free will"],
+            [546,"아기","baby,infant"],[547,"아저씨","Sir, calling an unknown male"],[548,"옛날","Ancient times, antiquity"],[549,"이날","Today, this day"],[550,"제대로","As properly is suitable"],
+            [551,"달","The moon"],[552,"던지다","To throw"],[553,"참","really,truly"],[554,"공간","Space or room"],[555,"이곳","This place, here"],
+            [556,"마지막","Last, final"],[557,"벌이다","(1) to plan to start a job/project (2) to play a table game"],[558,"병원","Hospital"],[559,"자세","Position, posture"],[560,"강조하다","Place empasis upon"],
+            [561,"경찰","The police"],[562,"맡다","Take charge of"],[563,"저녁","Evening"],[564,"한편","One side, one way"],[565,"그러면","If so or if that is the case"],
+            [566,"기자","A journalist"],[567,"넓다","Broad"],[568,"시험","A test"],[569,"잠","Sleep"],[570,"주로","principally,mainly"],
+            [571,"훨씬","By far, very much so"],[572,"면","Side"],[573,"통일","Unification"],[574,"건강","Health"],[575,"가깝다","Close"],
+            [576,"건물","Building"],[577,"시설","establishment,institution"],[578,"외국","A foreign country"],[579,"밑","The bottom"],[580,"어른","A man, an adult"],
+            [581,"주변","A circumference"],[582,"대신","Instead of"],[583,"원인","A cause,a factor"],[584,"팔다","To sell"],[585,"차례","(1) order,precedence (2) one time, one round"],
+            [586,"군","An army"],[587,"열심히","Enthusiastically,with zeal"],[588,"일하다","To work, labor"],[589,"재산","property,fortune, assets, possessions"],[590,"팀","Team"],
+            [591,"부모","Parents"],[592,"약간","Somewhat"],[593,"언어","language,speech"],[594,"요구하다","To demand,claim,request"],[595,"올라가다","To go up, ascend"],
+            [596,"첫","First"],[597,"감독","The director"],[598,"그날","That day or that same day"],[599,"사실","Actually, really"],[600,"자주","Always, constantly"],
+            [601,"당하다","Have, encounter"],[602,"삼다","Make a thing of"],[603,"약","About, approximately"],[604,"기간","A period or a time or"],[605,"담배","Tobacco"],
+            [606,"일으키다","Riase, get up; start, commence"],[607,"일단","Temporarily"],[608,"할아버지","Grandfather"],[609,"조직","Organization (composition, structure)"],[610,"태어나다","To be born, see the light of day"],
+            [611,"공장","Construction site"],[612,"벌써","Already"],[613,"즐기다","Enjoy oneself,take pleasure,delight"],[614,"지","since,from"],[615,"환자","A patient"],
+            [616,"변하다","Change"],[617,"사고","An accident"],[618,"그래도","All the same"],[619,"아무리","However much"],[620,"맞추다","Adjust, adapt"],
+            [621,"쌀","Uncooked rice"],[622,"일반","universal,common,usual"],[623,"재미있다","interesting,fun"],[624,"가르치다","To teach"],[625,"대화","Conversation"],
+            [626,"막다","Stop, obstruct"],[627,"올해","This year"],[628,"형","An elder brother"],[629,"달리","Differently"],[630,"버리다","Throw away"],
+            [631,"붙이다","affix,put on"],[632,"인물","A man, a person"],[633,"늘","Always"],[634,"모두","everything"],[635,"전국","The whole country"],
+            [636,"마치다","Finish, complete"],[637,"전","all,every"],[638,"다만","Only, merely"],[639,"도움","Help"],[640,"가정","Famly"],
+            [641,"걸다","Hang up or suspend"],[642,"빠지다","To fall into"],[643,"멀다","To be far"],[644,"버스","Bus"],[645,"오늘날","These days, nowadays"],
+            [646,"잠시","For a little while"],[647,"농업","Agriculture"],[648,"대다","Put, place up to"],[649,"식","form,style"],[650,"의견","An opinion,a suggestion"],
+            [651,"무대","Stage"],[652,"사진","Picture"],[653,"주장","assertion,insistance"],[654,"표현하다","To express, make known by saying"],[655,"인하다","To be due to, caused by"],
+            [656,"이상하다","To be strange,queer"],[657,"제일","The first"],[658,"붙다","Stick, adhere to"],[659,"아마","Probably"],[660,"얘기하다","To tell a story"],
+            [661,"잇다","Join, connect"],[662,"조금","A little"],[663,"경기","Race or match or contest"],[664,"목적","goal,purpose"],[665,"태도","attitude,comportment"],
+            [666,"남성","Male"],[667,"주위","The circumference,the girth"],[668,"대책","Countermeasure"],[669,"그만","That much or a little amount"],[670,"발생하다","Originate, come from"],
+            [671,"다리","Leg"],[672,"아무","anybody,everybody"],[673,"어쩌다","By chance, accident"],[674,"재료","stuff,material"],[675,"각각","Each and every"],
+            [676,"결코","Never or by no means"],[677,"옮기다","Move, transfer (2)(sickness) communicate, transfer to"],[678,"항상","Always"],[679,"해","A year"],[680,"잃다","To lose, to miss, to be deprived"],
+            [681,"자유","Freedom"],[682,"책임","Responsibility"],[683,"바뀌다","Be changed"],[684,"비슷하다","To resemble"],[685,"심하다","To be extreme,intense"],
+            [686,"경쟁","Competition or rivalry"],[687,"사랑하다","To love"],[688,"아니","No!"],[689,"여름","summer,summertime"],[690,"자라다","To grow up"],
+            [691,"회","A time, an inning, a round in a game"],[692,"구체적","Concretely"],[693,"기회","An opportunity"],[694,"실시하다","To enforce,put into effect"],[695,"지구","The earth"],
+            [696,"번째","How many times"],[697,"소비자","A consumer"],[698,"싫다","To not like, to hate"],[699,"규모","Scale or scope or structure"],[700,"기준","A standard or basis"],
+            [701,"말","End"],[702,"반드시","Most certainly"],[703,"셈","An intention,design,purpose"],[704,"갖추다","Make or get ready or prepare"],[705,"그러니까","And so it is that"],
+            [706,"받아들이다","Accept"],[707,"값","Price"],[708,"현장","on site, on location, at the site in question"],[709,"건설","Construction"],[710,"꺼내다","To get out or draw out"],
+            [711,"노동자","Laborer, worker"],[712,"언제나","everytime,always"],[713,"완전히","completely,perfectly"],[714,"자동차","Car"],[715,"전하다","To transmit,convey"],
+            [716,"존재하다","To exist"],[717,"개월","Each and every month"],[718,"맞다","receive,welcome (note, usually this is 맞히다)"],[719,"별로","Especially, particularly"],[720,"어린이","A youngster, a child"],
+            [721,"정하다","To set,determine"],[722,"한마디","One word"],[723,"유지하다","To preserve, maintain"],[724,"이데올로기","Ideology"],[725,"공부하다","To study"],
+            [726,"대중","The masses"],[727,"늘어나다","Grow longer"],[728,"닦다","Wipe clean, polish"],[729,"만","As many as, full, complete"],[730,"말씀","Speech"],
+            [731,"괜찮다","To be okay"],[732,"눈물","A tear"],[733,"각종","All sorts or varieties"],[734,"빛","Light"],[735,"아니","Not"],
+            [736,"피하다","avoid,keep away"],[737,"거치다","Pass or go through"],[738,"나아가다","Advance, go forward"],[739,"야","(Word to get somebody's attention) Hey!! (2) impolite speech for 이다, to be"],[740,"지식","Knowledge, information"],
+            [741,"여전히","As it used to be, as before ; still, persistently, even still"],[742,"주인","The head of a family,the owner"],[743,"발견하다","To discover"],[744,"선","A line, a route"],[745,"인류","The human race"],
+            [746,"특징","A special feature, a distinguishing feature"],[747,"선수","An athlete"],[748,"형식","A form, formality, mold"],[749,"마련하다","To plan, arrange"],[750,"반","Half"],
+            [751,"발표하다","To announce"],[752,"주제","Subject, theme, topic"],[753,"걸치다","1) put a thing over or across 2) to range from A to B"],[754,"겪다","Experience or undergo or suffer"],[755,"관점","A point of view or a standpoint/outlook"],
+            [756,"귀","Ear"],[757,"기본","A foundation"],[758,"미터","Meter"],[759,"사라지다","To disappear"],[760,"어떠하다","To be how"],
+            [761,"감정","Feelings"],[762,"기억","A memory"],[763,"놈","A fellow"],[764,"인기","Popularity"],[765,"배","Abdomen"],
+            [766,"아파트","Apartment"],[767,"가끔","Sometimes"],[768,"구성","Organization or constitution , the framework of something"],[769,"술","Spoonful"],[770,"실제로","In reality"],
+            [771,"짧다","Short, brief"],[772,"고맙다","To thank"],[773,"관리","Management or administration"],[774,"그곳","That place"],[775,"보다","More than, greater than …."],
+            [776,"비롯하다","begin,start"],[777,"과연","Just as one thought"],[778,"달리다","run, make do fast"],[779,"바쁘다","Busy"],[780,"이전","Former days/times"],
+            [781,"인정하다","To acknowledge,authorize"],[782,"자","A person"],[783,"중앙","The middle and the heart"],[784,"나쁘다","To be bad"],[785,"불구하다","Deformity, malformation"],
+            [786,"시키다","To make"],[787,"게임","Game"],[788,"국제","International"],[789,"그룹","Group"],[790,"인생","Life"],
+            [791,"전통","tradition,convention"],[792,"기르다","Educate or train or cultivate"],[793,"잔","A cup, wine glass"],[794,"조사하다","To examine,investigate"],[795,"커다랗다","To be very big/large"],
+            [796,"있다","To be"],[797,"시인","A poet"],[798,"언제","when,at what time"],[799,"외","Except, save for"],[800,"평가","Evaluation, appraisal"],
+            [801,"내려오다","Come down"],[802,"위치","A position, a location"],[803,"줄이다","reduce,decrease"],[804,"가격","Price"],[805,"달라지다","To change, vary"],
+            [806,"비다","To be empty, vacant"],[807,"삼국","Three countries"],[808,"손님","Customer"],[809,"원하다","To want"],[810,"통신","communications,correspondance"],
+            [811,"확인하다","To confirm,corroborate"],[812,"모임","A group, a party"],[813,"수","The number of sth"],[814,"웃음","Laughter, a smile"],[815,"기계","An instrument or a machine"],
+            [816,"모양","signs,indications"],[817,"물질","matter,material"],[818,"아나운서","Announcer"],[819,"뉴스","News"],[820,"살아가다","Lead a life, get along"],
+            [821,"펴다","Spread out, unfold"],[822,"배","Times, x-fold"],[823,"수업","school,teaching"],[824,"겨울","Winter"],[825,"종교","religion,a faith"],
+            [826,"층","floor,grade,class"],[827,"자연스럽다","To be natural"],[828,"장","One piece of sth flat"],[829,"식사","A meal"],[830,"안다","To hold, embrace"],
+            [831,"이해","Understanding"],[832,"잊다","To forget"],[833,"제시하다","To present"],[834,"반","Group, company, party"],[835,"불과하다","Nothing more than"],
+            [836,"혹은","If that's not the case"],[837,"엄청나다","To be absurd,wild,terribly large"],[838,"편","Direction, way (the wind is blowing that ~)"],[839,"텔레비전","Television"],[840,"파악하다","Grasp, seize, understand"],
+            [841,"편","Compilation, editing"],[842,"실천","Practice"],[843,"노력하다","To try hard, strive"],[844,"보호","protection,shelter"],[845,"씻다","To wash,cleanse"],
+            [846,"늦다","To be late (time)"],[847,"이웃","The neighborhood"],[848,"편지","Letter"],[849,"공동","Association or union or collaboration"],[850,"까닭","Reason"],
+            [851,"방안","A plan, scheme"],[852,"센티미터","Centimeter"],[853,"팔","An arm"],[854,"분명하다","To be clear/obvious"],[855,"분석","Analysis"],
+            [856,"소녀","A young girl"],[857,"지나가다","To pass, elapse"],[858,"차","order,sequence,degree"],[859,"상품","Product"],[860,"설명","Explanation"],
+            [861,"훌륭하다","To be excellent"],[862,"관계자","The interested or affected parties"],[863,"새로","newly,anew"],[864,"세","Age in years"],[865,"이어지다","Get joined, be connected"],
+            [866,"티브이","TV"],[867,"봄","Spring"],[868,"종류","kind,sort,species"],[869,"낮다","Be low"],[870,"어깨","Shoulder"],
+            [871,"부부","Man and wife"],[872,"오래","Long, for a long time"],[873,"요구","A demand, claim, request"],[874,"키우다","To raise, bring up, rear"],[875,"눕다","Lie down"],
+            [876,"발전하다","To develop, grow"],[877,"여행","Trip"],[878,"죽음","Death"],[879,"고통","Suffering or agony"],[880,"공","Ball"],
+            [881,"어울리다","To be becoming, suiting"],[882,"오월","May"],[883,"쉬다","to relax, take a break"],[884,"알리다","To inform, tell a person"],[885,"차다","To be full, to be filled with (PASSIVE)"],
+            [886,"과","A lesson or a section or a department"],[887,"멀리","Far away"],[888,"빼다","Pull out, extract"],[889,"예정","A program, schedule"],[890,"오빠","Older brother"],
+            [891,"즐겁다","Be pleasant,agreeable"],[892,"한계","Boundary, limits"],[893,"흔히","Generally, commonly ; often"],[894,"바탕","Natural disposition ; to go all out in a fight, 아주 크게 싸우다 ; the background"],[895,"사월","April"],
+            [896,"싸우다","To fight"],[897,"예쁘다","Pretty, lovely"],[898,"갈등","Conflict or troubles"],[899,"느껴지다","Feel"],[900,"의지","will,volition"],
+            [901,"전문","A specialty"],[902,"정확하다","To be exact"],[903,"초기","The early days, the initial period"],[904,"나중","The last, the latter part"],[905,"맛있다","Delicious"],
+            [906,"며칠","How many days"],[907,"쓴 맛","bitter flavor, bitter taste"],[908,"찾아오다","To go meet somebody, to go get sth"],[909,"미","beauty,grace"],[910,"사용","use,emply"],
+            [911,"시선","one's line of vision"],[912,"아무런","No sort of"],[913,"언론","A speech, discussion"],[914,"투자","Investment"],[915,"지원","helping, supporting, aiding"],
+            [916,"결정하다","To decide"],[917,"경영","Management or administration"],[918,"목표","goal,object"],[919,"성장","Growth"],[920,"숲","Forest"],
+            [921,"없어지다","To lose, get lost"],[922,"작년","Last year"],[923,"내려가다","To go down"],[924,"미치다","To reach"],[925,"새벽","dawn,daybreak"],
+            [926,"쓰레기","Garbage"],[927,"얼른","Fast, quickly, rapidly"],[928,"임금","Wages, pay"],[929,"피해","Damage"],[930,"한","A limit"],
+            [931,"무섭다","fearful,dreadful"],[932,"직장","one's work place"],[933,"참다","Bear, endure"],[934,"크기","Size, dimensions"],[935,"고기","Meat"],
+            [936,"남기다","To leave behind"],[937,"서양","The Western countries"],[938,"주요","The major, the chief thing"],[939,"가져오다","To bring or get"],[940,"냄새","Smell"],
+            [941,"부드럽다","soft,tender"],[942,"여기다","Think, consider as"],[943,"이","this,this thing"],[944,"공연","A public performance"],[945,"남녀","Man and woman"],
+            [946,"내놓다","Put out, take out"],[947,"만들어지다","Make, create"],[948,"속도","Speed"],[949,"심각하다","seriousness,gravity"],[950,"준비","Preparation"],
+            [951,"계속되다","To continue"],[952,"구월","September"],[953,"맑다","clean,pure"],[954,"소년","A boy"],[955,"소식","News, information"],
+            [956,"유월","June"],[957,"작용","Application"],[958,"허리","The waist, the small of the back"],[959,"골","Goal"],[960,"공업","The industry or manufacturing industry"],
+            [961,"그중","Among the rest of them"],[962,"노인","Old person"],[963,"벌다","To earn (money) ; (2) to invite, to bring onto oneself"],[964,"살리다","1) revive, bring around, restore to life 2) save,spare,rescue"],[965,"새","A bird"],
+            [966,"영어","The english language"],[967,"출신","A native, place one is from"],[968,"결정","A decision or determination"],[969,"경향","Tendency or trend"],[970,"기록","A record or a document"],
+            [971,"나름","Depending on"],[972,"대답하다","To answer, reply"],[973,"반면","One side"],[974,"썰다","Chip, mince,dice"],[975,"움직임","movement,motion,activity"],
+            [976,"이미지","Image"],[977,"터지다","Break, be torn, get away from"],[978,"특성","A special/unique characteristic (individuality making, peculiarity)"],[979,"교장","Principal"],[980,"벗다","Take off, remove"],
+            [981,"업무","Buisness, duty"],[982,"입시","An entrance examination"],[983,"준비하다","To prepare"],[984,"청소년","Young boys and girls, teenagers"],[985,"응","Yes, i see!"],
+            [986,"이기다","To win"],[987,"찾아보다","To go meet somebody"],[988,"취하다","To adopt, assume, take"],[989,"다루다","Treat, deal with"],[990,"달","The moon"],
+            [991,"사장","Company boss"],[992,"삼월","March"],[993,"그렇지만","But or however"],[994,"선배","one's senior"],[995,"업체","A business enterprise"],
+            [996,"키","stature,height"],[997,"구하다","1) To buy or purchase or 2) look for or seek or want"],[998,"국회","The National Assembly"],[999,"그러므로","So or hence or therefore"],[1000,"포함하다","To include,contain"]
+        ];
+
+        // Topic classification rules so all 1,000 words are grouped by meaningful topic,
+        // and within each topic, higher sub-numbers (e.g., Politics 2) are easier than lower sub-numbers (Politics 1).
+        const TOPIC_RULES = [
+            {
+                topic: "Politics & Law",
+                icon: "ph-bank",
+                keywords: ["president", "government", "state", "nation", "country", "politics", "nationality", "election", "race,nation", "minister", "law", "order, system", "residents of a city", "police", "unification", "army", "whole country", "countermeasure", "freedom", "ideology", "three countries", "collaboration", "conflict", "national assembly", "member", "authority", "enforce"]
+            },
+            {
+                topic: "Economy & Business",
+                icon: "ph-CurrencyCircleDollar",
+                keywords: ["krw", "percent", "money", "buy", "economy", "market", "enterprise", "advertisement", "industry", "work", "manufactured", "business", "labor", "price", "farmer", "bank", "chariman", "sell", "property", "construction", "factory", "agriculture", "competition", "consumer", "scale", "laborer", "management", "customer", "product", "investment", "wages", "work place", "earn", "boss", "duty"]
+            },
+            {
+                topic: "People & Family",
+                icon: "ph-users-three",
+                keywords: ["person", "we, our", "he, that", "mr.", "she", "woman", "child", "you", "human", "mom", "who", "oneself", "everybody", "female", "friend", "father", "boy", "formal you", "student", "mamma", "husband", "son", "baby", "others", "dad", "wife", "family", "age", "sister", "children", "inhabitants", "grandmother", "years old", "marriage", "sir", "adult", "parents", "grandfather", "brother", "male", "youngster", "masses", "owner", "fellow", "girl", "couple", "man and wife", "old person", "teenagers", "senior"]
+            },
+            {
+                topic: "Education & Research",
+                icon: "ph-graduation-cap",
+                keywords: ["question,problem", "school", "education", "teacher", "history", "read", "book", "meaning", "research", "reason", "words, a verse", "university", "investigation", "science", "teaching", "test", "language", "teach", "study", "knowledge", "discover", "announce", "subject, theme", "educate", "evaluation", "confirm", "understanding", "practice", "analysis", "explanation", "specialty", "english", "record", "principal", "entrance examination"]
+            },
+            {
+                topic: "Culture, Media & Art",
+                icon: "ph-film-slate",
+                keywords: ["culture", "sound,noise", "conversation", "art", "story", "work of art", "literature", "movie", "program", "picture", "telephone", "poetry", "voice", "song", "newspaper", "expression", "broadcast", "drama", "writer", "buddhism", "music", "novel", "journalist", "team", "stage", "race or match", "speech", "athlete", "popularity", "game", "poet", "communications", "announcer", "news", "religion", "television", "letter", "tv", "ball", "beauty", "performance", "goal", "image"]
+            },
+            {
+                topic: "Nature, Body & Health",
+                icon: "ph-heart-beat",
+                keywords: ["eyes", "motion", "heart", "body", "face", "water", "take (medicine)", "hand", "life", "die", "environment", "head", "mouth", "sky", "nature", "chest", "nape", "give birth", "flow", "mountain", "flower", "wind", "sea", "fire", "tree", "sleep", "foot", "hurt", "rain", "moon", "hospital", "posture", "health", "tobacco", "born", "patient", "leg", "grow up", "earth", "tear", "light", "ear", "abdomen", "winter", "wash", "centimeter", "arm", "species", "shoulder", "lie down", "death", "suffering", "forest", "garbage", "meat", "smell", "clean,pure", "waist", "revive", "bird", "stature"]
+            },
+            {
+                topic: "Space, Time & Daily Life",
+                icon: "ph-clock-countdown",
+                keywords: ["year", "one day", "house", "inside", "place", "in front", "center", "eat", "time", "store", "period", "next", "world", "above", "day", "hobby", "after", "where", "area, region", "road", "lifestyle", "first", "now", "seat", "outside", "middle", "after that", "locality", "night", "recently", "computer", "minutes", "soon", "today", "room", "morning", "end", "interval", "rice", "wear", "alone", "once", "coffee", "flavor", "food", "nowadays", "continuously", "century", "present", "vehicle", "city", "atmosphere", "bottom", "boat", "door", "during", "town", "moment", "before", "clothes", "past", "season", "hometown", "afternoon", "ancient", "space", "here", "evening", "close", "building", "institution", "foreign", "circumference", "that day", "always", "temporarily", "accident", "this year", "far", "bus", "little while", "everytime", "car", "month", "that place", "former", "international", "position", "empty", "cup", "machine", "floor", "meal", "late", "neighborhood", "spring", "long time", "trip", "may", "schedule", "april", "early days", "latter", "delicious", "how many days", "bitter", "dawn", "western", "speed", "preparation", "september", "june", "march", "apartment"]
+            },
+            {
+                topic: "Mind, Emotion & Attitude",
+                icon: "ph-smiley",
+                keywords: ["think", "not know", "thought", "want,hope", "know", "important", "feel", "hard", "power", "easy", "need", "concern", "mind,spirit", "laugh", "beautiful", "really", "love", "look forward", "facial expression", "touch, feel", "personality", "believe", "like, be fond", "effort", "ability", "understand", "mood", "dream", "experience", "wish", "strong", "surprised", "cry", "on its own", "properly", "truly", "enthusiastically", "enjoy", "interesting", "strange", "attitude", "lose", "responsibility", "extreme", "hate", "intention", "okay", "feelings", "memory", "thank", "busy", "bad", "natural", "forget", "try hard", "excellent", "relax", "pleasant", "disposition", "pretty", "volition", "fearful", "endure", "soft", "seriousness", "win"]
+            },
+            {
+                topic: "Society & Systems",
+                icon: "ph-globe-hemisphere-east",
+                keywords: ["society", "case", "connection", "process", "result", "contents", "event", "world,society", "condition", "actuality", "change", "nucleus", "activity", "present situation", "technique", "structure", "plan", "development", "relation", "form", "information", "part, a role", "action", "domestic", "engine", "method", "influence", "step, phase", "representative", "possibility", "direction", "great meeting", "corps", "materials", "existence", "field", "act, deed", "level", "function", "war", "meeting", "group", "difference", "private", "effect", "universe", "opportunity", "various", "cause", "organization", "common", "help", "opinion", "assertion", "goal", "material", "standard", "on site", "preserve", "feature", "formality", "standpoint", "foundation", "constitution", "administration", "group, a party", "matter", "protection", "plan, scheme", "interested", "demand", "boundary", "use,emply", "support", "damage", "application", "native", "decision", "tendency", "characteristic"]
+            },
+            {
+                topic: "Core Actions & Movement",
+                icon: "ph-person-simple-run",
+                keywords: ["to do", "to try", "to see", "to give", "face, confront", "to go", "speak", "sake of", "to come", "receive", "come out", "to live", "to make", "run, lead", "catch sight", "to have", "pass,elapse", "to be born", "action is over", "to start", "put, place", "appear", "meet", "produce", "show,let see", "to write", "see through", "sit down", "to hold", "seek", "go out", "seize", "to stand", "to rise", "put in", "to call", "light up", "descend", "make, build", "arise", "to use", "ride", "send", "go to and from", "open", "to ask", "remain", "refer to", "divide", "make use", "reach", "accomplish", "to drink", "attack", "advance", "draw to a close", "match", "hung up", "protect", "climb", "stand up", "play", "to face", "change,exchange", "draw a picture", "to learn", "compare", "come forth", "raise", "cross", "carry with", "do well", "to move", "become known", "assert", "gather", "talk", "walk", "watch closely", "untie", "pull", "begin", "cease", "explain", "display", "spend time", "put in a bottle", "assemble", "throw", "start a job", "emphasis", "take charge", "demand", "ascend", "encounter", "make a thing", "commence", "adjust", "stop", "throw away", "affix", "finish", "hang up", "fall into", "place up to", "express", "caused by", "stick", "tell a story", "join", "originate", "transfer", "Be changed", "accept", "get out", "transmit", "exist", "welcome", "determine", "grow longer", "wipe", "avoid", "go through", "go forward", "plan, arrange", "range from", "undergo", "disappear", "run,", "acknowledge", "examine", "come down", "reduce", "change, vary", "want", "lead a life", "spread out", "embrace", "present", "grasp", "pass, elapse", "connected", "bring up", "develop", "inform", "filled with", "extract", "fight", "meet somebody", "decide", "get lost", "go down", "leave behind", "bring or get", "consider as", "put out", "create", "continue", "answer", "mince", "torn", "take off", "prepare", "adopt", "deal with", "seek or want", "include"]
+            }
+        ];
+
+        function classifyWordTopic(id, kr, en) {
+            const lowerEn = en.toLowerCase();
+            for (const rule of TOPIC_RULES) {
+                for (const kw of rule.keywords) {
+                    if (lowerEn.includes(kw.toLowerCase())) {
+                        return { topic: rule.topic, icon: rule.icon };
+                    }
+                }
+            }
+            // Fallback for fundamental grammar, pronouns, numbers, and connectors
+            return { topic: "Core Expressions & Logic", icon: "ph-chat-centered-text" };
+        }
+
+        // Hand-crafted context sentences and unique hints for high-frequency & notebook TOPIK words
+        const CURATED_CONTEXT_BY_KR = {
+            "것": {
+                kr: "제가 가장 좋아하는 ___은 주말에 친구들과 커피를 마시는 일입니다.",
+                en: "My favorite ___ is drinking coffee with friends on the weekend.",
+                hint: "Bound noun meaning 'thing/fact/one' — always preceded by a modifier (e.g., 좋은 것, 먹는 것)."
+            },
+            "하다": {
+                kr: "매일 아침 삼십 분씩 꾸준히 운동을 ___ 것이 건강에 좋습니다.",
+                en: "It is good for your health to ___ exercise steadily for 30 minutes every morning.",
+                hint: "Versatile action verb ('to do'); attaches to nouns (공부하다, 운동하다) to turn them into verbs."
+            },
+            "있다": {
+                kr: "책상 위에 오늘 읽어야 할 한국어 전공 서적이 놓여 ___.",
+                en: "The Korean textbook I need to read today is (___) on the desk.",
+                hint: "Expresses existence ('to be located in/at') or possession ('to have'). Opposite of 없다."
+            },
+            "수": {
+                kr: "열심히 연습하면 누구나 유창하게 한국어를 말할 ___ 있습니다.",
+                en: "If you practice hard, anyone has the ___ (way/ability) to speak Korean fluently.",
+                hint: "Often used in the grammar pattern -(으)ㄹ 수 있다/없다 ('can / cannot do') or to mean 'a number'."
+            },
+            "나": {
+                kr: "어제 친구가 물어본 질문에 대해 ___는 오랫동안 깊이 생각했다.",
+                en: "___ thought deeply for a long time about the question my friend asked yesterday.",
+                hint: "Informal first-person pronoun ('I / me'). Changes to 내 before the subject particle 가 (내가)."
+            },
+            "없다": {
+                kr: "오늘은 급한 약속이 ___ 집에서 편하게 쉬려고 합니다.",
+                en: "Since I ___ (do not have) any urgent plans today, I plan to rest comfortably at home.",
+                hint: "Means 'to not exist' or 'to not have'. Pronounced [업따]."
+            },
+            "않다": {
+                kr: "포기하지 ___ 끝까지 최선을 다하면 좋은 결과가 있을 거예요.",
+                en: "If you do ___ give up and do your best until the end, there will be a good result.",
+                hint: "Auxiliary negation verb used after -지 (e.g., 가지 않다 = 'to not go')."
+            },
+            "사람": {
+                kr: "어려울 때 진심으로 도와주는 ___이 진짜 소중한 친구입니다.",
+                en: "A ___ who sincerely helps you in difficult times is a truly precious friend.",
+                hint: "General noun for 'person' or 'human'. Combined with country names for nationality (한국 사람)."
+            },
+            "우리": {
+                kr: "___ 가족은 매년 설날마다 할머니 댁에 모여서 떡국을 먹습니다.",
+                en: "___ family gathers at Grandmother's house every Lunar New Year to eat rice cake soup.",
+                hint: "Korean speakers frequently say '우리' ('we/our') instead of 'my' for family, home (우리 집), and country (우리나라)."
+            },
+            "그": {
+                kr: "어제 도서관에서 만난 ___ 학생은 한국 역사를 전공하고 있었다.",
+                en: "___ student whom I met at the library yesterday was majoring in Korean history.",
+                hint: "Demonstrative meaning 'that' (near listener or already mentioned) or third-person pronoun 'he'."
+            },
+            "아니다": {
+                kr: "돈이 많다고 해서 반드시 행복한 것은 ___.",
+                en: "Having a lot of money does ___ necessarily mean that one is happy.",
+                hint: "Negative copula ('to not be') following a noun + 이/가 아니다."
+            },
+            "보다": {
+                kr: "주말에 시간이 나면 새로 개봉한 한국 영화를 ___ 싶어요.",
+                en: "If I have time on the weekend, I want to ___ (watch/try) the newly released Korean movie.",
+                hint: "As a main verb, means 'to see/look/watch'; after -아/어 보다, it means 'to try doing'."
+            },
+            "거": {
+                kr: "이 우산은 제 ___이 아니라 제 동생이 어제 사 온 우산이에요.",
+                en: "This umbrella is not mine (my ___), but the one my younger sibling bought yesterday.",
+                hint: "Colloquial spoken form of 것 ('thing'). Frequently used in daily conversation (내 거 = mine)."
+            },
+            "같다": {
+                kr: "오늘 날씨는 어제와 비슷해서 산책하기에 참 좋은 것 ___.",
+                en: "Today's weather is ___ (similar) to yesterday's, so it seems great for a walk.",
+                hint: "Means 'to be the same/similar' (와/과 같다) or forms conjectures with -(으)ㄴ/는 것 같다 ('it seems that')."
+            },
+            "주다": {
+                kr: "모르는 단어가 있을 때 선생님이 친절하게 의미를 설명해 ___.",
+                en: "When there was an unknown word, the teacher kindly explained the meaning for me (___).",
+                hint: "Means 'to give', or attaches to verbs (-아/어 주다) to indicate doing an action for someone."
+            },
+            "대하다": {
+                kr: "우리는 환경 보호 문제에 ___ 진지하게 토론하는 시간을 가졌다.",
+                en: "We had a time to seriously discuss ___ (concerning/facing) the issue of environmental protection.",
+                hint: "Usually appears as ~에 대해(서) or ~에 대한 meaning 'about, regarding, or toward'."
+            },
+            "가다": {
+                kr: "방학이 시작되면 기차를 타고 부산 해운대 바다에 ___ 예정입니다.",
+                en: "When vacation starts, I plan to ___ to Haeundae Beach in Busan by train.",
+                hint: "Core directional verb meaning 'to go' (moving away from the current speaker's location)."
+            },
+            "년": {
+                kr: "한국에 처음 유학을 온 지 벌써 삼 ___이라는 시간이 지났습니다.",
+                en: "Three ___s have already passed since I first came to study abroad in Korea.",
+                hint: "Sino-Korean counter for years (e.g., 2026년, 삼 년). Always used with Sino-Korean numbers."
+            },
+            "한": {
+                kr: "하루에 커피를 ___ 잔만 마시고 물을 많이 마시기로 결심했어요.",
+                en: "I decided to drink only ___ cup of coffee a day and drink plenty of water.",
+                hint: "Native Korean determiner for 'one' before a counter (한 개, 한 명, 한 번), or 'approximately'."
+            },
+            "말": {
+                kr: "가는 ___이 고와야 오는 ___이 곱다는 한국 속담이 있습니다.",
+                en: "There is a Korean proverb that says your ___ (words) must be kind for others' words to be kind.",
+                hint: "Means 'spoken words, speech, or language' (한국말 = Korean language; 거짓말 = lie)."
+            },
+            "일": {
+                kr: "오늘 해야 할 ___을 내일로 미루지 말고 지금 바로 시작합시다.",
+                en: "Let's not put off the ___ (work/task) we need to do today until tomorrow, and start right now.",
+                hint: "As a native noun, means 'work, job, or matter'; as a Sino-Korean word, means 'day' or 'one'."
+            },
+            "이": {
+                kr: "___ 책은 제가 한국어를 배울 때 가장 큰 도움을 받은 교재입니다.",
+                en: "___ book is the textbook that helped me the most when I was learning Korean.",
+                hint: "Demonstrative modifier meaning 'this' (near the speaker), or referring to 'this person'."
+            },
+            "말하다": {
+                kr: "회의 시간에는 자신의 의견을 분명하고 솔직하게 ___ 것이 중요합니다.",
+                en: "During a meeting, it is important to ___ your opinion clearly and honestly.",
+                hint: "Combines 말 (words) + 하다 (to do) = 'to speak, say, or tell'."
+            },
+            "위하다": {
+                kr: "건강한 미래를 ___ 규칙적인 식습관과 충분한 수면이 필요합니다.",
+                en: "___ (For the sake of) a healthy future, regular eating habits and enough sleep are needed.",
+                hint: "Almost always used as ~을/를 위해(서) ('for the sake of / in order to') or ~을/를 위한."
+            },
+            "그러나": {
+                kr: "그 시험은 정말 어려웠다. ___ 포기하지 않고 끝까지 문제를 풀었다.",
+                en: "The exam was really difficult. ___, I did not give up and solved the questions to the end.",
+                hint: "Formal sentence-initial conjunction meaning 'However / But still' (contrasts with the previous clause)."
+            },
+            "오다": {
+                kr: "내일 우리 집에서 저녁을 먹을 거니까 여섯 시까지 꼭 ___.",
+                en: "Since we're having dinner at my house tomorrow, please be sure to ___ by six o'clock.",
+                hint: "Core directional verb meaning 'to come' (moving toward the speaker's location)."
+            },
+            "알다": {
+                kr: "그 역사적 사건의 정확한 원인을 ___ 있는 전문가는 많지 않다.",
+                en: "There are not many experts who ___ the exact cause of that historical event.",
+                hint: "Irregular ㄹ verb meaning 'to know/understand'. Opposite of 모르다 ('to not know')."
+            },
+            "씨": {
+                kr: "김민수 ___는 이번 프로젝트에서 팀원들을 훌륭하게 이끌었습니다.",
+                en: "Mr./Ms. (___) Kim Minsu led the team members wonderfully in this project.",
+                hint: "Polite title ('Mr./Ms.') attached after a full name or given name among peers/colleagues."
+            },
+            "그렇다": {
+                kr: "네, 말씀하신 대로 ___ 생각하시는 분들이 요즘 점점 많아지고 있어요.",
+                en: "Yes, just as you said, more and more people think ___ (that way / so) these days.",
+                hint: "ㅎ-irregular descriptive verb ('to be so / like that'). Conjugates to 그래요 in polite speech."
+            },
+            "크다": {
+                kr: "서울은 인구가 많고 고층 빌딩이 가득한 아주 ___ 도시입니다.",
+                en: "Seoul is a very ___ (big/large) city with a large population and full of high-rise buildings.",
+                hint: "ㅡ-irregular adjective meaning 'to be big, large, or loud' (conjugates to 커요)."
+            },
+            "사회": {
+                kr: "사람들은 구매한 물건을 일상에서 사용함으로써 ___ 문제에 대한 입장을 표현한다.",
+                en: "People express their stance on ___ (social/society) issues by using purchased goods in daily life.",
+                hint: "Key TOPIK noun meaning 'society / community' (e.g., 현대 사회 = modern society, 사회에 진출하다)."
+            },
+            "많다": {
+                kr: "주말이라서 그런지 공원에 산책을 나온 가족들이 정말 ___.",
+                en: "Perhaps because it is the weekend, there are ___ (many) families out for a walk in the park.",
+                hint: "Descriptive verb meaning 'to be many/much'. Adverbial form is 많이 ('a lot')."
+            },
+            "안": {
+                kr: "오늘은 비가 많이 와서 밖에 ___ 나가고 집에서 책을 읽었어요.",
+                en: "Because it rained a lot today, I did ___ go outside and read a book at home.",
+                hint: "Short negation adverb placed directly before a verb/adjective (안 가다 = not go). Also means 'inside' as a noun."
+            },
+            "좋다": {
+                kr: "아침에 창문을 열었더니 상쾌한 공기가 들어와서 기분이 참 ___.",
+                en: "When I opened the window in the morning, fresh air came in and I felt really ___ (good).",
+                hint: "Adjective meaning 'to be good/fine'. Note the difference from 좋아하다 ('to like' - transitive verb)."
+            },
+            "더": {
+                kr: "조금만 ___ 노력하면 이번 한국어 능력 시험에서 높은 점수를 받을 수 있어요.",
+                en: "If you try just a little ___ (more), you can get a high score on this TOPIK exam.",
+                hint: "Comparative adverb meaning 'more / further' (e.g., 더 좋다 = better, 더 많이 = more)."
+            },
+            "받다": {
+                kr: "생일에 친구들로부터 따뜻한 축하 편지와 선물을 ___ 정말 기뻤다.",
+                en: "I was really happy to ___ warm congratulatory letters and gifts from friends on my birthday.",
+                hint: "Core transitive verb meaning 'to receive / get / take'. Opposite of 주다 ('to give')."
+            },
+            "그것": {
+                kr: "손에 들고 있는 ___은 어디에서 산 물건인지 물어봐도 될까요?",
+                en: "May I ask where you bought ___ (that thing) you are holding in your hand?",
+                hint: "Pronoun combining 그 + 것 ('that thing') referring to an object near the listener or already mentioned."
+            },
+            "집": {
+                kr: "퇴근 후에 따뜻한 ___으로 돌아와 가족과 저녁을 먹는 시간이 가장 행복하다.",
+                en: "The happiest time is returning ___ (home/house) after work and eating dinner with family.",
+                hint: "Means 'house/home', or can be a suffix for a specialty shop/restaurant (빵집 = bakery, 맛집 = great restaurant)."
+            },
+            "나오다": {
+                kr: "드디어 기다리던 시험 결과가 홈페이지에 ___ 확인해 보았다.",
+                en: "The exam results I had been waiting for finally ___ (came out) on the website, so I checked them.",
+                hint: "Compound verb (나다 + 오다) meaning 'to come out, appear, or be published'."
+            },
+            "그리고": {
+                kr: "저는 도서관에서 숙제를 마쳤습니다. ___ 친구와 함께 저녁을 먹으러 갔습니다.",
+                en: "I finished my homework at the library. ___ (And then) I went to eat dinner with my friend.",
+                hint: "Connector used to link sentences in chronological or additive order ('And / And then')."
+            },
+            "문제": {
+                kr: "환경 오염 ___를 해결하기 위해 전 세계가 함께 협력해야 합니다.",
+                en: "The whole world must cooperate together to solve the environmental pollution ___ (problem).",
+                hint: "Means both a 'problem/issue' to resolve (문제를 해결하다) and a 'test question' (문제를 풀다)."
+            },
+            "그런": {
+                kr: "___ 따뜻한 격려의 말을 들으니 다시 시작할 용기가 생겼습니다.",
+                en: "Hearing ___ (such) warm words of encouragement gave me the courage to start again.",
+                hint: "Determiner derived from 그렇다, placed before a noun to mean 'such a / that kind of'."
+            },
+            "살다": {
+                kr: "저는 서울의 조용한 동네에서 부모님과 함께 십 년째 ___ 있습니다.",
+                en: "I have been ___ (living) with my parents in a quiet neighborhood in Seoul for ten years.",
+                hint: "ㄹ-irregular verb meaning 'to live / reside / be alive'. Noun form is 삶 ('life')."
+            },
+            "저": {
+                kr: "선생님, ___는 이번 발표 주제에 대해 조금 다른 생각을 가지고 있습니다.",
+                en: "Teacher, ___ (I - humble) have a slightly different thought regarding this presentation topic.",
+                hint: "Humble first-person pronoun ('I') used in polite/formal speech, or demonstrative 'that over there'."
+            },
+            "못하다": {
+                kr: "어제 밤늦게까지 일하느라 피곤해서 아침 운동을 하지 ___.",
+                en: "Because I was tired from working late last night, I could ___ (was unable to) do my morning workout.",
+                hint: "Expresses inability ('cannot / be impossible') when used as -지 못하다, or 'to be poor at'."
+            },
+            "생각하다": {
+                kr: "무엇이 우리 삶에서 가장 중요한 가치인지 깊이 ___ 볼 필요가 있습니다.",
+                en: "We need to ___ deeply about what the most important value in our lives is.",
+                hint: "Combines 생각 (thought) + 하다 = 'to think / consider'."
+            },
+            "모르다": {
+                kr: "길이 너무 복잡해서 어디로 가야 할지 전혀 ___ 지나가는 분께 물어보았다.",
+                en: "Because the road was so complicated, I did ___ (not know) where to go, so I asked a passerby.",
+                hint: "르-irregular verb ('to not know / be unaware'). Conjugates to 몰라요 in present tense."
+            },
+            "기업": {
+                kr: "최근 시장 환경이 변하면서 의사 결정 속도가 빠른 ___이 경쟁력을 갖게 되었다.",
+                en: "As the market environment changed recently, ___ (companies/enterprises) with fast decision-making gained competitiveness.",
+                hint: "Formal TOPIK word for 'company / enterprise' (e.g., 대기업 = large corporation, 중소기업 = SME)."
+            },
+            "경제": {
+                kr: "최근 뉴스에 따르면 올해 국가 ___ 성장률이 작년보다 높아졌다고 합니다.",
+                en: "According to recent news, the national ___ (economic) growth rate increased compared to last year.",
+                hint: "Refers to 'economy' or 'economics' (경제 발전 = economic development, 경제가 침체되다)."
+            },
+            "다양하다": {
+                kr: "통계 자료는 기준 설정에 따라 아주 ___ 해석될 수 있습니다.",
+                en: "Statistical data can be interpreted in very ___ (various/diverse) ways depending on how standards are set.",
+                hint: "Descriptive verb meaning 'to be diverse/varied' (다양한 경험 = diverse experiences)."
+            },
+            "자신": {
+                kr: "어떤 어려운 일을 시작할 때에도 ___을 믿고 도전하는 태도가 중요합니다.",
+                en: "Even when starting a difficult task, an attitude of believing in ___ (oneself) and taking on the challenge is important.",
+                hint: "Reflexive noun meaning 'oneself' (나 자신 = myself) or 'self-confidence' (자신이 있다)."
+            },
+            "새롭다": {
+                kr: "최근에 ___ 개발된 이 치료제는 환자들에게 큰 도움이 되고 있다.",
+                en: "This treatment, which was ___ (newly) developed recently, is a great help to patients.",
+                hint: "ㅂ-irregular adjective ('to be new/fresh'). Conjugates to 새로운 before a noun and 새로워요."
+            },
+            "기술": {
+                kr: "화성 탐사선에 종이접기 ___이 유용하게 활용되었다는 기사를 읽었다.",
+                en: "I read an article that origami ___ (technology/technique) was usefully applied to the Mars probe.",
+                hint: "Means 'skill, technique, or technology' (정보 통신 기술 = IT technology, 기술을 개발하다)."
+            },
+            "내용": {
+                kr: "발표 자료의 ___이 너무 복잡해서 한눈에 이해하기가 쉽지 않았다.",
+                en: "Because the ___ (content) of the presentation material was so complex, it wasn't easy to understand at a glance.",
+                hint: "Refers to the 'contents / substance' of a book, report, or speech (내용을 파악하다)."
+            },
+            "보이다": {
+                kr: "오늘은 날씨가 아주 맑아서 저 멀리 있는 산봉우리까지 선명하게 잘 ___.",
+                en: "Because the weather is very clear today, even the mountain peaks far away ___ (are seen / visible) clearly.",
+                hint: "Passive/causative of 보다: means both 'to be seen / visible' (눈에 보이다) and 'to show'."
+            },
+            "산업": {
+                kr: "자국의 ___을 보호하고 발전시키기 위해 정부가 새로운 지원책을 마련했다.",
+                en: "To protect and develop the nation's ___ (industry), the government prepared new support measures.",
+                hint: "Refers to macroeconomic 'industry' (4차 산업 = 4th industrial sector, 관광 산업 = tourism industry)."
+            },
+            "환경": {
+                kr: "경제 발전만 우선시하다 보면 자연 ___이 심각하게 훼손될 수 있다.",
+                en: "If we prioritize only economic development, the natural ___ (environment) can be seriously damaged.",
+                hint: "Means both natural 'environment' (환경을 보호하다) and surrounding conditions (근무 환경)."
+            },
+            "활동": {
+                kr: "주말에는 스트레스를 풀기 위해 동호회에서 다양한 여가 ___을 즐깁니다.",
+                en: "On weekends, I enjoy various leisure ___ (activities) in a club to relieve stress.",
+                hint: "Noun for active 'activity / operation' (봉사 활동 = volunteer work, 문화 활동 = cultural activity)."
+            },
+            "경우": {
+                kr: "갈등은 의사소통이 부족해서 생기는 ___가 대부분이다.",
+                en: "In most ___ (cases/instances), conflict arises from a lack of communication.",
+                hint: "Frequently used in ~(으)ㄴ/는 경우에 ('in the case that / if')."
+            },
+            "방식": {
+                kr: "기존과 다른 새로운 교육 ___을 도입하여 학생들의 참여를 높였다.",
+                en: "By introducing a new educational ___ (method/way) different from before, student participation increased.",
+                hint: "Means an established 'way, mode, or method' of doing something (근무 방식, 생활 방식)."
+            },
+            "영향": {
+                kr: "어린 시절의 독서 습관은 평생의 사고방식에 긍정적인 ___을 미친다.",
+                en: "Childhood reading habits have a positive ___ (influence/impact) on one's lifelong way of thinking.",
+                hint: "Key collocation: 영향을 미치다 / 주다 ('to exert an influence') and 영향을 받다 ('to be influenced')."
+            },
+            "문화": {
+                kr: "한류 열풍 덕분에 한국의 전통 ___와 음식에 관심을 갖는 외국인이 많아졌다.",
+                en: "Thanks to the Korean Wave, many foreigners have become interested in Korean traditional ___ (culture) and food.",
+                hint: "Means 'culture' (문화 교류 = cultural exchange, 대중문화 = pop culture)."
+            },
+            "맞다": {
+                kr: "정답이 무엇인지 확실하지 않지만, 제 생각에는 이 설명이 ___ 것 같습니다.",
+                en: "I'm not sure what the answer is, but in my opinion, this explanation seems ___ (right/correct).",
+                hint: "Homonym verb: 1) 'to be right/correct/fit' (답이 맞다), 2) 'to welcome/greet', 3) 'to be hit by (rain/snow)'."
+            },
+            "상황": {
+                kr: "갑작스러운 기상 악화 ___ 때문에 비행기 출발 시간이 두 시간 연기되었다.",
+                en: "Because of the sudden worsening weather ___ (situation), the flight departure was delayed by two hours.",
+                hint: "Refers to the unfolding 'situation / state of affairs' (상황을 파악하다, 상황에 처하다)."
+            },
+            "기회": {
+                kr: "자신에게 찾아온 소중한 ___를 놓치지 않고 끝까지 도전해 보기로 했다.",
+                en: "I decided not to miss the precious ___ (opportunity/chance) that came to me and challenge myself to the end.",
+                hint: "Common collocations: 기회를 잡다 ('seize an opportunity'), 기회를 놓치다 ('miss a chance')."
+            },
+            "효과": {
+                kr: "규칙적으로 산책을 하면 마음을 안정시키는 좋은 ___를 얻을 수 있다.",
+                en: "If you take walks regularly, you can get a good ___ (effect) of calming your mind.",
+                hint: "Means 'effect / effectiveness' (효과가 크다 = highly effective, 효과를 거두다 = achieve results)."
+            },
+            "관계": {
+                kr: "원만한 의사소통은 사람들과의 ___를 유지하고 발전시키는 데 필수적이다.",
+                en: "Smooth communication is essential for maintaining and developing ___ (relationships) with people.",
+                hint: "Means 'relationship / connection' (대인 관계 = interpersonal relations, ~와/과 관계가 있다)."
+            },
+            "사업": {
+                kr: "우리 회사는 친환경 에너지를 활용한 새로운 해외 ___을 계획하고 있습니다.",
+                en: "Our company is planning a new overseas ___ (business/project) utilizing eco-friendly energy.",
+                hint: "Refers to a commercial 'business enterprise' or a public 'project' (사업을 추진하다)."
+            },
+            "최근": {
+                kr: "___ 한국의 편의점 업계가 해외로 진출하면서 현지에서 큰 인기를 끌고 있다.",
+                en: "___ (Recently), as Korea's convenience store industry expanded overseas, it has gained huge popularity locally.",
+                hint: "Time noun/adverb meaning 'recently / lately / the latest' (최근 동향 = recent trends)."
+            },
+            "가치": {
+                kr: "실패를 두려워하지 않는 도전 정신은 그 자체로 높은 ___를 지니고 있다.",
+                en: "A challenging spirit unafraid of failure holds high ___ (value/worth) in itself.",
+                hint: "Means 'value or worth' (가치가 높다 = high value, 가치를 인정받다 = have one's value recognized)."
+            },
+            "변화": {
+                kr: "기후 ___로 인해 전 세계적으로 이상 기온 현상이 자주 발생하고 있다.",
+                en: "Due to climate ___ (change), abnormal temperature phenomena are occurring frequently worldwide.",
+                hint: "Noun meaning 'change / transformation' (변화가 생기다, 변화를 겪다). Verb is 변화하다/변하다."
+            },
+            "성장": {
+                kr: "우리 회사가 이렇게 빠른 ___을 이룰 수 있었던 것은 직원들의 노력 덕분이다.",
+                en: "The reason our company could achieve such rapid ___ (growth) is thanks to the employees' efforts.",
+                hint: "Used for both economic/company 'growth' (경제 성장) and personal/child growth."
+            },
+            "의견": {
+                kr: "성공적인 회의를 위해 참가자 각자의 ___을 경청하고 존중해야 한다.",
+                en: "For a successful meeting, we must listen closely to and respect each participant's ___ (opinion).",
+                hint: "Means 'opinion or view' (의견을 나누다 = share opinions, 의견을 모으다 = gather views)."
+            },
+            "인간": {
+                kr: "자연환경 오염은 동식물뿐만 아니라 결국 ___의 생존까지 위협한다.",
+                en: "Environmental pollution threatens not only plants and animals, but ultimately ___ (human) survival.",
+                hint: "Formal noun for 'human being / humankind' (인간관계 = human relations)."
+            },
+            "제품": {
+                kr: "마케팅도 중요하지만 무엇보다 ___의 품질이 우수해야 소비자가 다시 찾는다.",
+                en: "Marketing is important, but above all, the quality of the ___ (product) must be excellent for consumers to return.",
+                hint: "Refers to manufactured 'products / goods' (신제품 = new product, 제품을 출시하다)."
+            },
+            "행동": {
+                kr: "어린아이들은 어른들의 말보다 평소의 ___을 보고 따라 배우는 경향이 있다.",
+                en: "Young children tend to learn by watching adults' everyday ___ (behavior/actions) rather than their words.",
+                hint: "Means 'action or behavior' (행동으로 옮기다 = put into action)."
+            },
+            "지역": {
+                kr: "도시 ___과 농촌 ___이 균형 있게 발전할 수 있도록 지원이 필요하다.",
+                en: "Support is needed so that urban ___ (areas/regions) and rural ___ can develop in balance.",
+                hint: "Geographic 'region, area, or district' (지역 주민 = local residents, 지역 경제 = local economy)."
+            },
+            "기록": {
+                kr: "그 수영 선수는 이번 올림픽 대회에서 세계 신___을 세우며 금메달을 땄다.",
+                en: "That swimmer set a new world ___ (record) and won the gold medal at this Olympic Games.",
+                hint: "Means a historical/documentary 'record' (기록을 남기다) or an athletic 'record' (기록을 깨다)."
+            },
+            "삶": {
+                kr: "바쁜 일상 속에서도 일과 휴식의 균형을 찾으면 ___의 질이 훨씬 높아진다.",
+                en: "Finding a balance between work and rest even in a busy routine greatly improves the quality of ___ (life).",
+                hint: "Native Korean noun derived from 살다 ('to live'), meaning 'life / living' (삶의 질 = quality of life)."
+            },
+            "설명하다": {
+                kr: "복잡한 과학 원리를 초등학생도 이해할 수 있도록 쉬운 예를 들어 ___.",
+                en: "He ___ (explained) the complex scientific principle using easy examples so even elementary students could understand.",
+                hint: "Transitive verb meaning 'to explain / describe' (자세히 설명하다 = explain in detail)."
+            }
+        };
+
+        // Rich, varied templates by grammatical & thematic category so every word in every level gets a unique context & hint
+        const VERB_TEMPLATES = [
+            {
+                kr: "상황이 바뀌더라도 포기하지 않고 끝까지 ___ 태도가 중요합니다.",
+                en: "Even if the situation changes, an attitude of trying to ___ until the very end without giving up is important.",
+                hintType: "Persistently performing an action despite changing circumstances"
+            },
+            {
+                kr: "전문가들은 문제를 해결하기 전에 먼저 원인을 정확히 ___ 한다고 조언합니다.",
+                en: "Experts advise that we must accurately ___ the cause first before solving the problem.",
+                hintType: "Analytical action recommended by experts during problem-solving"
+            },
+            {
+                kr: "매일 조금씩이라도 꾸준히 연습하면 누구나 자연스럽게 ___ 수 있습니다.",
+                en: "If you practice steadily even a little bit every day, anyone can naturally ___.",
+                hintType: "Skill-building verb often combined with -(으)ㄹ 수 있다 ('can do')"
+            },
+            {
+                kr: "이번 주말에는 가족들과 함께 시간을 보내며 천천히 ___ 계획입니다.",
+                en: "This weekend, I plan to spend time with my family and slowly ___.",
+                hintType: "Planned future action used with -(으)ㄹ 계획이다"
+            },
+            {
+                kr: "처음에는 익숙하지 않아서 힘들었지만 이제는 혼자서도 잘 ___.",
+                en: "At first it was hard because I wasn't used to it, but now I can ___ well on my own.",
+                hintType: "Action showing personal growth from beginner to independent mastery"
+            },
+            {
+                kr: "친구와 대화를 나누면서 그동안 몰랐던 새로운 사실을 ___ 되었다.",
+                en: "While conversing with my friend, I came to ___ a new fact I hadn't known before.",
+                hintType: "Used with -게 되다 to express coming to perform or experience an action"
+            },
+            {
+                kr: "약속 시간에 늦지 않으려면 지금 바로 준비해서 ___ 것이 좋겠습니다.",
+                en: "In order not to be late for the appointment, it would be best to get ready and ___ right now.",
+                hintType: "Recommended immediate action paired with -는 것이 좋다"
+            },
+            {
+                kr: "그 문제를 혼자 결정하기보다 팀원들과 충분히 상의한 후에 ___ 합시다.",
+                en: "Rather than deciding that issue alone, let's discuss it thoroughly with team members and then ___.",
+                hintType: "Collaborative action taken after group discussion"
+            },
+            {
+                kr: "어린 시절에 겪었던 다양한 경험이 지금의 저를 ___ 데 큰 도움이 되었습니다.",
+                en: "Various experiences from childhood helped greatly in allowing me to ___ today.",
+                hintType: "Used with -는 데 도움이 되다 ('helps in doing')"
+            },
+            {
+                kr: "안전 규칙을 철저히 지키면서 차근차근 단계별로 ___ 주세요.",
+                en: "Please ___ step by step while strictly following the safety rules.",
+                hintType: "Polite instructional request (-아/어 주세요) in a procedural setting"
+            }
+        ];
+
+        const ADJ_TEMPLATES = [
+            {
+                kr: "계절이 바뀌면서 아침저녁으로 날씨가 제법 ___ 느껴집니다.",
+                en: "As the seasons change, the weather feels quite ___ in the morning and evening.",
+                hintType: "Descriptive state paired with -게 느껴지다 ('to feel [adjective]')"
+            },
+            {
+                kr: "처음 예상했던 것보다 결과가 훨씬 ___ 모두가 만족해했다.",
+                en: "Because the result was much more ___ than initially expected, everyone was satisfied.",
+                hintType: "Comparative descriptive clause highlighting an impressive outcome"
+            },
+            {
+                kr: "사람마다 성격과 취향이 ___ 때문에 서로의 차이를 존중해야 합니다.",
+                en: "Because each person's personality and taste is ___, we must respect one another's differences.",
+                hintType: "Descriptive verb explaining a reason with -기 때문에"
+            },
+            {
+                kr: "오랜만에 고향 친구들을 만나서 이야기를 나누니 마음이 참 ___.",
+                en: "Meeting hometown friends after a long time and chatting made my heart feel truly ___.",
+                hintType: "Emotional or sensory state experienced in daily life"
+            },
+            {
+                kr: "이 방법은 절차가 간단하고 비용이 적게 들어서 실생활에 매우 ___.",
+                en: "Because this method has a simple procedure and low cost, it is very ___ in real life.",
+                hintType: "Practical evaluation of a method or condition"
+            },
+            {
+                kr: "겉으로 보기에는 ___ 보이지만 실제로 해 보면 생각보다 복잡합니다.",
+                en: "On the surface it looks ___, but when you actually try it, it is more complex than you think.",
+                hintType: "Contrasting outward appearance (-아/어 보이다) with reality"
+            }
+        ];
+
+        const NOUN_TEMPLATES_BY_TOPIC = {
+            "Politics & Law": [
+                { kr: "국회에서는 국민의 권리를 보호하기 위해 새로운 ___에 대한 논의를 시작했다.", en: "The National Assembly began discussions on a new ___ to protect citizens' rights." },
+                { kr: "민주주의 사회에서 공정한 ___을/를 유지하는 것은 모든 시민의 의무입니다.", en: "Maintaining a fair ___ in a democratic society is the duty of every citizen." },
+                { kr: "이번 ___ 결과에 따라 앞으로의 국가 정책 방향이 크게 달라질 전망이다.", en: "Depending on the outcome of this ___, future national policy directions are expected to change significantly." },
+                { kr: "정부는 지역 간의 갈등을 줄이고 평화로운 ___을/를 이루기 위해 노력하고 있다.", en: "The government is working to reduce regional conflict and achieve a peaceful ___." },
+                { kr: "역사적 사료를 살펴보면 당시 ___의 구조와 특징을 명확히 알 수 있다.", en: "Looking at historical records, we can clearly see the structure and features of the ___ at that time." }
+            ],
+            "Economy & Business": [
+                { kr: "올해 국제 시장의 변화로 인해 국내 ___에도 적지 않은 영향이 나타났다.", en: "Due to changes in the international market this year, a considerable impact appeared in the domestic ___ as well." },
+                { kr: "소비자들은 물건을 구매할 때 디자인뿐만 아니라 합리적인 ___을/를 중요하게 본다.", en: "When purchasing goods, consumers look closely at a reasonable ___ as well as design." },
+                { kr: "안정적인 수익을 얻기 위해서는 철저한 사전 조사와 체계적인 ___이/가 필수적이다.", en: "To obtain stable returns, thorough preliminary research and systematic ___ are essential." },
+                { kr: "기술 혁신을 통해 생산 효율을 높인 ___들이 글로벌 무대에서 활약하고 있다.", en: "___s that increased production efficiency through technological innovation are thriving on the global stage." },
+                { kr: "근로자의 근무 환경을 개선하면 장기적으로 업무 ___ 또한 함께 향상된다.", en: "Improving workers' working conditions also enhances work ___ in the long run." }
+            ],
+            "People & Family": [
+                { kr: "명절이 되면 멀리 떨어져 살던 ___들이 한자리에 모여 안부를 묻는다.", en: "When holidays come, ___s who lived far apart gather in one place to ask how each other is doing." },
+                { kr: "어려운 일이 생겼을 때 가장 먼저 떠올리는 사람은 언제나 내 편이 되어 주는 ___이다.", en: "The person who comes to mind first when trouble arises is the ___ who is always on my side." },
+                { kr: "세대 간의 차이를 극복하기 위해서는 ___ 서로의 입장을 이해하려는 대화가 필요하다.", en: "To overcome generational differences, conversation trying to understand each ___'s perspective is needed." },
+                { kr: "그 소설의 주인공은 어린 시절 ___에게서 배운 삶의 지혜를 평생 간직했다.", en: "The protagonist of that novel cherished the wisdom of life learned from their ___ in childhood for a lifetime." },
+                { kr: "우리 동네에는 이웃과 따뜻하게 인사를 나누는 친절한 ___이/가 많이 살고 있다.", en: "In our neighborhood, there live many kind ___s who warmly exchange greetings with neighbors." }
+            ],
+            "Education & Research": [
+                { kr: "이번 학기 대학원 세미나에서는 현대 사회의 ___을/를 주제로 발표를 진행했다.", en: "In this semester's graduate seminar, we held presentations on the theme of ___ in modern society." },
+                { kr: "정확한 결론을 도출하기 위해 연구팀은 수개월 동안 객관적인 ___을/를 수집했다.", en: "To draw an accurate conclusion, the research team collected objective ___ for several months." },
+                { kr: "학생들이 스스로 사고하는 힘을 기를 수 있도록 학교의 ___ 환경이 바뀌고 있다.", en: "The school's ___ environment is changing so students can cultivate the power to think for themselves." },
+                { kr: "외국어를 배울 때 단어 암기만큼이나 문화적 배경에 대한 ___이/가 중요하다.", en: "When learning a foreign language, ___ of the cultural background is just as important as memorizing words." },
+                { kr: "다가오는 기말 ___에서 좋은 성적을 거두기 위해 도서관에서 복습을 시작했다.", en: "To achieve a good grade on the upcoming final ___, I started reviewing at the library." }
+            ],
+            "Culture, Media & Art": [
+                { kr: "이번 주말 예술의전당에서 열리는 특별 ___에 친구와 함께 가기로 예매했다.", en: "I booked tickets to go with my friend to the special ___ held at the Seoul Arts Center this weekend." },
+                { kr: "그 작가는 일상적인 풍경을 독창적인 ___으로 표현하여 평론가들의 찬사를 받았다.", en: "The artist expressed everyday scenery through an original ___ and received praise from critics." },
+                { kr: "스마트폰의 보급으로 누구나 실시간으로 다양한 ___을/를 접할 수 있게 되었다.", en: "With the spread of smartphones, anyone can access various ___ in real time." },
+                { kr: "오랜 세월 동안 전해 내려온 전통 ___ 속에는 선조들의 지혜와 정서가 담겨 있다.", en: "The wisdom and emotion of ancestors are contained within the traditional ___ passed down over a long time." },
+                { kr: "관객들은 무대 위에서 펼쳐진 감동적인 ___을/를 보며 뜨거운 박수를 보냈다.", en: "The audience sent warm applause while watching the moving ___ unfolding on stage." }
+            ],
+            "Nature, Body & Health": [
+                { kr: "건강을 유지하기 위해서는 바른 자세와 함께 내 몸의 ___ 상태를 자주 살펴야 한다.", en: "To maintain health, you must frequently check the condition of your body's ___ along with good posture." },
+                { kr: "주말에 복잡한 도심을 벗어나 맑은 ___을/를 느끼며 산책하니 피로가 확 풀렸다.", en: "Leaving the crowded city center on the weekend and walking while feeling the clear ___ relieved my fatigue." },
+                { kr: "무리하게 운동을 하다가 ___에 통증이 생겨서 병원에서 진료를 받았다.", en: "While exercising excessively, pain developed in my ___, so I received treatment at the hospital." },
+                { kr: "계절에 따라 변화하는 아름다운 ___의 풍경은 사진작가들에게 좋은 영감을 준다.", en: "The scenery of beautiful ___ changing with the seasons gives great inspiration to photographers." },
+                { kr: "생태계의 균형을 지키기 위해 우리가 일상에서 버리는 ___을/를 줄여야 한다.", en: "To protect the balance of the ecosystem, we must reduce the ___ we throw away in daily life." }
+            ],
+            "Space, Time & Daily Life": [
+                { kr: "바쁜 하루 일과를 마치고 조용한 ___에서 차 한 잔을 마시는 시간이 가장 평화롭다.", en: "After finishing a busy daily routine, the time spent drinking a cup of tea in a quiet ___ is the most peaceful." },
+                { kr: "약속 장소에 제시간에 도착하기 위해 출발하기 전에 ___을/를 다시 한번 확인했다.", en: "To arrive at the meeting place on time, I checked the ___ once more before departing." },
+                { kr: "새로 이사한 동네는 대중교통이 편리하고 주변에 필요한 ___이/가 잘 갖추어져 있다.", en: "The newly moved-into neighborhood has convenient public transit and necessary ___ well equipped nearby." },
+                { kr: "다가오는 ___에는 미루어 두었던 여행 계획을 실천에 옮기기로 마음먹었다.", en: "In the upcoming ___, I made up my mind to put my postponed travel plans into action." },
+                { kr: "일상생활에서 작은 습관을 바꾸는 것만으로도 하루의 ___이/가 한결 여유로워진다.", en: "Just by changing small habits in daily life, the ___ of your day becomes much more relaxed." }
+            ],
+            "Mind, Emotion & Attitude": [
+                { kr: "어려운 순간일수록 침착한 ___을/를 잃지 않아야 현명한 판단을 내릴 수 있다.", en: "The more difficult the moment, the more you must not lose a calm ___ to make a wise judgment." },
+                { kr: "상대방의 이야기에 진심으로 공감해 주면 두 사람 사이에 깊은 ___이/가 형성된다.", en: "When you sincerely empathize with the other person's story, a deep ___ is formed between the two." },
+                { kr: "오랫동안 준비했던 일을 성공적으로 마쳤을 때 말로 표현할 수 없는 ___을/를 느꼈다.", en: "When I successfully finished the task I had prepared for a long time, I felt an indescribable ___." },
+                { kr: "실패를 두려워하기보다 긍정적인 ___을/를 가지고 새로운 목표에 도전해 보세요.", en: "Rather than fearing failure, challenge yourself toward a new goal with a positive ___." },
+                { kr: "작은 친절과 배려가 주변 사람들에게 따뜻한 ___을/를 전해 줄 수 있습니다.", en: "Small kindness and consideration can convey a warm ___ to the people around you." }
+            ],
+            "Society & Systems": [
+                { kr: "현대 사회에서는 개인의 자유만큼이나 공동체의 ___을/를 존중하는 태도가 요구된다.", en: "In modern society, an attitude of respecting the community's ___ is required just as much as individual freedom." },
+                { kr: "새로운 제도를 도입할 때는 현장의 ___을/를 충분히 반영해야 부작용을 줄일 수 있다.", en: "When introducing a new system, reflecting the on-site ___ sufficiently helps reduce side effects." },
+                { kr: "다양한 분야의 전문가들이 모여 이번 프로젝트의 구체적인 ___을/를 마련했다.", en: "Experts from various fields gathered and prepared a concrete ___ for this project." },
+                { kr: "복잡한 사회 현상을 올바로 이해하려면 표면적인 결과보다 근본적인 ___을/를 봐야 한다.", en: "To properly understand complex social phenomena, we must look at the fundamental ___ rather than surface results." },
+                { kr: "디지털 기술의 발달로 인해 사회 전반의 ___이/가 빠르게 변화하고 있다.", en: "Due to the development of digital technology, the overall ___ of society is changing rapidly." }
+            ],
+            "Core Actions & Movement": [
+                { kr: "목표한 지점까지 안전하게 도달하기 위해 팀원들과 호흡을 맞추어 ___을/를 이어갔다.", en: "To safely reach the target point, we matched our pace with team members and continued the ___." },
+                { kr: "꾸준한 연습과 반복적인 ___을/를 통해 기초 실력을 탄탄하게 다질 수 있다.", en: "Through steady practice and repetitive ___, you can firmly build your foundational skills." }
+            ],
+            "Core Expressions & Logic": [
+                { kr: "앞 문장의 내용과 뒤 문장의 논리적 흐름을 자연스럽게 연결할 때 '___' 표현을 씁니다.", en: "When naturally connecting the logical flow between the preceding and following clauses, we use '___'." },
+                { kr: "일상 대화나 글쓰기에서 화자의 의도를 정확하게 강조하기 위해 ___을/를 자주 사용합니다.", en: "In daily conversation or writing, ___ is frequently used to accurately emphasize the speaker's intention." },
+                { kr: "구체적인 대상이나 수량, 혹은 정도를 가리킬 때 맥락에 맞게 ___을/를 붙여 말합니다.", en: "When pointing to a specific target, quantity, or degree, we attach ___ according to the context." },
+                { kr: "두 가지 사실을 비교하거나 조건을 덧붙여 설명할 때 ___이/가 핵심적인 역할을 합니다.", en: "When comparing two facts or explaining with an added condition, ___ plays a key role." },
+                { kr: "상대방의 질문에 동의하거나 자신의 입장을 분명히 밝힐 때 '___'라고 표현할 수 있습니다.", en: "When agreeing with the other person's question or clearly stating your stance, you can express it as '___'." }
+            ]
+        };
+
+        function createContextSentences(id, kr, en, topic) {
+            // 1. Check if we have a hand-crafted curated entry for this word
+            if (CURATED_CONTEXT_BY_KR[kr]) {
+                const curated = CURATED_CONTEXT_BY_KR[kr];
+                return {
+                    sentenceKr: curated.kr,
+                    sentenceEn: curated.en,
+                    uniqueHint: `💡 ${curated.hint} (TOPIK Rank #${id})`
+                };
+            }
+
+            const cleanEn = en.split(/[;/,()]/)[0].replace(/^1\)\s*/, "").trim() || en;
+            const lowerEn = en.toLowerCase();
+            const isVerbOrAdj = kr.endsWith("다") && kr.length >= 2;
+            const isAdjective = isVerbOrAdj && (
+                lowerEn.startsWith("to be ") ||
+                lowerEn.startsWith("be ") ||
+                ["하얗다", "까맣다", "이렇다", "그렇다", "어떻다", "어떠하다", "이러하다", "그러하다", "아름답다", "새롭다", "어렵다", "쉽다", "중요하다", "필요하다", "작다", "높다", "길다", "깊다", "어리다", "힘들다", "가능하다", "젊다", "강하다", "아프다", "적다", "다양하다", "빠르다", "넓다", "가깝다", "재미있다", "멀다", "이상하다", "비슷하다", "심하다", "싫다", "괜찮다", "짧다", "고맙다", "바쁘다", "나쁘다", "커다랗다", "자연스럽다", "엄청나다", "늦다", "분명하다", "훌륭하다", "낮다", "즐겁다", "예쁘다", "정확하다", "맛있다", "무섭다", "부드럽다", "심각하다", "맑다"].includes(kr)
+            );
+
+            // Build a syllable & morphology clue unique to this specific word
+            const firstSyllable = kr.charAt(0);
+            const lastSyllable = kr.charAt(kr.length - 1);
+            const wordLengthInfo = kr.length === 1
+                ? `1-syllable core word`
+                : `${kr.length}-syllable word starting with '${firstSyllable}' and ending with '${lastSyllable}'`;
+
+            if (isAdjective) {
+                const tpl = ADJ_TEMPLATES[id % ADJ_TEMPLATES.length];
+                const stem = kr.slice(0, -1);
+                const isHada = kr.endsWith("하다");
+                const grammarNote = isHada
+                    ? `하다 descriptive verb (modifies nouns as ${stem}한, polite form ${stem.slice(0, -1)}해요)`
+                    : `Descriptive adjective (stem: ${stem}-, modifies nouns with -(으)ㄴ)`;
+                return {
+                    sentenceKr: tpl.kr,
+                    sentenceEn: tpl.en.replace("___", `___ (${cleanEn})`),
+                    uniqueHint: `💡 ${grammarNote} • ${tpl.hintType}. (${wordLengthInfo}, TOPIK #${id})`
+                };
+            }
+
+            if (isVerbOrAdj) {
+                const tpl = VERB_TEMPLATES[id % VERB_TEMPLATES.length];
+                const stem = kr.slice(0, -1);
+                const isHada = kr.endsWith("하다");
+                const grammarNote = isHada
+                    ? `Action verb formed with Noun + 하다 (${stem.slice(0, -1)} + 하다)`
+                    : `Action verb (dictionary stem: ${stem}-, polite present: -아/어요)`;
+                return {
+                    sentenceKr: tpl.kr,
+                    sentenceEn: tpl.en.replace("___", `___ (${cleanEn})`),
+                    uniqueHint: `💡 ${grammarNote} • ${tpl.hintType}. (${wordLengthInfo}, TOPIK #${id})`
+                };
+            }
+
+            // Noun / Adverb / Connector templates tailored by topic and word ID
+            const topicTemplates = NOUN_TEMPLATES_BY_TOPIC[topic] || NOUN_TEMPLATES_BY_TOPIC["Society & Systems"];
+            const tpl = topicTemplates[id % topicTemplates.length];
+
+            // Determine final consonant (batchim) of the Korean word for a helpful particle tip!
+            const lastCharCode = kr.charCodeAt(kr.length - 1);
+            const hasBatchim = (lastCharCode >= 0xAC00 && lastCharCode <= 0xD7A3)
+                ? ((lastCharCode - 0xAC00) % 28 !== 0)
+                : false;
+            const particleTip = hasBatchim
+                ? `Ends in a final consonant (받침), so it pairs with particles 이 / 을 / 과 / 으로`
+                : `Ends in a vowel (no 받침), so it pairs with particles 가 / 를 / 와 / 로`;
+
+            return {
+                sentenceKr: tpl.kr,
+                sentenceEn: tpl.en.replace("___", `___ (${cleanEn})`),
+                uniqueHint: `💡 Topic: ${topic} • ${particleTip}. (${wordLengthInfo}, Meaning nuance: "${en}")`
+            };
+        }
+
+        function buildAltAnswers(en) {
+            const rawParts = en
+                .replace(/\([0-9]\)/g, "/")
+                .replace(/[0-9]\)/g, "/")
+                .replace(/~|\.\.\./g, "")
+                .split(/[;,\/]|\s+or\s+/i);
+            const alts = new Set();
+            alts.add(en.toLowerCase().trim());
+            rawParts.forEach(p => {
+                const cleaned = p.replace(/\([^)]*\)/g, "").trim().toLowerCase();
+                if (cleaned) {
+                    alts.add(cleaned);
+                    const noPrefix = cleaned.replace(/^(to be |to |a |an |the )/, "").trim();
+                    if (noPrefix) alts.add(noPrefix);
+                }
+            });
+            return Array.from(alts);
+        }
+
+        // Build all 1,000 word objects and organize into 50 Topic + Difficulty levels (20 words per level)
+        const VOCAB_DATABASE = [];
+        const LEVEL_META = [];
+
+        (function initialize50Levels() {
+            const annotatedWords = RAW_TOPIK_1000.map(([id, kr, en]) => {
+                const { topic, icon } = classifyWordTopic(id, kr, en);
+                const { sentenceKr, sentenceEn, uniqueHint } = createContextSentences(id, kr, en, topic);
+                const primaryShortEn = en.split(/[;,]/)[0].replace(/^1\)\s*/, "").trim();
+                return {
+                    id,
+                    kr,
+                    en: primaryShortEn,
+                    fullEn: en,
+                    alt: buildAltAnswers(en),
+                    notes: `TOPIK #${id} • ${en}`,
+                    topic,
+                    icon,
+                    sentenceKr,
+                    sentenceEn,
+                    uniqueHint
+                };
+            });
+
+            // Group words by topic
+            const topicBuckets = {};
+            annotatedWords.forEach(w => {
+                if (!topicBuckets[w.topic]) topicBuckets[w.topic] = [];
+                topicBuckets[w.topic].push(w);
+            });
+
+            // Sort each topic bucket by frequency ID ascending (1 = easiest/most common -> 1000 = hardest/most advanced)
+            Object.values(topicBuckets).forEach(list => list.sort((a, b) => a.id - b.id));
+
+            // Create 50 chunks of 20 words each while keeping topics coherent
+            const rawChunks = [];
+            const overflowPool = [];
+
+            const topicOrder = [
+                "Core Expressions & Logic",
+                "People & Family",
+                "Space, Time & Daily Life",
+                "Core Actions & Movement",
+                "Mind, Emotion & Attitude",
+                "Nature, Body & Health",
+                "Education & Research",
+                "Culture, Media & Art",
+                "Society & Systems",
+                "Economy & Business",
+                "Politics & Law"
+            ];
+
+            topicOrder.forEach(topicName => {
+                const list = topicBuckets[topicName] || [];
+                while (list.length >= 20) {
+                    const slice = list.splice(0, 20);
+                    rawChunks.push({
+                        topic: topicName,
+                        icon: slice[0].icon,
+                        words: slice,
+                        avgId: slice.reduce((s, x) => s + x.id, 0) / slice.length
+                    });
+                }
+                overflowPool.push(...list);
+            });
+
+            // Sort remaining words by ID and group into 20-word Mixed/Topic chunks
+            overflowPool.sort((a, b) => a.id - b.id);
+            while (overflowPool.length >= 20) {
+                const slice = overflowPool.splice(0, 20);
+                // Name the chunk after the most frequent topic in this slice
+                const counts = {};
+                slice.forEach(w => { counts[w.topic] = (counts[w.topic] || 0) + 1; });
+                const dominantTopic = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+                const matchingIcon = slice.find(w => w.topic === dominantTopic)?.icon || "ph-sparkle";
+                rawChunks.push({
+                    topic: dominantTopic,
+                    icon: matchingIcon,
+                    words: slice,
+                    avgId: slice.reduce((s, x) => s + x.id, 0) / slice.length
+                });
+            }
+
+            // Group chunks by topic and number them ascending by difficulty (1 = easiest foundation, 2 = next step, etc.)
+            const chunksByTopic = {};
+            rawChunks.forEach(ch => {
+                if (!chunksByTopic[ch.topic]) chunksByTopic[ch.topic] = [];
+                chunksByTopic[ch.topic].push(ch);
+            });
+
+            Object.entries(chunksByTopic).forEach(([tName, chList]) => {
+                // Sort from easiest (lowest TOPIK frequency ID) to hardest (highest TOPIK frequency ID)
+                chList.sort((a, b) => a.avgId - b.avgId);
+                const totalForTopic = chList.length;
+                chList.forEach((ch, idx) => {
+                    // 1 = Easiest foundation step for this topic, increasing up to totalForTopic (hardest)
+                    const stepNumber = idx + 1;
+                    ch.topicNumber = stepNumber;
+                    ch.totalInTopic = totalForTopic;
+                    ch.title = `${tName} ${stepNumber}`;
+                    const tierLabel = stepNumber === 1
+                        ? "Step 1 • Foundation Tier"
+                        : (stepNumber === totalForTopic && totalForTopic > 1 ? `Step ${stepNumber} • Advanced Tier` : `Step ${stepNumber} • Intermediate Tier`);
+                    ch.tierLabel = tierLabel;
+                });
+            });
+
+            // Sort all 50 levels primarily by their step/difficulty number (all "... 1" levels first, then "... 2", etc.),
+            // ensuring "Core Expressions & Logic 1" is Level 1, and sorting by average word difficulty within the same step tier.
+            rawChunks.sort((a, b) => {
+                if (a.topicNumber !== b.topicNumber) {
+                    return a.topicNumber - b.topicNumber;
+                }
+                if (a.topic === "Core Expressions & Logic" && b.topic !== "Core Expressions & Logic") return -1;
+                if (b.topic === "Core Expressions & Logic" && a.topic !== "Core Expressions & Logic") return 1;
+                return a.avgId - b.avgId;
+            });
+
+            rawChunks.forEach((ch, index) => {
+                const levelNum = index + 1;
+                ch.words.forEach(w => {
+                    w.assignedLevel = levelNum;
+                    VOCAB_DATABASE.push(w);
+                });
+                const minRank = Math.min(...ch.words.map(w => w.id));
+                const maxRank = Math.max(...ch.words.map(w => w.id));
+                LEVEL_META.push({
+                    level: levelNum,
+                    title: ch.title,
+                    topic: ch.topic,
+                    topicNumber: ch.topicNumber,
+                    totalInTopic: ch.totalInTopic,
+                    tierLabel: ch.tierLabel,
+                    subtitle: `20 Words • TOPIK #${minRank}–#${maxRank} • ${ch.tierLabel}`,
+                    icon: ch.icon
+                });
+            });
+        })();
+
+        // Persistent Game State
+        let gameState = {
+            unlockedLevel: 1,         // Starts at Level 1
+            practicedLevels: [1],     // Level 1 is ready to play
+            levelStats: {
+                // levelNum: { bestScore, bestRank, accuracy, avgSpeedSec, completed }
+            }
+        };
+
+        // UI Filter State for the 50-Level Map
+        let mapFilterState = {
+            topic: "ALL",
+            search: ""
+        };
+
+        // Active Session State
+        let activeSession = {
+            mode: "map", // 'map' | 'review' | 'practice' | 'play' | 'results'
+            level: 1,
+            words: [],
+            currentIndex: 0,
+            score: 0,
+            correctCount: 0,
+            streak: 0,
+            startTime: 0,
+            cardStartTime: 0,
+            responseTimes: [],
+            currentDirection: "KR_TO_EN", // or 'EN_TO_KR'
+            practiceQuestions: [],
+            practiceIndex: 0,
+            practiceCorrect: 0,
+            soundEnabled: true,
+            awaitingNext: false
+        };
+
+        // Load saved progress from localStorage if available
+        function loadProgress() {
+            try {
+                const saved = localStorage.getItem("kVocabPopState_1000_v2");
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    gameState = { ...gameState, ...parsed };
+                }
+            } catch (e) {
+                console.warn("Could not load state:", e);
+            }
+            updateHeaderStats();
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem("kVocabPopState_1000_v2", JSON.stringify(gameState));
+            } catch (e) {
+                console.warn("Could not save state:", e);
+            }
+            updateHeaderStats();
+        }
+
+        const audioCtx = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)
+            ? new (window.AudioContext || window.webkitAudioContext)()
+            : null;
+
+        function playSound(type) {
+            if (!activeSession.soundEnabled || !audioCtx) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const now = audioCtx.currentTime;
+
+                if (type === 'pop') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(320, now);
+                    osc.frequency.exponentialRampToValueAtTime(680, now + 0.09);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.09);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+                } else if (type === 'correct') {
+                    const notes = [523.25, 659.25, 783.99, 1046.5];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                        gain.gain.setValueAtTime(0.16, now + idx * 0.06);
+                        gain.gain.exponentialRampToValueAtTime(0.008, now + idx * 0.06 + 0.2);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.06);
+                        osc.stop(now + idx * 0.06 + 0.2);
+                    });
+                } else if (type === 'wrong') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(140, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'fanfare') {
+                    const chord = [440, 554.37, 659.25, 880];
+                    chord.forEach((freq, i) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + i * 0.08);
+                        gain.gain.setValueAtTime(0.18, now + i * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.005, now + i * 0.08 + 0.5);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + i * 0.08);
+                        osc.stop(now + i * 0.08 + 0.5);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            activeSession.soundEnabled = !activeSession.soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            icon.className = activeSession.soundEnabled ? 'ph-fill ph-speaker-high text-xl' : 'ph-fill ph-speaker-slash text-xl text-purple-400';
+            if (activeSession.soundEnabled) playSound('pop');
+        }
+
+        function showToast(message, iconClass = "ph-sparkle") {
+            const toast = document.getElementById("toastNotification");
+            const msgEl = document.getElementById("toastMessage");
+            const iconEl = document.getElementById("toastIcon");
+            msgEl.textContent = message;
+            iconEl.className = `ph-fill ${iconClass} text-2xl text-purple-900`;
+            toast.classList.remove("hidden");
+            setTimeout(() => {
+                toast.classList.add("hidden");
+            }, 3200);
+        }
+
+        function getWordsForLevel(levelNum) {
+            const startIdx = (levelNum - 1) * 20;
+            return VOCAB_DATABASE.slice(startIdx, startIdx + 20);
+        }
+
+        function normalizeAnswer(str) {
+            return (str || "")
+                .toLowerCase()
+                .trim()
+                .replace(/[.,!?~()'"]/g, "")
+                .replace(/\s+/g, " ");
+        }
+
+        function checkUserAnswer(wordObj, userRawInput, direction) {
+            const cleaned = normalizeAnswer(userRawInput);
+            if (!cleaned) return false;
+
+            if (direction === "EN_TO_KR") {
+                // Expecting Korean word: accept exact match, partial match if multi-word, or any Korean word sharing the same English meaning
+                const targetKr = normalizeAnswer(wordObj.kr);
+                if (cleaned === targetKr) return true;
+
+                // Allow matching part of a multi-word Korean expression (e.g., "쓴 맛")
+                const krTokens = targetKr.split(" ").filter(Boolean);
+                if (krTokens.includes(cleaned)) return true;
+
+                // Also accept if another entry in the database shares the same English definition and matches the Korean input
+                const targetPrimaryEn = normalizeAnswer(wordObj.en);
+                const matchingHomonym = VOCAB_DATABASE.some(other =>
+                    normalizeAnswer(other.kr) === cleaned &&
+                    (normalizeAnswer(other.en) === targetPrimaryEn || normalizeAnswer(other.fullEn) === normalizeAnswer(wordObj.fullEn))
+                );
+                if (matchingHomonym) return true;
+
+                return false;
+            } else {
+                // Expecting English meaning: allow flexible and partial matching (e.g., "and" for "And or and then")
+                const fullEnText = `${wordObj.en} / ${wordObj.fullEn || ""} / ${(wordObj.alt || []).join(" / ")}`;
+                const strippedUser = cleaned.replace(/^(to be |to |a |an |the )/, "").trim();
+                const effectiveUser = strippedUser || cleaned;
+
+                // Split definition by common separators including " or ", commas, slashes, semicolons, and parentheses
+                const rawSegments = fullEnText
+                    .replace(/\([0-9]\)/g, "/")
+                    .replace(/[0-9]\)/g, "/")
+                    .split(/[\/,;()]|\s+or\s+/i)
+                    .map(s => normalizeAnswer(s))
+                    .filter(Boolean);
+
+                for (const seg of rawSegments) {
+                    const strippedSeg = seg.replace(/^(to be |to |a |an |the )/, "").trim();
+                    if (cleaned === seg || effectiveUser === strippedSeg || cleaned === strippedSeg) {
+                        return true;
+                    }
+
+                    // Check if the user's answer matches a word/phrase inside the definition segment
+                    const segWords = strippedSeg.split(" ").filter(Boolean);
+                    const userWords = effectiveUser.split(" ").filter(Boolean);
+
+                    // If user typed a single word that appears in the stripped segment (excluding generic filler prepositions unless the segment itself is that word)
+                    const genericFillers = new Set(["to", "be", "a", "an", "the", "of", "for", "in", "on", "at", "by", "with"]);
+                    if (userWords.length === 1) {
+                        const uw = userWords[0];
+                        if (segWords.includes(uw) && (!genericFillers.has(uw) || segWords.length === 1)) {
+                            return true;
+                        }
+                    } else if (userWords.length > 1) {
+                        // Multi-word partial phrase match (boundary-safe)
+                        const paddedSeg = ` ${strippedSeg} `;
+                        const paddedFull = ` ${ seg } `;
+                        if (paddedSeg.includes(` ${effectiveUser} `) || paddedFull.includes(` ${cleaned} `)) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        function updateHeaderStats() {
+            let totalScore = 0;
+            Object.values(gameState.levelStats).forEach(st => {
+                if (st && st.bestScore) totalScore += st.bestScore;
+            });
+            document.getElementById("headerTotalScore").textContent = totalScore.toLocaleString();
+            document.getElementById("headerUnlockedCount").textContent = `${Math.min(50, gameState.unlockedLevel)} / 50`;
+        }
+
+        function setTopicFilter(topic) {
+            mapFilterState.topic = topic;
+            showMapScreen();
+        }
+
+        function setMapSearch(val) {
+            mapFilterState.search = val;
+            renderLevelCardsGrid();
+        }
+
+        function renderLevelCardsGrid() {
+            const gridEl = document.getElementById("levelsGridContainer");
+            if (!gridEl) return;
+
+            const searchLower = (mapFilterState.search || "").toLowerCase().trim();
+            const filteredMeta = LEVEL_META.filter(meta => {
+                if (mapFilterState.topic !== "ALL" && meta.topic !== mapFilterState.topic) return false;
+                if (searchLower) {
+                    const inTitle = meta.title.toLowerCase().includes(searchLower) || meta.subtitle.toLowerCase().includes(searchLower);
+                    const levelWords = getWordsForLevel(meta.level);
+                    const inWords = levelWords.some(w => w.kr.includes(searchLower) || w.fullEn.toLowerCase().includes(searchLower));
+                    return inTitle || inWords;
+                }
+                return true;
+            });
+
+            if (filteredMeta.length === 0) {
+                gridEl.innerHTML = `
+                    <div class="col-span-full bubbly-card p-8 text-center">
+                        <p class="text-lg font-extrabold text-purple-950">No levels match your filter.</p>
+                        <button onclick="setTopicFilter('ALL')" class="btn-yellow px-5 py-2 mt-3 text-sm">Reset Filters</button>
+                    </div>
+                `;
+                return;
+            }
+
+            gridEl.innerHTML = filteredMeta.map(meta => {
+                const lvl = meta.level;
+                const isCompleted = gameState.levelStats[lvl]?.completed;
+                const prevCompleted = lvl === 1 ? true : Boolean(gameState.levelStats[lvl - 1]?.completed);
+                const isPracticed = gameState.practicedLevels.includes(lvl);
+                const isPlayUnlocked = lvl === 1 || (prevCompleted && isPracticed);
+                const canReviewAndPractice = lvl === 1 || prevCompleted;
+
+                const stats = gameState.levelStats[lvl] || null;
+
+                let statusBadge = "";
+                if (isCompleted) {
+                    statusBadge = `<span class="bg-yellow-400 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white shadow">RANK ${stats.bestRank} • ${stats.bestScore} PTS</span>`;
+                } else if (isPlayUnlocked) {
+                    statusBadge = `<span class="bg-green-400 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white">READY TO PLAY!</span>`;
+                } else if (canReviewAndPractice) {
+                    statusBadge = `<span class="bg-amber-300 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white animate-pulse">PRACTICE TO UNLOCK</span>`;
+                } else {
+                    statusBadge = `<span class="bg-purple-950/90 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-purple-500"><i class="ph-fill ph-lock-key mr-1"></i>BEAT LVL ${lvl - 1} FIRST</span>`;
+                }
+
+                return `
+                <div class="bubbly-card p-5 flex flex-col justify-between relative overflow-hidden ${!canReviewAndPractice ? 'opacity-75 grayscale-[25%]' : ''}">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <span class="text-xs font-extrabold uppercase tracking-wider bg-purple-100 text-purple-900 px-3 py-1 rounded-full border border-purple-300">
+                                Stage ${lvl} / 50 • 20 Words
+                            </span>
+                            ${statusBadge}
+                        </div>
+
+                        <div class="flex items-center gap-3.5 my-2">
+                            <div class="w-13 h-13 p-3 rounded-2xl bg-gradient-to-br from-purple-700 to-purple-900 text-yellow-300 flex items-center justify-center text-2xl shadow-md border-2 border-yellow-400 shrink-0">
+                                <i class="ph-fill ${meta.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <h3 class="text-lg font-extrabold text-purple-950 leading-tight">${meta.title}</h3>
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-yellow-300 text-purple-950 border border-yellow-500">
+                                        Tier ${meta.topicNumber} of ${meta.totalInTopic}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-purple-700 font-semibold mt-0.5">${meta.subtitle}</p>
+                            </div>
+                        </div>
+
+                        ${stats ? `
+                        <div class="mt-3 bg-purple-50 rounded-2xl p-2.5 border-2 border-purple-200 grid grid-cols-3 gap-2 text-center">
+                            <div>
+                                <div class="text-[10px] text-purple-600 font-bold">BEST RANK</div>
+                                <div class="text-base font-extrabold text-purple-900">${stats.bestRank}</div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-purple-600 font-bold">ACCURACY</div>
+                                <div class="text-base font-extrabold text-purple-900">${stats.accuracy}%</div>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-purple-600 font-bold">AVG SPEED</div>
+                                <div class="text-base font-extrabold text-purple-900">${stats.avgSpeedSec}s</div>
+                            </div>
+                        </div>
+                        ` : `
+                        <div class="mt-3 bg-yellow-50/90 rounded-2xl p-2.5 border-2 border-yellow-300 text-xs text-purple-900 font-medium flex items-center gap-2">
+                            <i class="ph-fill ph-info text-base text-yellow-600 shrink-0"></i>
+                            <span>${lvl === 1 ? 'Review the 20 words or jump straight into Stage 1 Flashcards!' : (canReviewAndPractice ? 'Study the 20 words & complete the fill-in-the-blank sentence practice to unlock!' : `Complete Stage ${lvl - 1} to unlock the Study & Practice Quest for ${meta.title}.`)}</span>
+                        </div>
+                        `}
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t-2 border-purple-100 flex flex-wrap gap-2">
+                        <button 
+                            onclick="openReviewScreen(${lvl})"
+                            ${!canReviewAndPractice ? 'disabled' : ''}
+                            class="flex-1 py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 ${canReviewAndPractice ? 'btn-purple' : 'btn-disabled rounded-full font-bold'}">
+                            <i class="ph-bold ph-book-open-text text-base"></i>
+                            <span>Review & Practice</span>
+                        </button>
+
+                        <button 
+                            onclick="startFlashcardGame(${lvl})"
+                            ${!isPlayUnlocked ? 'disabled' : ''}
+                            class="flex-1 py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 ${isPlayUnlocked ? 'btn-yellow' : 'btn-disabled rounded-full font-bold'}">
+                            <i class="ph-fill ${isPlayUnlocked ? 'ph-play-circle' : 'ph-lock-key'} text-base"></i>
+                            <span>${isPlayUnlocked ? 'Play Flashcards' : 'Locked'}</span>
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join("");
+        }
+
+        function showMapScreen() {
+            playSound('pop');
+            activeSession.mode = "map";
+            const container = document.getElementById("appContainer");
+
+            const uniqueTopics = ["ALL", ...Array.from(new Set(LEVEL_META.map(m => m.topic)))];
+            const topicPillsHtml = uniqueTopics.map(t => {
+                const active = mapFilterState.topic === t;
+                const count = t === "ALL" ? 50 : LEVEL_META.filter(m => m.topic === t).length;
+                return `
+                    <button 
+                        onclick="setTopicFilter('${t}')"
+                        class="px-3.5 py-1.5 rounded-full text-xs font-extrabold transition border-2 ${active ? 'bg-yellow-400 text-purple-950 border-white shadow-md scale-105' : 'bg-purple-900/80 text-purple-100 border-purple-500 hover:bg-purple-800'}">
+                        ${t === "ALL" ? "All 50 Levels" : `${t} (${count})`}
+                    </button>
+                `;
+            }).join("");
+
+            container.innerHTML = `
+                <!-- Hero Banner -->
+                <div class="bubbly-panel-purple p-6 md:p-7 mb-6 relative overflow-hidden">
+                    <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+                        <div class="max-w-2xl">
+                            <div class="inline-flex items-center gap-2 bg-yellow-400 text-purple-950 font-extrabold text-xs px-3.5 py-1 rounded-full mb-3 shadow">
+                                <i class="ph-fill ph-sparkle"></i> 1,000 TOPIK GUIDE WORDS • 50 STEP-BY-STEP LEVELS
+                            </div>
+                            <h2 class="text-2xl md:text-4xl font-extrabold text-white leading-tight">
+                                Conquer all <span class="text-yellow-300 underline decoration-wavy decoration-yellow-400">1,000 Korean Words</span> Step-by-Step!
+                            </h2>
+                            <p class="text-purple-100 text-xs md:text-sm mt-2">
+                                Ordered in progressive difficulty waves: start with all <strong>Tier 1 Foundation</strong> topics (Stage 1: <strong>Core Expressions & Logic 1</strong>, Stage 2: <strong>Core Actions & Movement 1</strong>, etc.), then advance through <strong>Tier 2</strong>, <strong>Tier 3</strong>, and up to the highest difficulty tiers at Stage 50!
+                            </p>
+                        </div>
+                        <div class="bg-purple-950/70 border-2 border-yellow-400 rounded-3xl p-4 text-center min-w-[220px] shadow-xl">
+                            <div class="text-xs font-bold uppercase tracking-wider text-yellow-300 mb-1">Ranking Formula</div>
+                            <div class="flex justify-center gap-1.5 my-2">
+                                <span class="w-8 h-8 rounded-xl bg-yellow-400 text-purple-950 font-black flex items-center justify-center shadow">S</span>
+                                <span class="w-8 h-8 rounded-xl bg-purple-500 text-white font-black flex items-center justify-center">A</span>
+                                <span class="w-8 h-8 rounded-xl bg-purple-700 text-white font-black flex items-center justify-center">B</span>
+                                <span class="w-8 h-8 rounded-xl bg-purple-900 text-purple-200 font-black flex items-center justify-center">C</span>
+                            </div>
+                            <p class="text-[11px] text-purple-200">Scored on <strong>Accuracy %</strong> + <strong>Typing Speed</strong>!</p>
+                        </div>
+                    </div>
+
+                    <!-- Topic Filter Bar & Search -->
+                    <div class="mt-6 pt-4 border-t border-purple-400/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                        <div class="flex flex-wrap gap-1.5">
+                            ${topicPillsHtml}
+                        </div>
+                        <div class="relative min-w-[220px]">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-300"></i>
+                            <input 
+                                type="text" 
+                                value="${mapFilterState.search}"
+                                oninput="setMapSearch(this.value)"
+                                placeholder="Search topic or word..."
+                                class="w-full pl-9 pr-4 py-2 rounded-full bg-purple-950/90 border-2 border-purple-400 text-xs font-bold text-white placeholder-purple-300 focus:outline-none focus:border-yellow-400"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 50 Levels Grid -->
+                <div id="levelsGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+                </div>
+            `;
+
+            renderLevelCardsGrid();
+        }
+
+        function openReviewScreen(levelNum) {
+            playSound('pop');
+            activeSession.mode = "review";
+            activeSession.level = levelNum;
+            const words = getWordsForLevel(levelNum);
+            const meta = LEVEL_META[levelNum - 1];
+            const isPlayUnlocked = levelNum === 1 || gameState.practicedLevels.includes(levelNum);
+
+            const container = document.getElementById("appContainer");
+
+            const wordRowsHtml = words.map((w, idx) => `
+                <div class="bg-white rounded-2xl p-4 border-2 border-purple-200 hover:border-yellow-400 transition shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-7 h-7 rounded-full bg-purple-800 text-yellow-300 font-extrabold text-xs flex items-center justify-center">${idx + 1}</span>
+                                <span class="text-2xl font-black text-purple-950">${w.kr}</span>
+                                <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="w-7 h-7 rounded-full bg-purple-100 hover:bg-yellow-300 text-purple-900 flex items-center justify-center text-sm transition" title="Listen to pronunciation">
+                                    <i class="ph-fill ph-speaker-high"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="openAiTutorModal({ id: ${w.id}, kr: '${w.kr.replace(/'/g, "\\'")}', en: '${w.en.replace(/'/g, "\\'")}' })" class="bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold text-[11px] px-2.5 py-0.5 rounded-full border border-purple-300 flex items-center gap-1" title="Deep-dive with Gemini AI">
+                                    <i class="ph-fill ph-sparkle text-yellow-600"></i> AI Coach
+                                </button>
+                                <span class="bg-yellow-300 text-purple-950 font-extrabold text-sm px-3 py-0.5 rounded-full border border-yellow-500 text-right">
+                                    ${w.en}
+                                </span>
+                            </div>
+                        </div>
+                        <p class="text-xs font-semibold text-purple-600 mb-2 pl-9">${w.notes}</p>
+                    </div>
+                    <div class="bg-purple-50 rounded-xl p-2.5 border border-purple-200 text-xs space-y-1.5">
+                        <div class="text-purple-950 font-bold flex items-start justify-between gap-2">
+                            <span><span class="text-purple-600">KR Context:</span> ${w.sentenceKr.replace('___', `<span class="underline decoration-2 decoration-purple-700 font-extrabold text-purple-900">${w.kr}</span>`)}</span>
+                            <button type="button" onclick="speakKoreanWithGemini('${w.sentenceKr.replace('___', w.kr).replace(/'/g, "\\'")}', this)" class="w-6 h-6 rounded-full bg-white hover:bg-yellow-300 text-purple-900 flex items-center justify-center shrink-0 border border-purple-200" title="Listen to full sentence">
+                                <i class="ph-fill ph-speaker-high text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="text-purple-700">
+                            <span class="text-purple-500 font-semibold">EN Context:</span> ${w.sentenceEn.replace('___', `<span class="underline font-bold">${w.en.toLowerCase()}</span>`)}
+                        </div>
+                        <div class="text-[11px] text-purple-800 bg-yellow-100/80 px-2.5 py-1 rounded-lg border border-yellow-300 font-semibold">
+                            ${w.uniqueHint}
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+
+            container.innerHTML = `
+                <div class="bubbly-panel-purple p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <button onclick="showMapScreen()" class="btn-yellow px-4 py-2 text-sm flex items-center gap-1">
+                            <i class="ph-bold ph-arrow-left"></i> Back
+                        </button>
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-yellow-300">Stage ${levelNum}: ${meta.title}</h2>
+                            <p class="text-xs md:text-sm text-purple-100">${meta.subtitle} — Study all 20 words and their context sentences!</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <button onclick="openStageStoryModal(${levelNum})" class="btn-purple px-4 py-3 text-xs md:text-sm flex items-center gap-1.5">
+                            <i class="ph-fill ph-sparkle text-yellow-300 text-lg"></i>
+                            <span>✨ AI Stage Story</span>
+                        </button>
+                        <button onclick="startSentencePractice(${levelNum})" class="btn-yellow px-5 py-3 text-sm md:text-base flex items-center gap-2 animate-bounce">
+                            <i class="ph-fill ph-pencil-simple-line text-xl"></i>
+                            <span>${isPlayUnlocked ? 'Practice Sentences Again' : 'Start Sentence Practice to Unlock Stage ' + levelNum}</span>
+                        </button>
+                        ${isPlayUnlocked ? `
+                        <button onclick="startFlashcardGame(${levelNum})" class="btn-purple px-5 py-3 text-sm md:text-base flex items-center gap-2">
+                            <i class="ph-fill ph-play-circle text-xl"></i>
+                            <span>Play Flashcards</span>
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Word Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    ${wordRowsHtml}
+                </div>
+
+                <!-- Bottom Sticky CTA -->
+                <div class="sticky bottom-4 z-20 flex justify-center">
+                    <div class="bg-purple-950/95 border-4 border-yellow-400 rounded-full px-6 py-3 shadow-2xl flex items-center gap-4">
+                        <span class="text-sm font-bold text-white hidden sm:inline">Ready to test these words in context?</span>
+                        <button onclick="startSentencePractice(${levelNum})" class="btn-yellow px-6 py-2 text-sm flex items-center gap-2">
+                            <i class="ph-fill ph-sparkle"></i>
+                            <span>${isPlayUnlocked ? 'Practice Blank Sentences' : 'Complete Sentence Practice & Unlock Stage ' + levelNum}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function startSentencePractice(levelNum) {
+            playSound('pop');
+            activeSession.mode = "practice";
+            activeSession.level = levelNum;
+
+            const allLevelWords = [...getWordsForLevel(levelNum)];
+            // Shuffle and pick 8 rich context sentences for the unlock practice quest (or player can practice more)
+            for (let i = allLevelWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allLevelWords[i], allLevelWords[j]] = [allLevelWords[j], allLevelWords[i]];
+            }
+
+            activeSession.practiceQuestions = allLevelWords.slice(0, 8).map(word => {
+                // Pick 3 distractors from the same level
+                const others = allLevelWords.filter(w => w.id !== word.id);
+                const distractors = others.slice(0, 3);
+                const wordBank = [word.kr, ...distractors.map(d => d.kr)];
+                for (let i = wordBank.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [wordBank[i], wordBank[j]] = [wordBank[j], wordBank[i]];
+                }
+                return {
+                    word,
+                    wordBank
+                };
+            });
+
+            activeSession.practiceIndex = 0;
+            activeSession.practiceCorrect = 0;
+            activeSession.awaitingNext = false;
+
+            renderPracticeStep();
+        }
+
+        function renderPracticeStep() {
+            const container = document.getElementById("appContainer");
+            const qIndex = activeSession.practiceIndex;
+            const totalQ = activeSession.practiceQuestions.length;
+
+            if (qIndex >= totalQ) {
+                finishSentencePractice();
+                return;
+            }
+
+            const currentQ = activeSession.practiceQuestions[qIndex];
+            const w = currentQ.word;
+            const progressPct = Math.round((qIndex / totalQ) * 100);
+
+            const bankButtonsHtml = currentQ.wordBank.map(krOption => `
+                <button 
+                    type="button"
+                    onclick="fillPracticeInput('${krOption}')"
+                    class="bg-purple-100 hover:bg-yellow-300 text-purple-950 font-extrabold px-4 py-2 rounded-2xl border-2 border-purple-300 hover:border-purple-900 transition shadow-sm text-base">
+                    ${krOption}
+                </button>
+            `).join("");
+
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto w-full my-auto">
+                    <!-- Top Bar -->
+                    <div class="flex items-center justify-between mb-4">
+                        <button onclick="openReviewScreen(${activeSession.level})" class="btn-purple px-4 py-1.5 text-xs flex items-center gap-1">
+                            <i class="ph-bold ph-arrow-left"></i> Study Sheet
+                        </button>
+                        <div class="text-sm font-extrabold text-yellow-300">
+                            Level ${activeSession.level} Unlock Quest • Sentence ${qIndex + 1} of ${totalQ}
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full h-4 bg-purple-950 rounded-full p-1 border-2 border-purple-500 mb-6">
+                        <div class="h-full bg-gradient-to-r from-yellow-400 to-amber-300 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+                    </div>
+
+                    <!-- Practice Card -->
+                    <div id="practiceCard" class="bubbly-card p-6 md:p-8 text-center animate-pop">
+                        <span class="inline-block bg-purple-100 text-purple-900 font-extrabold text-xs px-3.5 py-1 rounded-full border border-purple-300 mb-4">
+                            FILL IN THE BLANK (KOREAN WORD)
+                        </span>
+
+                        <!-- Korean Sentence with Blank -->
+                        <div class="text-2xl md:text-3xl font-black text-purple-950 leading-relaxed mb-4">
+                            ${w.sentenceKr.replace('___', `<span class="inline-block bg-yellow-200 text-purple-900 border-b-4 border-purple-900 px-4 py-0.5 rounded-xl mx-1">?</span>`)}
+                        </div>
+
+                        <!-- English Translation & Unique Context/Grammar Hint -->
+                        <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 mb-6 space-y-2 text-left">
+                            <p class="text-sm font-bold text-purple-900 text-center">
+                                "${w.sentenceEn.replace('___', `<span class="underline text-purple-700 font-extrabold">${w.en}</span>`)}"
+                            </p>
+                            <div class="bg-yellow-100/90 border border-yellow-400 rounded-xl px-3.5 py-2 text-xs text-purple-950 font-semibold flex items-start justify-between gap-2">
+                                <div class="flex items-start gap-2">
+                                    <i class="ph-fill ph-lightbulb-filament text-yellow-600 text-base shrink-0 mt-0.5"></i>
+                                    <div>
+                                        <span class="font-extrabold uppercase text-[10px] tracking-wider bg-yellow-300 px-1.5 py-0.5 rounded text-purple-950 mr-1">Unique Hint</span>
+                                        <span>${w.uniqueHint.replace(/^💡\s*/, '')}</span>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="requestAiCardCoach(${w.id}, 'practiceAiCoachBox')" class="bg-purple-800 hover:bg-purple-700 text-yellow-300 font-extrabold text-[11px] px-2.5 py-1 rounded-full shrink-0 flex items-center gap-1 shadow">
+                                    <i class="ph-fill ph-sparkle"></i> ✨ AI Tip
+                                </button>
+                            </div>
+                            <div id="practiceAiCoachBox" class="hidden bg-purple-100/90 border border-purple-300 rounded-xl p-3"></div>
+                        </div>
+
+                        <!-- Helpful Word Bank (Click or Type) -->
+                        <div class="mb-5">
+                            <div class="text-xs font-bold uppercase tracking-wider text-purple-500 mb-2">Tap a word below or type it into the box:</div>
+                            <div class="flex flex-wrap justify-center gap-2.5">
+                                ${bankButtonsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Input Form -->
+                        <form id="practiceForm" onsubmit="handlePracticeSubmit(event)" class="flex flex-col sm:flex-row gap-3">
+                            <input 
+                                id="practiceInput"
+                                type="text" 
+                                autocomplete="off"
+                                placeholder="Type the Korean word (e.g. ${w.kr})..."
+                                class="flex-1 px-5 py-3.5 rounded-2xl border-4 border-purple-300 focus:border-purple-700 focus:outline-none text-lg font-extrabold text-center text-purple-950 bg-white shadow-inner"
+                            />
+                            <button type="submit" id="practiceSubmitBtn" class="btn-yellow px-7 py-3.5 text-base shrink-0">
+                                Check Answer
+                            </button>
+                        </form>
+
+                        <!-- Feedback Banner -->
+                        <div id="practiceFeedback" class="hidden mt-5 p-4 rounded-2xl border-2 text-left"></div>
+                    </div>
+                </div>
+            `;
+
+            const inputEl = document.getElementById("practiceInput");
+            if (inputEl) inputEl.focus();
+        }
+
+        function fillPracticeInput(val) {
+            if (activeSession.awaitingNext) return;
+            const inputEl = document.getElementById("practiceInput");
+            if (inputEl) {
+                inputEl.value = val;
+                inputEl.focus();
+            }
+        }
+
+        function handlePracticeSubmit(e) {
+            e.preventDefault();
+            if (activeSession.awaitingNext) {
+                activeSession.awaitingNext = false;
+                activeSession.practiceIndex++;
+                renderPracticeStep();
+                return;
+            }
+
+            const inputEl = document.getElementById("practiceInput");
+            const feedbackEl = document.getElementById("practiceFeedback");
+            const submitBtn = document.getElementById("practiceSubmitBtn");
+            const cardEl = document.getElementById("practiceCard");
+
+            const currentQ = activeSession.practiceQuestions[activeSession.practiceIndex];
+            const w = currentQ.word;
+            const userVal = normalizeAnswer(inputEl.value);
+
+            const isRight = userVal === normalizeAnswer(w.kr) || checkUserAnswer(w, userVal, "KR_TO_EN");
+
+            activeSession.awaitingNext = true;
+            inputEl.readOnly = true;
+
+            if (isRight) {
+                playSound('correct');
+                activeSession.practiceCorrect++;
+                feedbackEl.className = "mt-5 p-4 rounded-2xl border-2 bg-green-100 border-green-500 text-green-950 flex items-center justify-between";
+                feedbackEl.innerHTML = `
+                    <div>
+                        <div class="font-extrabold text-base flex items-center gap-1.5">
+                            <i class="ph-fill ph-check-circle text-green-600 text-xl"></i> Awesome! "${w.kr}" (${w.en}) fits the sentence!
+                        </div>
+                        <div class="text-xs font-semibold mt-0.5">${w.sentenceKr.replace('___', w.kr)}</div>
+                    </div>
+                `;
+            } else {
+                playSound('wrong');
+                cardEl.classList.remove("animate-pop");
+                cardEl.classList.add("animate-shake");
+                feedbackEl.className = "mt-5 p-4 rounded-2xl border-2 bg-amber-100 border-amber-500 text-amber-950 flex items-center justify-between";
+                feedbackEl.innerHTML = `
+                    <div>
+                        <div class="font-extrabold text-base flex items-center gap-1.5">
+                            <i class="ph-fill ph-lightbulb text-amber-600 text-xl"></i> Good try! The missing word is <span class="underline font-black">${w.kr}</span> (${w.en}).
+                        </div>
+                        <div class="text-xs font-semibold mt-0.5">${w.sentenceKr.replace('___', w.kr)}</div>
+                    </div>
+                `;
+            }
+
+            submitBtn.innerHTML = `Next Sentence <i class="ph-bold ph-arrow-right ml-1"></i>`;
+            submitBtn.focus();
+        }
+
+        function finishSentencePractice() {
+            playSound('fanfare');
+            const lvl = activeSession.level;
+            const meta = LEVEL_META[lvl - 1];
+            if (!gameState.practicedLevels.includes(lvl)) {
+                gameState.practicedLevels.push(lvl);
+            }
+            if (gameState.unlockedLevel < lvl) {
+                gameState.unlockedLevel = lvl;
+            }
+            saveProgress();
+
+            const container = document.getElementById("appContainer");
+            container.innerHTML = `
+                <div class="max-w-xl mx-auto w-full my-auto bubbly-card p-8 text-center animate-pop">
+                    <div class="w-20 h-20 rounded-3xl bg-yellow-400 text-purple-950 flex items-center justify-center text-5xl mx-auto mb-4 border-4 border-purple-900 shadow-lg">
+                        <i class="ph-fill ph-lock-key-open"></i>
+                    </div>
+                    <h2 class="text-3xl font-black text-purple-950 mb-2">Stage ${lvl} (${meta.title}) Unlocked!</h2>
+                    <p class="text-purple-700 font-semibold text-sm mb-6">
+                        You completed the context sentence practice (${activeSession.practiceCorrect} / ${activeSession.practiceQuestions.length} spot-on) and unlocked the 20-Word Flashcard Arena for <strong>${meta.title}</strong>!
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button onclick="startFlashcardGame(${lvl})" class="btn-yellow px-8 py-4 text-lg flex items-center justify-center gap-2">
+                            <i class="ph-fill ph-lightning text-2xl"></i>
+                            <span>Start ${meta.title} Flashcards!</span>
+                        </button>
+                        <button onclick="showMapScreen()" class="btn-purple px-6 py-4 text-base">
+                            Back to 50-Level Map
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startFlashcardGame(levelNum) {
+            playSound('pop');
+            activeSession.mode = "play";
+            activeSession.level = levelNum;
+
+            // Load and shuffle the 26 words for this level
+            const levelWords = [...getWordsForLevel(levelNum)];
+            for (let i = levelWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [levelWords[i], levelWords[j]] = [levelWords[j], levelWords[i]];
+            }
+
+            activeSession.words = levelWords;
+            activeSession.currentIndex = 0;
+            activeSession.score = 0;
+            activeSession.correctCount = 0;
+            activeSession.streak = 0;
+            activeSession.responseTimes = [];
+            activeSession.startTime = performance.now();
+            activeSession.awaitingNext = false;
+
+            pickNextDirection();
+            renderFlashcardArena();
+        }
+
+        function pickNextDirection() {
+            // Randomly switch between showing Korean asking for English, and showing English asking for Korean
+            activeSession.currentDirection = Math.random() < 0.5 ? "KR_TO_EN" : "EN_TO_KR";
+            activeSession.cardStartTime = performance.now();
+        }
+
+        function renderFlashcardArena() {
+            const container = document.getElementById("appContainer");
+            const idx = activeSession.currentIndex;
+            const total = activeSession.words.length; // 26 words
+
+            if (idx >= total) {
+                finishFlashcardLevel();
+                return;
+            }
+
+            const w = activeSession.words[idx];
+            const dir = activeSession.currentDirection;
+            const progressPct = Math.round((idx / total) * 100);
+
+            const isKrPrompt = dir === "KR_TO_EN";
+            const badgeText = isKrPrompt ? "KOREAN ➔ TYPE ENGLISH" : "ENGLISH ➔ TYPE KOREAN";
+            const badgeStyle = isKrPrompt
+                ? "bg-purple-800 text-yellow-300 border-purple-400"
+                : "bg-yellow-400 text-purple-950 border-yellow-600";
+
+            const mainPrompt = isKrPrompt ? w.kr : w.en;
+            const subHint = isKrPrompt
+                ? `Context clue: "${w.sentenceKr.replace('___', ' [ ? ] ')}"`
+                : `Notes clue: ${w.notes}`;
+            const inputPlaceholder = isKrPrompt
+                ? "Type the English meaning..."
+                : "한국어 단어를 입력하세요 (Type in Korean)...";
+
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto w-full my-auto">
+                    <!-- Arena Top HUD -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <button onclick="showMapScreen()" class="btn-purple px-3.5 py-1.5 text-xs flex items-center gap-1">
+                            <i class="ph-bold ph-x"></i> Quit
+                        </button>
+
+                        <div class="flex items-center gap-3">
+                            <div class="bg-purple-950/90 border-2 border-yellow-400 px-3.5 py-1 rounded-full text-xs font-extrabold text-yellow-300">
+                                CARD ${idx + 1} / ${total}
+                            </div>
+                            <div class="bg-purple-950/90 border-2 border-purple-400 px-3.5 py-1 rounded-full text-xs font-extrabold text-white">
+                                <i class="ph-fill ph-fire text-amber-400 mr-1"></i>STREAK: ${activeSession.streak}
+                            </div>
+                            <div class="bg-yellow-400 text-purple-950 px-4 py-1 rounded-full text-sm font-black shadow">
+                                ${activeSession.score} PTS
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full h-4 bg-purple-950 rounded-full p-1 border-2 border-purple-400 mb-6">
+                        <div class="h-full bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-500 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+                    </div>
+
+                    <!-- Main Flashcard -->
+                    <div id="flashcardBox" class="bubbly-card p-6 sm:p-9 text-center relative animate-pop">
+                        <!-- Direction Pill -->
+                        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                            <span class="text-xs font-black px-3.5 py-1 rounded-full border-2 ${badgeStyle}">
+                                ${badgeText}
+                            </span>
+                            <div class="flex items-center gap-1.5">
+                                ${isKrPrompt ? `
+                                <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="text-xs font-bold text-purple-900 bg-yellow-300 hover:bg-yellow-400 px-3 py-1 rounded-full border border-yellow-500 transition flex items-center gap-1">
+                                    <i class="ph-fill ph-speaker-high"></i> Listen
+                                </button>
+                                ` : ''}
+                                <button type="button" onclick="revealFirstLetterHint()" class="text-xs font-bold text-purple-700 hover:text-purple-950 bg-purple-100 hover:bg-yellow-200 px-3 py-1 rounded-full border border-purple-300 transition flex items-center gap-1">
+                                    <i class="ph-fill ph-lightbulb"></i> Hint
+                                </button>
+                                <button type="button" onclick="requestAiCardCoach(${w.id}, 'arenaAiCoachBox')" class="text-xs font-bold text-yellow-300 bg-purple-900 hover:bg-purple-800 px-3 py-1 rounded-full border border-purple-500 transition flex items-center gap-1">
+                                    <i class="ph-fill ph-sparkle"></i> ✨ AI Mnemonic
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Flashcard Term -->
+                        <div class="py-6 my-2 bg-gradient-to-b from-purple-50 to-white rounded-3xl border-2 border-purple-100 shadow-inner">
+                            <div class="text-4xl sm:text-5xl font-black text-purple-950 tracking-tight px-4 break-words">
+                                ${mainPrompt}
+                            </div>
+                            <div id="cardHintText" class="text-xs sm:text-sm font-semibold text-purple-600 mt-3 px-4">
+                                ${subHint}
+                            </div>
+                            <div id="arenaAiCoachBox" class="hidden mt-3 mx-4 bg-purple-100/90 border border-purple-300 rounded-xl p-3"></div>
+                        </div>
+
+                        <!-- Answer Input Form -->
+                        <form id="flashcardForm" onsubmit="handleFlashcardSubmit(event)" class="mt-6 flex flex-col sm:flex-row gap-3">
+                            <input 
+                                id="flashcardInput"
+                                type="text"
+                                autocomplete="off"
+                                placeholder="${inputPlaceholder}"
+                                class="flex-1 px-5 py-4 rounded-2xl border-4 border-purple-300 focus:border-purple-700 focus:outline-none text-lg font-extrabold text-center text-purple-950 bg-white shadow-inner"
+                            />
+                            <button type="submit" id="flashcardSubmitBtn" class="btn-yellow px-8 py-4 text-base shrink-0">
+                                Submit
+                            </button>
+                        </form>
+
+                        <!-- Answer Feedback Box -->
+                        <div id="flashcardFeedback" class="hidden mt-5 p-4 rounded-2xl border-2 text-left"></div>
+                    </div>
+                </div>
+            `;
+
+            const inputEl = document.getElementById("flashcardInput");
+            if (inputEl) inputEl.focus();
+        }
+
+        function revealFirstLetterHint() {
+            const w = activeSession.words[activeSession.currentIndex];
+            const dir = activeSession.currentDirection;
+            const hintBox = document.getElementById("cardHintText");
+            if (!hintBox) return;
+
+            if (dir === "KR_TO_EN") {
+                hintBox.innerHTML = `<span class="text-purple-900 font-extrabold">Starts with: "${w.en.slice(0, 2)}..." • ${w.uniqueHint}</span>`;
+            } else {
+                hintBox.innerHTML = `<span class="text-purple-900 font-extrabold">Starts with: "${w.kr.slice(0, 1)}..." (${w.kr.length} syllables) • ${w.uniqueHint}</span>`;
+            }
+        }
+
+        function handleFlashcardSubmit(e) {
+            e.preventDefault();
+
+            if (activeSession.awaitingNext) {
+                activeSession.awaitingNext = false;
+                activeSession.currentIndex++;
+                pickNextDirection();
+                renderFlashcardArena();
+                return;
+            }
+
+            const inputEl = document.getElementById("flashcardInput");
+            const submitBtn = document.getElementById("flashcardSubmitBtn");
+            const feedbackEl = document.getElementById("flashcardFeedback");
+            const cardBox = document.getElementById("flashcardBox");
+
+            const w = activeSession.words[activeSession.currentIndex];
+            const dir = activeSession.currentDirection;
+            const elapsedSec = Math.max(0.5, (performance.now() - activeSession.cardStartTime) / 1000);
+
+            const isCorrect = checkUserAnswer(w, inputEl.value, dir);
+            activeSession.responseTimes.push(elapsedSec);
+            activeSession.awaitingNext = true;
+            inputEl.readOnly = true;
+
+            if (isCorrect) {
+                playSound('correct');
+                activeSession.correctCount++;
+                activeSession.streak++;
+
+                // Calculate points: 100 base + up to 50 speed bonus + streak bonus
+                const speedBonus = Math.max(0, Math.round(50 - elapsedSec * 5));
+                const streakBonus = Math.min(50, activeSession.streak * 5);
+                const earned = 100 + speedBonus + streakBonus;
+                activeSession.score += earned;
+
+                feedbackEl.className = "mt-5 p-4 rounded-2xl border-2 bg-green-100 border-green-500 text-green-950";
+                feedbackEl.innerHTML = `
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div class="font-black text-base flex items-center gap-1.5">
+                            <i class="ph-fill ph-check-circle text-green-600 text-2xl"></i>
+                            <span>Correct! +${earned} pts</span>
+                            <span class="text-xs font-bold bg-green-200 px-2 py-0.5 rounded-full">(${elapsedSec.toFixed(1)}s)</span>
+                        </div>
+                        <div class="text-xs font-extrabold text-green-900">
+                            ${w.kr} = ${w.en} (${w.notes})
+                        </div>
+                    </div>
+                `;
+            } else {
+                playSound('wrong');
+                activeSession.streak = 0;
+                cardBox.classList.remove("animate-pop");
+                cardBox.classList.add("animate-shake");
+
+                feedbackEl.className = "mt-5 p-4 rounded-2xl border-2 bg-rose-100 border-rose-500 text-rose-950";
+                feedbackEl.innerHTML = `
+                    <div class="font-black text-base flex items-center gap-1.5 mb-1">
+                        <i class="ph-fill ph-x-circle text-rose-600 text-2xl"></i>
+                        <span>Not quite! Correct Answer: <span class="underline">${dir === 'KR_TO_EN' ? w.en : w.kr}</span></span>
+                    </div>
+                    <div class="text-xs font-bold text-rose-800">
+                        Full Note: <strong>${w.kr}</strong> — ${w.en} (${w.notes})
+                    </div>
+                `;
+            }
+
+            submitBtn.innerHTML = `Next Card <i class="ph-bold ph-arrow-right ml-1"></i>`;
+            submitBtn.focus();
+        }
+
+        function calculateRank(accuracyPct, avgSpeedSec) {
+            if (accuracyPct >= 92 && avgSpeedSec <= 5.5) return { rank: "S+", title: "Grandmaster Bubble Pop!", color: "text-yellow-300" };
+            if (accuracyPct >= 85 && avgSpeedSec <= 7.5) return { rank: "S", title: "Super Sonic Scholar!", color: "text-yellow-400" };
+            if (accuracyPct >= 75 && avgSpeedSec <= 10.0) return { rank: "A", title: "Ace Korean Speaker!", color: "text-green-400" };
+            if (accuracyPct >= 60) return { rank: "B", title: "Bubbly Challenger!", color: "text-purple-200" };
+            return { rank: "C", title: "Keep Popping & Practicing!", color: "text-amber-300" };
+        }
+
+        function finishFlashcardLevel() {
+            playSound('fanfare');
+            const lvl = activeSession.level;
+            const meta = LEVEL_META[lvl - 1];
+            const total = activeSession.words.length;
+            const accuracyPct = Math.round((activeSession.correctCount / total) * 100);
+            const totalTime = activeSession.responseTimes.reduce((acc, v) => acc + v, 0);
+            const avgSpeedSec = +(totalTime / Math.max(1, total)).toFixed(1);
+
+            const rankInfo = calculateRank(accuracyPct, avgSpeedSec);
+
+            // Save level completion & unlock next level's review/practice
+            const prevStats = gameState.levelStats[lvl] || { bestScore: 0, bestRank: "C" };
+            gameState.levelStats[lvl] = {
+                completed: true,
+                bestScore: Math.max(prevStats.bestScore || 0, activeSession.score),
+                bestRank: activeSession.score >= (prevStats.bestScore || 0) ? rankInfo.rank : prevStats.bestRank,
+                accuracy: accuracyPct,
+                avgSpeedSec: avgSpeedSec
+            };
+
+            if (lvl < 50 && gameState.unlockedLevel < lvl + 1) {
+                gameState.unlockedLevel = lvl + 1;
+            }
+            saveProgress();
+
+            const hasNextLevel = lvl < 50;
+            const container = document.getElementById("appContainer");
+
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto w-full my-auto bubbly-card p-7 md:p-10 text-center animate-pop">
+                    <div class="inline-flex items-center gap-2 bg-purple-900 text-yellow-300 text-xs font-extrabold px-4 py-1.5 rounded-full mb-4">
+                        <i class="ph-fill ph-confetti"></i> STAGE ${lvl} (${meta.title}) COMPLETE!
+                    </div>
+
+                    <h2 class="text-3xl sm:text-4xl font-black text-purple-950 mb-1">${rankInfo.title}</h2>
+                    <p class="text-sm font-semibold text-purple-700 mb-6">You finished all ${total} flashcards in ${meta.title}!</p>
+
+                    <!-- Rank Badge & Stats -->
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-7">
+                        <div class="bg-gradient-to-b from-purple-800 to-purple-950 text-white p-4 rounded-3xl border-4 border-yellow-400 shadow-lg flex flex-col justify-center items-center">
+                            <span class="text-xs font-bold text-purple-200 uppercase">RANK</span>
+                            <span class="text-5xl font-black text-yellow-300 my-1">${rankInfo.rank}</span>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-3xl border-2 border-purple-200 flex flex-col justify-center">
+                            <span class="text-xs font-bold text-purple-600 uppercase">SCORE</span>
+                            <span class="text-2xl font-black text-purple-950 mt-1">${activeSession.score.toLocaleString()}</span>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-3xl border-2 border-purple-200 flex flex-col justify-center">
+                            <span class="text-xs font-bold text-purple-600 uppercase">ACCURACY</span>
+                            <span class="text-2xl font-black text-purple-950 mt-1">${accuracyPct}%</span>
+                            <span class="text-[11px] font-semibold text-purple-600">${activeSession.correctCount} / ${total} words</span>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-3xl border-2 border-purple-200 flex flex-col justify-center">
+                            <span class="text-xs font-bold text-purple-600 uppercase">AVG SPEED</span>
+                            <span class="text-2xl font-black text-purple-950 mt-1">${avgSpeedSec}s</span>
+                            <span class="text-[11px] font-semibold text-purple-600">per card</span>
+                        </div>
+                    </div>
+
+                    ${hasNextLevel ? `
+                    <div class="bg-yellow-100 border-2 border-yellow-400 rounded-3xl p-4 mb-6 text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <div class="text-sm font-black text-purple-950 flex items-center gap-1.5">
+                                <i class="ph-fill ph-sparkle text-yellow-600 text-lg"></i>
+                                Next Up: Stage ${lvl + 1} — ${LEVEL_META[lvl].title}
+                            </div>
+                            <p class="text-xs text-purple-800 font-semibold mt-0.5">
+                                Review the 20 upcoming words in context and complete the fill-in-the-blank practice to unlock Stage ${lvl + 1}!
+                            </p>
+                        </div>
+                        <button onclick="openReviewScreen(${lvl + 1})" class="btn-yellow px-5 py-3 text-sm shrink-0 flex items-center gap-1.5">
+                            <span>Review & Unlock Stage ${lvl + 1}</span>
+                            <i class="ph-bold ph-arrow-right"></i>
+                        </button>
+                    </div>
+                    ` : `
+                    <div class="bg-yellow-100 border-2 border-yellow-400 rounded-3xl p-4 mb-6 text-center">
+                        <div class="text-base font-black text-purple-950">🎉 Congratulations! You have conquered all 50 Levels (1,000 Words) of K-Vocab Pop!</div>
+                    </div>
+                    `}
+
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button onclick="startFlashcardGame(${lvl})" class="btn-purple px-6 py-3 text-sm flex items-center gap-1.5">
+                            <i class="ph-bold ph-arrows-clockwise"></i> Replay Stage ${lvl}
+                        </button>
+                        <button onclick="showMapScreen()" class="btn-yellow px-6 py-3 text-sm flex items-center gap-1.5">
+                            <i class="ph-bold ph-map-trifold"></i> 50-Level Map
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initBubbles() {
+            const container = document.getElementById("bubbleContainer");
+            if (!container) return;
+            const count = 16;
+            for (let i = 0; i < count; i++) {
+                const b = document.createElement("div");
+                b.className = "bubble";
+                const size = Math.floor(Math.random() * 90) + 30;
+                b.style.width = `${size}px`;
+                b.style.height = `${size}px`;
+                b.style.left = `${Math.floor(Math.random() * 96)}vw`;
+                b.style.animationDuration = `${Math.floor(Math.random() * 14) + 10}s`;
+                b.style.animationDelay = `${Math.floor(Math.random() * 10)}s`;
+                container.appendChild(b);
+            }
+        }
+
+        window.onload = function () {
+            initBubbles();
+            loadProgress();
+            showMapScreen();
+        };
+    </script>
+</body>
+</html>
