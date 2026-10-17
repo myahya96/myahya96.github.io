@@ -191,11 +191,6 @@
                     </button>
                 </div>
 
-                <button onclick="openAiTutorModal()" class="btn-yellow px-3.5 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-md" title="Ask Gemini AI Korean Tutor">
-                    <i class="ph-fill ph-sparkle text-purple-900 text-base"></i>
-                    <span>✨ AI Tutor</span>
-                </button>
-
                 <button id="soundToggleBtn" onclick="toggleSound()" class="w-10 h-10 rounded-full bg-purple-800 hover:bg-purple-700 border-2 border-purple-400 flex items-center justify-center text-yellow-300 transition" title="Toggle Sound Effects">
                     <i id="soundIcon" class="ph-fill ph-speaker-high text-xl"></i>
                 </button>
@@ -230,30 +225,6 @@
             </div>
         </div>
 
-        <!-- Gemini AI Interactive Modal (Story Generator, Sentence Checker & Free Q&A Tutor) -->
-        <div id="aiModalOverlay" class="fixed inset-0 z-50 hidden bg-purple-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bubbly-card max-w-2xl w-full p-6 md:p-7 max-h-[90vh] flex flex-col animate-pop relative">
-                <div class="flex items-center justify-between border-b-2 border-purple-100 pb-3 mb-4">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-700 to-purple-950 text-yellow-300 flex items-center justify-center text-xl shadow border-2 border-yellow-400">
-                            <i class="ph-fill ph-sparkle"></i>
-                        </div>
-                        <div>
-                            <h3 id="aiModalTitle" class="text-xl font-black text-purple-950">✨ Gemini TOPIK AI Coach</h3>
-                            <p id="aiModalSubtitle" class="text-xs font-semibold text-purple-600">Powered by Gemini • Context, Grammar & Mnemonics</p>
-                        </div>
-                    </div>
-                    <button onclick="closeAiModal()" class="w-9 h-9 rounded-full bg-purple-100 hover:bg-rose-100 text-purple-900 hover:text-rose-700 flex items-center justify-center font-bold transition">
-                        <i class="ph-bold ph-x text-lg"></i>
-                    </button>
-                </div>
-
-                <div id="aiModalBody" class="overflow-y-auto pr-1 space-y-4 text-sm text-purple-950 flex-1">
-                    <!-- Dynamic AI Content -->
-                </div>
-            </div>
-        </div>
-
         <!-- Custom Toast / Alert Modal -->
         <div id="toastNotification" class="fixed bottom-6 right-6 z-50 hidden transform transition-all duration-300">
             <div class="bg-yellow-400 text-purple-950 font-bold px-5 py-3 rounded-2xl border-4 border-white shadow-2xl flex items-center gap-3">
@@ -264,407 +235,14 @@
     </div>
 
     <script>
-        const GEMINI_API_KEY = "";
-        const GEMINI_TEXT_MODEL = "gemini-3-flash-preview";
-        const GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts";
-
-        async function callGeminiWithBackoff(url, payload, maxRetries = 4) {
-            let delay = 1000;
-            for (let attempt = 0; attempt <= maxRetries; attempt++) {
-                try {
-                    const response = await fetch(url, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    if (response.ok) {
-                        return await response.json();
-                    }
-                    if (attempt === maxRetries) {
-                        throw new Error(`API status ${response.status}`);
-                    }
-                } catch (err) {
-                    if (attempt === maxRetries) throw err;
-                }
-                await new Promise(r => setTimeout(r, delay));
-                delay *= 2;
-            }
-        }
-
-        async function generateGeminiText(userPrompt, systemPrompt, jsonSchema = null) {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-            const payload = {
-                contents: [{ parts: [{ text: userPrompt }] }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                }
-            };
-            if (jsonSchema) {
-                payload.generationConfig = {
-                    responseMimeType: "application/json",
-                    responseSchema: jsonSchema
-                };
-            }
-            const result = await callGeminiWithBackoff(apiUrl, payload);
-            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) throw new Error("Empty response from Gemini");
-            return jsonSchema ? JSON.parse(text) : text;
-        }
-
-        function base64ToArrayBuffer(base64) {
-            const binaryString = window.atob(base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            return bytes.buffer;
-        }
-
-        function pcmToWav(pcm16, sampleRate) {
-            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
-            const view = new DataView(buffer);
-            const writeString = (offset, str) => {
-                for (let i = 0; i < str.length; i++) {
-                    view.setUint8(offset + i, str.charCodeAt(i));
-                }
-            };
-            writeString(0, "RIFF");
-            view.setUint32(4, 36 + pcm16.length * 2, true);
-            writeString(8, "WAVE");
-            writeString(12, "fmt ");
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true);
-            view.setUint16(22, 1, true);
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true);
-            view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true);
-            writeString(36, "data");
-            view.setUint32(40, pcm16.length * 2, true);
-            for (let i = 0; i < pcm16.length; i++) {
-                view.setInt16(44 + i * 2, pcm16[i], true);
-            }
-            return new Blob([buffer], { type: "audio/wav" });
-        }
-
-        async function speakKoreanWithGemini(koreanText, btnEl = null) {
-            const originalHtml = btnEl ? btnEl.innerHTML : "";
-            if (btnEl) {
-                btnEl.disabled = true;
-                btnEl.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i>`;
-            }
-            try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-                const payload = {
-                    contents: [{
-                        parts: [{ text: `Speak clearly and naturally in standard Korean: ${koreanText}` }]
-                    }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: { voiceName: "Kore" }
-                            }
-                        }
-                    },
-                    model: GEMINI_TTS_MODEL
-                };
-                const result = await callGeminiWithBackoff(apiUrl, payload, 2);
-                const part = result?.candidates?.[0]?.content?.parts?.[0];
-                const audioData = part?.inlineData?.data;
-                const mimeType = part?.inlineData?.mimeType || "audio/L16;rate=24000";
-                if (audioData) {
-                    const rateMatch = mimeType.match(/rate=(\d+)/);
-                    const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
-                    const pcmData = base64ToArrayBuffer(audioData);
-                    const pcm16 = new Int16Array(pcmData);
-                    const wavBlob = pcmToWav(pcm16, sampleRate);
-                    const audioUrl = URL.createObjectURL(wavBlob);
-                    const audio = new Audio(audioUrl);
-                    audio.play();
-                } else {
-                    throw new Error("No audio data returned");
-                }
-            } catch (e) {
-                // Fallback to browser SpeechSynthesis if available
-                if ('speechSynthesis' in window) {
-                    const utter = new SpeechSynthesisUtterance(koreanText);
-                    utter.lang = 'ko-KR';
-                    window.speechSynthesis.speak(utter);
-                } else {
-                    showToast("Could not play TTS audio right now.", "ph-speaker-slash");
-                }
-            } finally {
-                if (btnEl) {
-                    btnEl.disabled = false;
-                    btnEl.innerHTML = originalHtml;
-                }
-            }
-        }
-
-        function closeAiModal() {
-            const modal = document.getElementById("aiModalOverlay");
-            if (modal) modal.classList.add("hidden");
-        }
-
-        function openAiTutorModal(prefillWordObj = null) {
-            playSound('pop');
-            const modal = document.getElementById("aiModalOverlay");
-            const titleEl = document.getElementById("aiModalTitle");
-            const subEl = document.getElementById("aiModalSubtitle");
-            const bodyEl = document.getElementById("aiModalBody");
-
-            titleEl.textContent = "✨ Gemini TOPIK AI Tutor & Sentence Coach";
-            subEl.textContent = "Ask any Korean grammar/vocabulary question or get your own Korean sentence graded!";
-
-            const defaultPrompt = prefillWordObj
-                ? `Explain the nuance of "${prefillWordObj.kr}" (${prefillWordObj.en}), give a fun memory mnemonic, and show 2 TOPIK-style collocations.`
-                : "";
-
-            bodyEl.innerHTML = `
-                <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
-                    <label class="block text-xs font-extrabold uppercase tracking-wider text-purple-800">
-                        Write a Korean sentence to check, or ask about any word / grammar point (e.g., -(으)ㄹ수록, -(으)ㄹ지라도):
-                    </label>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <input 
-                            id="aiTutorInput"
-                            type="text"
-                            value="${defaultPrompt.replace(/"/g, '&quot;')}"
-                            placeholder="e.g., How do I use '${prefillWordObj ? prefillWordObj.kr : '영향을 미치다'}' in a sentence?"
-                            class="flex-1 px-4 py-3 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none font-bold text-purple-950 bg-white"
-                        />
-                        <button onclick="submitAiTutorQuery()" id="aiTutorSendBtn" class="btn-yellow px-5 py-3 text-sm shrink-0 flex items-center justify-center gap-1.5">
-                            <i class="ph-fill ph-sparkle"></i>
-                            <span>Ask Gemini</span>
-                        </button>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5 pt-1">
-                        <button type="button" onclick="quickFillTutor('Give me a short quiz comparing 안 and 못 negation with examples.')" class="text-[11px] font-bold bg-white hover:bg-yellow-200 text-purple-900 px-2.5 py-1 rounded-full border border-purple-300 transition">Compare 안 vs 못</button>
-                        <button type="button" onclick="quickFillTutor('Create a sentence using -(으)ㄹ수록 and Stage ' + activeSession.level + ' vocabulary.')" class="text-[11px] font-bold bg-white hover:bg-yellow-200 text-purple-900 px-2.5 py-1 rounded-full border border-purple-300 transition">Practice -(으)ㄹ수록</button>
-                        <button type="button" onclick="quickFillTutor('Create a sentence using -(으)ㄹ지라도 and explain how it works.')" class="text-[11px] font-bold bg-white hover:bg-yellow-200 text-purple-900 px-2.5 py-1 rounded-full border border-purple-300 transition">Practice -(으)ㄹ지라도</button>
-                    </div>
-                </div>
-                <div id="aiTutorResultBox" class="bg-white rounded-2xl p-4 border-2 border-purple-100 min-h-[120px] flex items-center justify-center text-purple-500 font-semibold text-xs">
-                    <span>Type a question or Korean sentence above and click <strong>Ask Gemini</strong>!</span>
-                </div>
-            `;
-            modal.classList.remove("hidden");
-            if (prefillWordObj) {
-                submitAiTutorQuery();
-            }
-        }
-
-        function quickFillTutor(text) {
-            const inp = document.getElementById("aiTutorInput");
-            if (inp) {
-                inp.value = text;
-                submitAiTutorQuery();
-            }
-        }
-
-        async function submitAiTutorQuery() {
-            const inp = document.getElementById("aiTutorInput");
-            const resBox = document.getElementById("aiTutorResultBox");
-            const btn = document.getElementById("aiTutorSendBtn");
-            if (!inp || !inp.value.trim()) return;
-
-            const query = inp.value.trim();
-            btn.disabled = true;
-            resBox.innerHTML = `
-                <div class="flex items-center gap-2.5 text-purple-800 font-bold py-6">
-                    <i class="ph-bold ph-spinner animate-spin text-2xl text-yellow-500"></i>
-                    <span>Gemini is crafting your Korean study guide...</span>
-                </div>
-            `;
-
-            const schema = {
-                type: "OBJECT",
-                properties: {
-                    headline: { type: "STRING" },
-                    explanation: { type: "STRING" },
-                    mnemonicOrTip: { type: "STRING" },
-                    examples: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                kr: { type: "STRING" },
-                                en: { type: "STRING" }
-                            },
-                            propertyOrdering: ["kr", "en"]
-                        }
-                    }
-                },
-                propertyOrdering: ["headline", "explanation", "mnemonicOrTip", "examples"]
-            };
-
-            try {
-                const sysPrompt = "You are an encouraging, expert Korean language and TOPIK I/II tutor. Give clear, concise explanations, helpful memory tips or grammar feedback, and natural Korean example sentences with English translations.";
-                const data = await generateGeminiText(query, sysPrompt, schema);
-
-                const examplesHtml = (data.examples || []).map(ex => `
-                    <div class="bg-purple-50 rounded-xl p-3 border border-purple-200 flex items-start justify-between gap-2">
-                        <div>
-                            <div class="font-extrabold text-purple-950 text-sm">${ex.kr}</div>
-                            <div class="text-xs text-purple-700 font-medium mt-0.5">${ex.en}</div>
-                        </div>
-                        <button type="button" onclick="speakKoreanWithGemini('${ex.kr.replace(/'/g, "\\'")}', this)" class="w-8 h-8 rounded-full bg-yellow-400 hover:bg-yellow-300 text-purple-950 flex items-center justify-center shrink-0 shadow" title="Listen with Gemini TTS">
-                            <i class="ph-fill ph-speaker-high"></i>
-                        </button>
-                    </div>
-                `).join("");
-
-                resBox.className = "bg-white rounded-2xl p-4 border-2 border-purple-200 space-y-3 text-left";
-                resBox.innerHTML = `
-                    <div class="text-base font-black text-purple-950 flex items-center gap-1.5">
-                        <i class="ph-fill ph-sparkle text-yellow-500 text-lg"></i>
-                        <span>${data.headline}</span>
-                    </div>
-                    <p class="text-xs sm:text-sm text-purple-900 leading-relaxed whitespace-pre-line font-medium">${data.explanation}</p>
-                    <div class="bg-yellow-100 border border-yellow-400 rounded-xl p-3 text-xs font-bold text-purple-950">
-                        💡 <span class="uppercase tracking-wider text-[10px] bg-yellow-300 px-1.5 py-0.5 rounded mr-1">Memory / TOPIK Tip</span>
-                        ${data.mnemonicOrTip}
-                    </div>
-                    <div class="space-y-2 pt-1">
-                        <div class="text-[11px] font-extrabold uppercase tracking-wider text-purple-600">Example Sentences (Click speaker for AI Audio):</div>
-                        ${examplesHtml}
-                    </div>
-                `;
-            } catch (err) {
-                resBox.innerHTML = `<div class="text-rose-700 font-bold text-xs p-3">Could not reach Gemini right now. Please try again!</div>`;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function openStageStoryModal(levelNum) {
-            playSound('pop');
-            const words = getWordsForLevel(levelNum);
-            const meta = LEVEL_META[levelNum - 1];
-            const modal = document.getElementById("aiModalOverlay");
-            const titleEl = document.getElementById("aiModalTitle");
-            const subEl = document.getElementById("aiModalSubtitle");
-            const bodyEl = document.getElementById("aiModalBody");
-
-            titleEl.textContent = `✨ Stage ${levelNum} AI Mini-Story: ${meta.title}`;
-            subEl.textContent = `Gemini weaves words from Stage ${levelNum} into a memorable Korean passage!`;
-            bodyEl.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-10 text-purple-900 font-bold gap-3">
-                    <i class="ph-bold ph-spinner animate-spin text-4xl text-yellow-500"></i>
-                    <p>Gemini is writing a custom Korean mini-story using Stage ${levelNum} vocabulary...</p>
-                </div>
-            `;
-            modal.classList.remove("hidden");
-
-            const sampleWords = words.slice(0, 8).map(w => `${w.kr} (${w.en})`).join(", ");
-            const prompt = `Create a short, engaging 4-sentence Korean reading passage or dialogue appropriate for TOPIK learners on the theme "${meta.topic}" that naturally incorporates at least 5 of these words from Stage ${levelNum}: ${sampleWords}. Also include an English translation, a list of the key words used, and 1 comprehension check question.`;
-
-            const schema = {
-                type: "OBJECT",
-                properties: {
-                    storyTitle: { type: "STRING" },
-                    koreanPassage: { type: "STRING" },
-                    englishTranslation: { type: "STRING" },
-                    featuredWords: {
-                        type: "ARRAY",
-                        items: { type: "STRING" }
-                    },
-                    comprehensionQuestion: { type: "STRING" },
-                    comprehensionAnswer: { type: "STRING" }
-                },
-                propertyOrdering: ["storyTitle", "koreanPassage", "englishTranslation", "featuredWords", "comprehensionQuestion", "comprehensionAnswer"]
-            };
-
-            try {
-                const sys = "You are a creative Korean language teacher writing engaging short stories and dialogues for TOPIK learners.";
-                const story = await generateGeminiText(prompt, sys, schema);
-
-                const badges = (story.featuredWords || []).map(fw => `
-                    <span class="bg-yellow-300 text-purple-950 font-extrabold text-xs px-2.5 py-1 rounded-full border border-yellow-500">${fw}</span>
-                `).join("");
-
-                bodyEl.innerHTML = `
-                    <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
-                        <div class="flex items-center justify-between gap-2">
-                            <h4 class="text-lg font-black text-purple-950">${story.storyTitle}</h4>
-                            <button type="button" onclick="speakKoreanWithGemini('${story.koreanPassage.replace(/'/g, "\\'").replace(/\n/g, " ")}', this)" class="btn-yellow px-3.5 py-1.5 text-xs flex items-center gap-1.5 shrink-0">
-                                <i class="ph-fill ph-speaker-high"></i> Read Aloud
-                            </button>
-                        </div>
-                        <p class="text-base font-bold text-purple-950 leading-relaxed bg-white p-4 rounded-xl border border-purple-200">${story.koreanPassage}</p>
-                        <p class="text-xs sm:text-sm text-purple-700 font-semibold leading-relaxed">${story.englishTranslation}</p>
-                        <div class="pt-1">
-                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-purple-500 mb-1.5">Featured Stage ${levelNum} Words:</div>
-                            <div class="flex flex-wrap gap-1.5">${badges}</div>
-                        </div>
-                    </div>
-
-                    <div class="bg-yellow-50 rounded-2xl p-4 border-2 border-yellow-300 space-y-2">
-                        <div class="text-xs font-extrabold uppercase tracking-wider text-purple-900">🧠 Quick Comprehension Check:</div>
-                        <p class="text-sm font-bold text-purple-950">${story.comprehensionQuestion}</p>
-                        <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-xs font-extrabold text-purple-700 underline">Reveal Answer</button>
-                        <p class="hidden text-xs font-bold text-green-800 bg-green-100 p-2.5 rounded-xl border border-green-300 mt-1">${story.comprehensionAnswer}</p>
-                    </div>
-
-                    <div class="flex justify-end">
-                        <button onclick="openStageStoryModal(${levelNum})" class="btn-purple px-4 py-2 text-xs flex items-center gap-1.5">
-                            <i class="ph-bold ph-arrows-clockwise"></i> Generate Another Story
-                        </button>
-                    </div>
-                `;
-            } catch (e) {
-                bodyEl.innerHTML = `<div class="p-4 text-rose-700 font-bold">Unable to generate story right now. Please try again in a moment!</div>`;
-            }
-        }
-
-        async function requestAiCardCoach(wordId, containerElementId) {
-            const w = VOCAB_DATABASE.find(item => item.id === wordId);
-            const targetEl = document.getElementById(containerElementId);
-            if (!w || !targetEl) return;
-
-            targetEl.classList.remove("hidden");
-            targetEl.innerHTML = `
-                <div class="flex items-center gap-2 text-purple-900 font-bold text-xs py-1">
-                    <i class="ph-bold ph-spinner animate-spin text-base text-purple-700"></i>
-                    <span>Asking Gemini for a memory trick & fresh example for <strong>${w.kr}</strong>...</span>
-                </div>
-            `;
-
-            const schema = {
-                type: "OBJECT",
-                properties: {
-                    mnemonic: { type: "STRING" },
-                    freshSentenceKr: { type: "STRING" },
-                    freshSentenceEn: { type: "STRING" },
-                    collocation: { type: "STRING" }
-                },
-                propertyOrdering: ["mnemonic", "collocation", "freshSentenceKr", "freshSentenceEn"]
-            };
-
-            try {
-                const prompt = `Word: ${w.kr} (Meaning: ${w.fullEn}, Topic: ${w.topic}). Give a short, memorable mnemonic or etymology/hanja/syllable clue, 1 common Korean collocation, and 1 fresh natural Korean sentence with English translation. Do not reveal the Korean word if used as a hint, or keep it brief and helpful.`;
-                const sys = "You are a witty, concise Korean vocabulary coach.";
-                const res = await generateGeminiText(prompt, sys, schema);
-
-                targetEl.innerHTML = `
-                    <div class="space-y-1.5 text-left text-xs">
-                        <div class="font-extrabold text-purple-950 flex items-center justify-between">
-                            <span>✨ Gemini Memory Coach: <span class="text-purple-700">${res.collocation}</span></span>
-                            <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="px-2 py-0.5 rounded-full bg-yellow-300 text-purple-950 font-black text-[11px] flex items-center gap-1">
-                                <i class="ph-fill ph-speaker-high"></i> ${w.kr}
-                            </button>
-                        </div>
-                        <div class="text-purple-900 font-semibold">🧠 <strong>Mnemonic:</strong> ${res.mnemonic}</div>
-                        <div class="bg-white/90 p-2 rounded-lg border border-purple-200">
-                            <div class="font-bold text-purple-950">${res.freshSentenceKr}</div>
-                            <div class="text-purple-600 text-[11px]">${res.freshSentenceEn}</div>
-                        </div>
-                    </div>
-                `;
-            } catch (err) {
-                targetEl.innerHTML = `<div class="text-xs text-rose-700 font-bold">Could not load AI coach tip right now.</div>`;
+        function speakKoreanAudio(koreanText) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(koreanText);
+                utter.lang = 'ko-KR';
+                window.speechSynthesis.speak(utter);
+            } else {
+                showToast("Speech synthesis is not supported in this browser.", "ph-speaker-slash");
             }
         }
 
@@ -1888,7 +1466,7 @@
                         <div class="flex items-center gap-2">
                             <span class="w-6 h-6 rounded-full bg-purple-900 text-yellow-300 font-black text-[11px] flex items-center justify-center shrink-0">#${w.id}</span>
                             <span class="text-xl font-black text-purple-950">${w.kr}</span>
-                            <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="w-6 h-6 rounded-full bg-purple-100 hover:bg-yellow-300 text-purple-900 flex items-center justify-center text-xs transition" title="Listen">
+                            <button type="button" onclick="speakKoreanAudio('${w.kr.replace(/'/g, "\\'")}')" class="w-6 h-6 rounded-full bg-purple-100 hover:bg-yellow-300 text-purple-900 flex items-center justify-center text-xs transition" title="Listen">
                                 <i class="ph-fill ph-speaker-high"></i>
                             </button>
                         </div>
@@ -2741,14 +2319,11 @@
                             <div class="flex items-center gap-2">
                                 <span class="w-7 h-7 rounded-full bg-purple-800 text-yellow-300 font-extrabold text-xs flex items-center justify-center">${idx + 1}</span>
                                 <span class="text-2xl font-black text-purple-950">${w.kr}</span>
-                                <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="w-7 h-7 rounded-full bg-purple-100 hover:bg-yellow-300 text-purple-900 flex items-center justify-center text-sm transition" title="Listen to pronunciation">
+                                <button type="button" onclick="speakKoreanAudio('${w.kr.replace(/'/g, "\\'")}')" class="w-7 h-7 rounded-full bg-purple-100 hover:bg-yellow-300 text-purple-900 flex items-center justify-center text-sm transition" title="Listen to pronunciation">
                                     <i class="ph-fill ph-speaker-high"></i>
                                 </button>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <button type="button" onclick="openAiTutorModal({ id: ${w.id}, kr: '${w.kr.replace(/'/g, "\\'")}', en: '${w.en.replace(/'/g, "\\'")}' })" class="bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold text-[11px] px-2.5 py-0.5 rounded-full border border-purple-300 flex items-center gap-1" title="Deep-dive with Gemini AI">
-                                    <i class="ph-fill ph-sparkle text-yellow-600"></i> AI Coach
-                                </button>
                                 <span class="bg-yellow-300 text-purple-950 font-extrabold text-sm px-3 py-0.5 rounded-full border border-yellow-500 text-right">
                                     ${w.en}
                                 </span>
@@ -2759,7 +2334,7 @@
                     <div class="bg-purple-50 rounded-xl p-2.5 border border-purple-200 text-xs space-y-1.5">
                         <div class="text-purple-950 font-bold flex items-start justify-between gap-2">
                             <span><span class="text-purple-600">KR Context:</span> ${w.sentenceKr.replace('___', `<span class="underline decoration-2 decoration-purple-700 font-extrabold text-purple-900">${w.kr}</span>`)}</span>
-                            <button type="button" onclick="speakKoreanWithGemini('${w.sentenceKr.replace('___', w.kr).replace(/'/g, "\\'")}', this)" class="w-6 h-6 rounded-full bg-white hover:bg-yellow-300 text-purple-900 flex items-center justify-center shrink-0 border border-purple-200" title="Listen to full sentence">
+                            <button type="button" onclick="speakKoreanAudio('${w.sentenceKr.replace('___', w.kr).replace(/'/g, "\\'")}')" class="w-6 h-6 rounded-full bg-white hover:bg-yellow-300 text-purple-900 flex items-center justify-center shrink-0 border border-purple-200" title="Listen to full sentence">
                                 <i class="ph-fill ph-speaker-high text-xs"></i>
                             </button>
                         </div>
@@ -2786,10 +2361,6 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2.5">
-                        <button onclick="openStageStoryModal(${levelNum})" class="btn-purple px-4 py-3 text-xs md:text-sm flex items-center gap-1.5">
-                            <i class="ph-fill ph-sparkle text-yellow-300 text-lg"></i>
-                            <span>✨ AI Stage Story</span>
-                        </button>
                         <button onclick="startSentencePractice(${levelNum})" class="btn-yellow px-5 py-3 text-sm md:text-base flex items-center gap-2 animate-bounce">
                             <i class="ph-fill ph-pencil-simple-line text-xl"></i>
                             <span>${isPlayUnlocked ? 'Practice Sentences Again' : 'Start Sentence Practice to Unlock Stage ' + levelNum}</span>
@@ -2920,11 +2491,7 @@
                                         <span>${w.uniqueHint.replace(/^💡\s*/, '')}</span>
                                     </div>
                                 </div>
-                                <button type="button" onclick="requestAiCardCoach(${w.id}, 'practiceAiCoachBox')" class="bg-purple-800 hover:bg-purple-700 text-yellow-300 font-extrabold text-[11px] px-2.5 py-1 rounded-full shrink-0 flex items-center gap-1 shadow">
-                                    <i class="ph-fill ph-sparkle"></i> ✨ AI Tip
-                                </button>
                             </div>
-                            <div id="practiceAiCoachBox" class="hidden bg-purple-100/90 border border-purple-300 rounded-xl p-3"></div>
                         </div>
 
                         <!-- Helpful Word Bank (Click or Type) -->
@@ -3152,15 +2719,12 @@
                             </span>
                             <div class="flex items-center gap-1.5">
                                 ${isKrPrompt ? `
-                                <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="text-xs font-bold text-purple-900 bg-yellow-300 hover:bg-yellow-400 px-3 py-1 rounded-full border border-yellow-500 transition flex items-center gap-1">
+                                <button type="button" onclick="speakKoreanAudio('${w.kr.replace(/'/g, "\\'")}')" class="text-xs font-bold text-purple-900 bg-yellow-300 hover:bg-yellow-400 px-3 py-1 rounded-full border border-yellow-500 transition flex items-center gap-1">
                                     <i class="ph-fill ph-speaker-high"></i> Listen
                                 </button>
                                 ` : ''}
                                 <button type="button" onclick="revealFirstLetterHint()" class="text-xs font-bold text-purple-700 hover:text-purple-950 bg-purple-100 hover:bg-yellow-200 px-3 py-1 rounded-full border border-purple-300 transition flex items-center gap-1">
                                     <i class="ph-fill ph-lightbulb"></i> Hint
-                                </button>
-                                <button type="button" onclick="requestAiCardCoach(${w.id}, 'arenaAiCoachBox')" class="text-xs font-bold text-yellow-300 bg-purple-900 hover:bg-purple-800 px-3 py-1 rounded-full border border-purple-500 transition flex items-center gap-1">
-                                    <i class="ph-fill ph-sparkle"></i> ✨ AI Mnemonic
                                 </button>
                             </div>
                         </div>
@@ -3173,7 +2737,6 @@
                             <div id="cardHintText" class="text-xs sm:text-sm font-semibold text-purple-600 mt-3 px-4">
                                 ${subHint}
                             </div>
-                            <div id="arenaAiCoachBox" class="hidden mt-3 mx-4 bg-purple-100/90 border border-purple-300 rounded-xl p-3"></div>
                         </div>
 
                         <!-- Answer Input Form -->
