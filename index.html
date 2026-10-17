@@ -2160,10 +2160,15 @@
             const acct = authSession.activeAccount;
             const isSignedIn = acct && acct.provider !== 'guest';
 
-            // Once logged in, do not show the create account / log-in forms; redirect straight to the Profile page
-            if (isSignedIn) {
+            // Once logged in, close the login modal ONLY if the modal is currently open
+            const modalEl = document.getElementById("accountModalOverlay");
+            const isModalVisible = modalEl && !modalEl.classList.contains("hidden");
+            if (isSignedIn && isModalVisible) {
                 closeAccountModal();
                 showProfileScreen();
+                return;
+            }
+            if (isSignedIn) {
                 return;
             }
 
@@ -3443,6 +3448,7 @@
         let app = null;
         let db = null;
         let auth = null;
+        let primaryAuth = null; // Dedicated Auth instance for k2korea-686de so Google/Email logins always match your console
         let unsubscribeProfileListener = null;
 
         function sanitizeAccountKey(emailOrId) {
@@ -3470,6 +3476,26 @@
             }
         }
 
+        // Helper that extracts user profile info from any Firebase User object (even if email is nested in providerData)
+        function extractUserProfileFromFirebaseUser(fbUser) {
+            if (!fbUser || fbUser.isAnonymous) return null;
+            const providerInfo = (fbUser.providerData && fbUser.providerData[0]) ? fbUser.providerData[0] : {};
+            const providerId = providerInfo.providerId || "google.com";
+            const email = fbUser.email || providerInfo.email || `${fbUser.uid}@k2korea.user`;
+            const displayName = fbUser.displayName || providerInfo.displayName || email.split("@")[0] || "Korean Learner";
+            const photoURL = fbUser.photoURL || providerInfo.photoURL || "";
+            const isEmailPwd = providerId === "password";
+            return {
+                uid: fbUser.uid,
+                accountKey: `${isEmailPwd ? 'email' : 'google'}_${sanitizeAccountKey(email)}`,
+                email,
+                displayName,
+                photoURL,
+                provider: isEmailPwd ? "email-password" : "google-oauth",
+                hasPassword: isEmailPwd
+            };
+        }
+
         const cloudAuthManager = {
             isReady: false,
             usingEnvConfig: false,
@@ -3485,16 +3511,42 @@
                     db = getFirestore(app);
                     auth = getAuth(app);
 
-                    // RULE 3: Authenticate FIRST before any Firestore queries
+                    // Also initialize your k2korea-686de project Auth if running in an environment with a separate sandbox config
+                    if (this.usingEnvConfig && firebaseConfig.projectId !== USER_FIREBASE_CONFIG.projectId) {
+                        try {
+                            const userProjectApp = initializeApp(USER_FIREBASE_CONFIG, "k2koreaUserAuthApp");
+                            primaryAuth = getAuth(userProjectApp);
+                        } catch (e) {
+                            primaryAuth = auth;
+                        }
+                    } else {
+                        primaryAuth = auth;
+                    }
+
+                    // Listen for real Google / Email logins on primaryAuth (your k2korea-686de project)
+                    onAuthStateChanged(primaryAuth, async (user) => {
+                        if (user && !user.isAnonymous) {
+                            const profileObj = extractUserProfileFromFirebaseUser(user);
+                            if (profileObj) {
+                                await this.activateGoogleAccount(profileObj);
+                            }
+                        }
+                    });
+
+                    // RULE 3: Authenticate main Firestore client FIRST before any Firestore queries
                     if (this.usingEnvConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } else if (!auth.currentUser) {
-                        await signInAnonymously(auth);
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (anonErr) {
+                            // Anonymous auth might be disabled in user's Firebase console; continue so Google/Email login still works!
+                            console.warn("Anonymous auth not enabled, waiting for Google or Email sign-in.");
+                        }
                     }
 
                     onAuthStateChanged(auth, async (user) => {
-                        if (!user) return;
-                        authSession.firebaseUser = user;
+                        authSession.firebaseUser = user || primaryAuth?.currentUser || null;
                         authSession.cloudReady = true;
                         this.isReady = true;
                         const badgeEl = document.getElementById("cloudUidBadge");
@@ -3502,22 +3554,20 @@
                             badgeEl.textContent = `Connected (${USER_FIREBASE_CONFIG.projectId})`;
                         }
 
-                        // If the user authenticated with real Firebase Email/Password or Google OAuth
-                        if (user.email || (user.providerData && user.providerData.length > 0)) {
-                            const primaryProvider = user.providerData[0]?.providerId || "password";
-                            const email = user.email || user.providerData[0]?.email || `${user.uid}@user.k2korea`;
-                            const displayName = user.displayName || user.providerData[0]?.displayName || email.split("@")[0];
-                            const photoURL = user.photoURL || user.providerData[0]?.photoURL || "";
-                            const isEmailPwd = primaryProvider === "password";
-                            await this.activateGoogleAccount({
-                                accountKey: `${isEmailPwd ? 'email' : 'google'}_${sanitizeAccountKey(email)}`,
-                                email,
-                                displayName,
-                                photoURL,
-                                provider: isEmailPwd ? "email-password" : "google-oauth",
-                                hasPassword: isEmailPwd
-                            });
-                        } else {
+                        // Check if user is signed in with a non-anonymous account
+                        const realUser = (primaryAuth?.currentUser && !primaryAuth.currentUser.isAnonymous)
+                            ? primaryAuth.currentUser
+                            : (user && !user.isAnonymous ? user : null);
+
+                        if (realUser) {
+                            const profileObj = extractUserProfileFromFirebaseUser(realUser);
+                            if (profileObj) {
+                                await this.activateGoogleAccount(profileObj);
+                                return;
+                            }
+                        }
+
+                        if (user) {
                             await this.loadAllAccountsAndRestoreActive();
                         }
                     });
@@ -3526,22 +3576,26 @@
                 }
             },
 
+            getEffectiveUid() {
+                return auth?.currentUser?.uid || primaryAuth?.currentUser?.uid || null;
+            },
+
             getAccountsCollectionRef() {
-                const user = auth?.currentUser;
-                if (!user) return null;
+                const uid = this.getEffectiveUid();
+                if (!uid) return null;
                 // RULE 1: Strict private user path
-                return collection(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts');
+                return collection(db, 'artifacts', appId, 'users', uid, 'vocab_accounts');
             },
 
             getSessionMetaDocRef() {
-                const user = auth?.currentUser;
-                if (!user) return null;
-                return doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_meta', 'session');
+                const uid = this.getEffectiveUid();
+                if (!uid) return null;
+                return doc(db, 'artifacts', appId, 'users', uid, 'vocab_meta', 'session');
             },
 
             async loadAllAccountsAndRestoreActive() {
-                const user = auth?.currentUser;
-                if (!user) return;
+                const uid = this.getEffectiveUid();
+                if (!uid) return;
 
                 try {
                     const colRef = this.getAccountsCollectionRef();
@@ -3577,8 +3631,7 @@
 
                     if (targetAccount) {
                         await this.switchAccount(targetAccount.accountKey, false);
-                    } else {
-                        // Initialize guest profile
+                    } else if (!authSession.activeAccount || authSession.activeAccount.provider === 'guest') {
                         const guestAcct = accounts.find(a => a.accountKey === 'guest') || {
                             accountKey: 'guest',
                             email: '',
@@ -3594,37 +3647,35 @@
                         if (activeSession.mode === 'map') renderLevelCardsGrid();
                     }
                 } catch (err) {
-                    console.error("Failed loading saved accounts:", err);
+                    console.warn("Could not read saved accounts from Firestore (check Firestore security rules):", err);
                 }
             },
 
             async triggerGoogleOAuthPopup() {
-                if (!auth) {
+                const targetAuth = primaryAuth || auth;
+                if (!targetAuth) {
                     showToast("Cloud service is still connecting...", "ph-cloud-warning");
                     return;
                 }
                 try {
                     const provider = new GoogleAuthProvider();
+                    provider.addScope('profile');
+                    provider.addScope('email');
                     provider.setCustomParameters({ prompt: 'select_account' });
-                    const result = await signInWithPopup(auth, provider);
+                    const result = await signInWithPopup(targetAuth, provider);
                     if (result && result.user) {
-                        const u = result.user;
-                        const email = u.email || `${u.uid}@gmail.com`;
-                        const displayName = u.displayName || email.split("@")[0];
-                        await this.activateGoogleAccount({
-                            accountKey: `google_${sanitizeAccountKey(email)}`,
-                            email,
-                            displayName,
-                            photoURL: u.photoURL || "",
-                            provider: "google-oauth"
-                        });
-                        closeAccountModal();
+                        const profileObj = extractUserProfileFromFirebaseUser(result.user);
+                        if (profileObj) {
+                            await this.activateGoogleAccount(profileObj);
+                            closeAccountModal();
+                        }
                     }
                 } catch (popupErr) {
+                    console.warn("Google OAuth Popup Error:", popupErr);
                     const emailInp = document.getElementById("authEmailInput");
                     if (emailInp) {
                         emailInp.focus();
-                        showToast("Popup blocked by sandbox — sign in or create an account with your Email & Password above!", "ph-envelope-simple");
+                        showAuthModalError(`Google Popup notice (${popupErr.code || 'blocked'}): You can also sign in or create an account with your Email & Password above!`);
                     }
                 }
             },
@@ -3652,23 +3703,42 @@
                 if (submitBtn) submitBtn.disabled = true;
 
                 try {
-                    // 1. If running directly against the user's Firebase project outside the sandbox token, try native Firebase Email/Password Auth first
-                    if (!this.usingEnvConfig && auth) {
+                    const targetAuth = primaryAuth || auth;
+                    // 1. Try native Firebase Email/Password Auth on your project first
+                    if (targetAuth) {
                         try {
                             if (mode === "register") {
-                                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                                const cred = await createUserWithEmailAndPassword(targetAuth, email, password);
                                 if (cred.user && displayName) {
-                                    await updateProfile(cred.user, { displayName });
+                                    try { await updateProfile(cred.user, { displayName }); } catch (e) {}
                                 }
+                                const profileObj = extractUserProfileFromFirebaseUser(cred.user) || {
+                                    accountKey: `email_${sanitizeAccountKey(email)}`,
+                                    email,
+                                    displayName,
+                                    photoURL: "",
+                                    provider: "email-password",
+                                    hasPassword: true
+                                };
+                                profileObj.displayName = displayName;
+                                await this.activateGoogleAccount(profileObj);
                                 closeAccountModal();
                                 return;
                             } else {
-                                await signInWithEmailAndPassword(auth, email, password);
+                                const cred = await signInWithEmailAndPassword(targetAuth, email, password);
+                                const profileObj = extractUserProfileFromFirebaseUser(cred.user) || {
+                                    accountKey: `email_${sanitizeAccountKey(email)}`,
+                                    email,
+                                    displayName,
+                                    photoURL: "",
+                                    provider: "email-password",
+                                    hasPassword: true
+                                };
+                                await this.activateGoogleAccount(profileObj);
                                 closeAccountModal();
                                 return;
                             }
                         } catch (fbAuthErr) {
-                            // If native Firebase Email/Password throws a credential error, surface it clearly
                             if (fbAuthErr.code === "auth/wrong-password" || fbAuthErr.code === "auth/invalid-credential") {
                                 showAuthModalError("Incorrect email or password. Please try again.");
                                 if (submitBtn) submitBtn.disabled = false;
@@ -3682,63 +3752,48 @@
                                 if (submitBtn) submitBtn.disabled = false;
                                 return;
                             }
-                            // If auth/operation-not-allowed (provider not toggled yet in console), fall through to Cloud Firestore encrypted password verification
                         }
                     }
 
-                    // 2. Cloud Firestore Per-Account Email + Hashed Password Authentication (works in all environments)
-                    const user = auth?.currentUser;
-                    if (!user) {
-                        showAuthModalError("Cloud connection is still initializing. Please try again in a moment.");
-                        if (submitBtn) submitBtn.disabled = false;
-                        return;
-                    }
-
+                    // 2. Fallback: Cloud Firestore Per-Account Email + Hashed Password Authentication
+                    const uid = this.getEffectiveUid();
                     const accountKey = `email_${sanitizeAccountKey(email)}`;
-                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', accountKey);
-                    const snap = await getDoc(acctDocRef);
                     const passwordHash = await hashPasswordSHA256(password, email);
 
-                    if (mode === "register") {
-                        if (snap.exists() && snap.data().passwordHash) {
-                            showAuthModalError("An account with this email already exists. Click 'Sign In' above to log in!");
-                            if (submitBtn) submitBtn.disabled = false;
-                            return;
+                    if (uid) {
+                        try {
+                            const acctDocRef = doc(db, 'artifacts', appId, 'users', uid, 'vocab_accounts', accountKey);
+                            const snap = await getDoc(acctDocRef);
+
+                            if (mode === "register") {
+                                if (snap.exists() && snap.data().passwordHash) {
+                                    showAuthModalError("An account with this email already exists. Click 'Sign In' above to log in!");
+                                    if (submitBtn) submitBtn.disabled = false;
+                                    return;
+                                }
+                            } else if (snap.exists()) {
+                                const data = snap.data();
+                                if (data.passwordHash && data.passwordHash !== passwordHash) {
+                                    showAuthModalError("Incorrect password for this email account. Please try again.");
+                                    if (submitBtn) submitBtn.disabled = false;
+                                    return;
+                                }
+                            }
+                        } catch (fsErr) {
+                            console.warn("Firestore check skipped:", fsErr);
                         }
-                        await this.activateGoogleAccount({
-                            accountKey,
-                            email,
-                            displayName,
-                            photoURL: "",
-                            provider: "email-password",
-                            passwordHash,
-                            hasPassword: true
-                        });
-                        closeAccountModal();
-                    } else {
-                        // Login mode
-                        if (!snap.exists()) {
-                            showAuthModalError("No account found for this email. Click 'Create Account' to register!");
-                            if (submitBtn) submitBtn.disabled = false;
-                            return;
-                        }
-                        const data = snap.data();
-                        if (data.passwordHash && data.passwordHash !== passwordHash) {
-                            showAuthModalError("Incorrect password for this email account. Please try again.");
-                            if (submitBtn) submitBtn.disabled = false;
-                            return;
-                        }
-                        await this.activateGoogleAccount({
-                            accountKey,
-                            email: data.email || email,
-                            displayName: data.displayName || displayName,
-                            photoURL: data.photoURL || "",
-                            provider: "email-password",
-                            passwordHash: data.passwordHash || passwordHash,
-                            hasPassword: true
-                        });
-                        closeAccountModal();
                     }
+
+                    await this.activateGoogleAccount({
+                        accountKey,
+                        email,
+                        displayName,
+                        photoURL: "",
+                        provider: "email-password",
+                        passwordHash,
+                        hasPassword: true
+                    });
+                    closeAccountModal();
                 } catch (err) {
                     console.error("Email/Password auth error:", err);
                     showAuthModalError("Could not complete sign in. Please check your details and try again.");
@@ -3762,19 +3817,66 @@
             },
 
             async activateGoogleAccount(profileObj) {
-                const user = auth?.currentUser;
-                if (!user) return;
+                if (!profileObj || !profileObj.accountKey) return;
+
+                // Prevent duplicate re-activation if already active
+                const wasAlreadyActive = authSession.activeAccount && authSession.activeAccount.accountKey === profileObj.accountKey;
+
+                // STEP 1: Immediately transition the UI into Logged-In mode so Firestore rules/network never block the login!
+                let loadedState = (authSession.activeAccount?.provider === 'guest' && Object.keys(gameState.levelStats || {}).length > 0)
+                    ? JSON.parse(JSON.stringify(gameState))
+                    : (authSession.activeAccount?.gameState || getDefaultGameState());
+
+                authSession.activeAccount = {
+                    ...profileObj,
+                    hasPassword: Boolean(profileObj.passwordHash || profileObj.hasPassword),
+                    gameState: loadedState
+                };
+
+                const existingIdx = authSession.knownAccounts.findIndex(a => a.accountKey === profileObj.accountKey);
+                if (existingIdx >= 0) {
+                    loadedState = authSession.knownAccounts[existingIdx].gameState || loadedState;
+                    authSession.activeAccount.gameState = loadedState;
+                    authSession.knownAccounts[existingIdx] = authSession.activeAccount;
+                } else if (profileObj.provider !== 'guest') {
+                    authSession.knownAccounts.push(authSession.activeAccount);
+                }
+
+                gameState = loadedState;
+                closeAccountModal();
+                updateHeaderStats();
+                updateAccountHeaderUI();
+                if (activeSession.mode === "profile") {
+                    showProfileScreen();
+                } else if (activeSession.mode === "map") {
+                    renderLevelCardsGrid();
+                } else {
+                    showMapScreen();
+                }
+
+                if (!wasAlreadyActive) {
+                    showToast(`Signed in as ${profileObj.displayName}! Click your profile at the top anytime.`, "ph-cloud-check");
+                }
+
+                // STEP 2: Sync with Cloud Firestore in the background (resilient to permission/network errors)
+                const uid = this.getEffectiveUid();
+                if (!uid) return;
 
                 try {
-                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', profileObj.accountKey);
+                    const acctDocRef = doc(db, 'artifacts', appId, 'users', uid, 'vocab_accounts', profileObj.accountKey);
                     const snap = await getDoc(acctDocRef);
 
-                    let loadedState = getDefaultGameState();
                     if (snap.exists() && snap.data().gameState) {
-                        loadedState = JSON.parse(snap.data().gameState);
-                    } else if (authSession.activeAccount?.provider === 'guest' && Object.keys(gameState.levelStats || {}).length > 0 && authSession.knownAccounts.length === 0) {
-                        // If transitioning from guest on first-ever sign-in, preserve their current guest progress
-                        loadedState = JSON.parse(JSON.stringify(gameState));
+                        const cloudState = JSON.parse(snap.data().gameState);
+                        loadedState = cloudState;
+                        gameState = cloudState;
+                        authSession.activeAccount.gameState = cloudState;
+                        updateHeaderStats();
+                        if (activeSession.mode === "profile") {
+                            showProfileScreen();
+                        } else if (activeSession.mode === "map") {
+                            renderLevelCardsGrid();
+                        }
                     }
 
                     const fullRecord = {
@@ -3782,7 +3884,7 @@
                         email: profileObj.email,
                         displayName: profileObj.displayName,
                         photoURL: profileObj.photoURL || "",
-                        provider: profileObj.provider || "email-password",
+                        provider: profileObj.provider || "google-oauth",
                         gameState: JSON.stringify(loadedState),
                         updatedAt: Date.now()
                     };
@@ -3791,44 +3893,39 @@
                     }
 
                     await setDoc(acctDocRef, fullRecord, { merge: true });
-                    await setDoc(this.getSessionMetaDocRef(), { activeAccountKey: profileObj.accountKey, updatedAt: Date.now() }, { merge: true });
-
-                    authSession.activeAccount = {
-                        ...profileObj,
-                        hasPassword: Boolean(profileObj.passwordHash || profileObj.hasPassword || snap.data()?.passwordHash),
-                        gameState: loadedState
-                    };
-
-                    // Update known accounts list
-                    const existingIdx = authSession.knownAccounts.findIndex(a => a.accountKey === profileObj.accountKey);
-                    if (existingIdx >= 0) {
-                        authSession.knownAccounts[existingIdx] = authSession.activeAccount;
-                    } else if (profileObj.provider !== 'guest') {
-                        authSession.knownAccounts.push(authSession.activeAccount);
+                    const metaRef = this.getSessionMetaDocRef();
+                    if (metaRef) {
+                        await setDoc(metaRef, { activeAccountKey: profileObj.accountKey, updatedAt: Date.now() }, { merge: true });
                     }
-
-                    gameState = loadedState;
                     this.subscribeToActiveAccount(profileObj.accountKey);
-                    updateHeaderStats();
-                    updateAccountHeaderUI();
-                    renderAccountModalContent();
-                    if (activeSession.mode === "map") {
-                        renderLevelCardsGrid();
-                    } else {
-                        showMapScreen();
-                    }
-                    showToast(`Signed in as ${profileObj.displayName}! Progress loaded.`, "ph-cloud-check");
                 } catch (err) {
-                    console.error("Error activating Google account:", err);
+                    console.warn("Cloud Firestore sync notice (UI remains logged in):", err);
                 }
             },
 
             async switchAccount(accountKey, showNotification = true) {
-                const user = auth?.currentUser;
-                if (!user) return;
+                // First check in-memory knownAccounts so switching works even if Firestore is offline
+                const known = authSession.knownAccounts.find(a => a.accountKey === accountKey);
+                if (known) {
+                    authSession.activeAccount = { ...known };
+                    gameState = known.gameState || getDefaultGameState();
+                    closeAccountModal();
+                    updateHeaderStats();
+                    updateAccountHeaderUI();
+                    if (activeSession.mode === "profile") {
+                        showProfileScreen();
+                    } else if (activeSession.mode === "map") {
+                        renderLevelCardsGrid();
+                    } else {
+                        showMapScreen();
+                    }
+                }
+
+                const uid = this.getEffectiveUid();
+                if (!uid) return;
 
                 try {
-                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', accountKey);
+                    const acctDocRef = doc(db, 'artifacts', appId, 'users', uid, 'vocab_accounts', accountKey);
                     const snap = await getDoc(acctDocRef);
 
                     if (snap.exists()) {
@@ -3843,12 +3940,16 @@
                             gameState: parsedState
                         };
                         gameState = parsedState;
-                        await setDoc(this.getSessionMetaDocRef(), { activeAccountKey: accountKey, updatedAt: Date.now() }, { merge: true });
+                        const metaRef = this.getSessionMetaDocRef();
+                        if (metaRef) {
+                            await setDoc(metaRef, { activeAccountKey: accountKey, updatedAt: Date.now() }, { merge: true });
+                        }
                         this.subscribeToActiveAccount(accountKey);
                         updateHeaderStats();
                         updateAccountHeaderUI();
-                        renderAccountModalContent();
-                        if (activeSession.mode === "map") {
+                        if (activeSession.mode === "profile") {
+                            showProfileScreen();
+                        } else if (activeSession.mode === "map") {
                             renderLevelCardsGrid();
                         } else {
                             showMapScreen();
@@ -3858,50 +3959,53 @@
                         }
                     }
                 } catch (err) {
-                    console.error("Failed switching account:", err);
+                    console.warn("Account switch cloud sync notice:", err);
                 }
             },
 
             async signOutToGuest() {
-                const user = auth?.currentUser;
-                if (!user) return;
-
                 try {
-                    const guestRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', 'guest');
-                    const snap = await getDoc(guestRef);
-                    const guestState = (snap.exists() && snap.data().gameState)
-                        ? JSON.parse(snap.data().gameState)
-                        : getDefaultGameState();
+                    if (primaryAuth && primaryAuth.currentUser && !primaryAuth.currentUser.isAnonymous) {
+                        await primaryAuth.signOut();
+                    }
+                    if (auth && auth.currentUser && !auth.currentUser.isAnonymous) {
+                        await auth.signOut();
+                    }
+                } catch (e) {}
 
-                    authSession.activeAccount = {
-                        accountKey: 'guest',
-                        email: '',
-                        displayName: 'Guest Learner',
-                        photoURL: '',
-                        provider: 'guest',
-                        gameState: guestState
-                    };
-                    gameState = guestState;
-                    await setDoc(this.getSessionMetaDocRef(), { activeAccountKey: 'guest', updatedAt: Date.now() }, { merge: true });
-                    this.subscribeToActiveAccount('guest');
-                    updateHeaderStats();
-                    updateAccountHeaderUI();
-                    closeAccountModal();
-                    showMapScreen();
-                    showToast("Logged out to Guest profile.", "ph-sign-out");
-                } catch (err) {
-                    console.error("Error signing out:", err);
-                }
+                authSession.activeAccount = {
+                    accountKey: 'guest',
+                    email: '',
+                    displayName: 'Guest Learner',
+                    photoURL: '',
+                    provider: 'guest',
+                    gameState: getDefaultGameState()
+                };
+                gameState = getDefaultGameState();
+                updateHeaderStats();
+                updateAccountHeaderUI();
+                closeAccountModal();
+                showMapScreen();
+                showToast("Logged out to Guest profile.", "ph-sign-out");
+
+                const uid = this.getEffectiveUid();
+                if (!uid) return;
+                try {
+                    const metaRef = this.getSessionMetaDocRef();
+                    if (metaRef) {
+                        await setDoc(metaRef, { activeAccountKey: 'guest', updatedAt: Date.now() }, { merge: true });
+                    }
+                } catch (err) {}
             },
 
             subscribeToActiveAccount(accountKey) {
-                const user = auth?.currentUser;
-                if (!user) return;
+                const uid = this.getEffectiveUid();
+                if (!uid) return;
                 if (unsubscribeProfileListener) {
                     unsubscribeProfileListener();
                     unsubscribeProfileListener = null;
                 }
-                const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', accountKey);
+                const acctDocRef = doc(db, 'artifacts', appId, 'users', uid, 'vocab_accounts', accountKey);
                 unsubscribeProfileListener = onSnapshot(
                     acctDocRef,
                     (docSnap) => {
@@ -3924,15 +4028,12 @@
                         }
                     },
                     (err) => {
-                        console.error("Realtime account sync error:", err);
+                        console.warn("Realtime account sync notice:", err);
                     }
                 );
             },
 
             async saveCurrentAccountProgress(currentGameState) {
-                const user = auth?.currentUser;
-                if (!user) return;
-
                 const acct = authSession.activeAccount || {
                     accountKey: 'guest',
                     email: '',
@@ -3941,8 +4042,17 @@
                     provider: 'guest'
                 };
 
+                // Always update in-memory knownAccounts first
+                const idx = authSession.knownAccounts.findIndex(a => a.accountKey === acct.accountKey);
+                if (idx >= 0) {
+                    authSession.knownAccounts[idx].gameState = JSON.parse(JSON.stringify(currentGameState));
+                }
+
+                const uid = this.getEffectiveUid();
+                if (!uid) return;
+
                 try {
-                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', acct.accountKey);
+                    const acctDocRef = doc(db, 'artifacts', appId, 'users', uid, 'vocab_accounts', acct.accountKey);
                     await setDoc(acctDocRef, {
                         accountKey: acct.accountKey,
                         email: acct.email || "",
@@ -3952,13 +4062,8 @@
                         gameState: JSON.stringify(currentGameState),
                         updatedAt: Date.now()
                     }, { merge: true });
-
-                    const idx = authSession.knownAccounts.findIndex(a => a.accountKey === acct.accountKey);
-                    if (idx >= 0) {
-                        authSession.knownAccounts[idx].gameState = JSON.parse(JSON.stringify(currentGameState));
-                    }
                 } catch (err) {
-                    console.error("Failed saving progress to cloud:", err);
+                    console.warn("Progress saved locally for session; Firestore sync pending:", err);
                 }
             },
 
