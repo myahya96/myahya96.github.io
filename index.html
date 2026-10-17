@@ -159,7 +159,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow">
-                        K-Vocab <span class="text-white">Pop!</span>
+                        1K <span class="text-white">2KOREAN!</span>
                     </h1>
                     <p class="text-xs text-purple-200 font-medium">1,000 TOPIK Guide Words • 50 Topic & Difficulty Levels</p>
                 </div>
@@ -1821,6 +1821,286 @@
             if (modal) modal.classList.add("hidden");
         }
 
+        function handleProfileHeaderClick() {
+            const acct = authSession.activeAccount;
+            if (acct && acct.provider !== 'guest') {
+                showProfileScreen();
+            } else {
+                openAccountModal();
+            }
+        }
+
+        function getLearnedWordsList() {
+            const learned = [];
+            for (let lvl = 1; lvl <= 50; lvl++) {
+                if (gameState.levelStats && gameState.levelStats[lvl]?.completed) {
+                    const words = getWordsForLevel(lvl);
+                    words.forEach(w => learned.push({ ...w, levelNum: lvl, levelTitle: LEVEL_META[lvl - 1]?.title || `Stage ${lvl}` }));
+                }
+            }
+            return learned;
+        }
+
+        let profileShowWordsExpanded = false;
+        let profileWordsSearchQuery = "";
+
+        function toggleProfileLearnedWords() {
+            playSound('pop');
+            profileShowWordsExpanded = !profileShowWordsExpanded;
+            showProfileScreen();
+        }
+
+        function setProfileWordsSearch(val) {
+            profileWordsSearchQuery = val;
+            renderProfileLearnedWordsDrawer();
+        }
+
+        function renderProfileLearnedWordsDrawer() {
+            const drawerEl = document.getElementById("profileLearnedWordsDrawer");
+            if (!drawerEl) return;
+
+            const learnedWords = getLearnedWordsList();
+            const q = (profileWordsSearchQuery || "").toLowerCase().trim();
+            const filtered = q
+                ? learnedWords.filter(w =>
+                    w.kr.includes(q) ||
+                    w.en.toLowerCase().includes(q) ||
+                    w.fullEn.toLowerCase().includes(q) ||
+                    w.levelTitle.toLowerCase().includes(q)
+                )
+                : learnedWords;
+
+            if (learnedWords.length === 0) {
+                drawerEl.innerHTML = `
+                    <div class="bg-purple-50 rounded-2xl p-6 border-2 border-purple-200 text-center">
+                        <i class="ph-fill ph-books text-4xl text-purple-400 mb-2"></i>
+                        <p class="text-base font-extrabold text-purple-950">You haven't completed a level yet!</p>
+                        <p class="text-xs font-semibold text-purple-700 mt-1">Complete Stage 1 Flashcards to add your first 20 words to your Learned Vocabulary Bank.</p>
+                        <button onclick="startFlashcardGame(1)" class="btn-yellow px-5 py-2 mt-4 text-xs">Play Stage 1 Now</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const cardsHtml = filtered.map((w, i) => `
+                <div class="bg-white rounded-2xl p-3.5 border-2 border-purple-200 hover:border-yellow-400 transition shadow-sm flex flex-col justify-between gap-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-purple-900 text-yellow-300 font-black text-[11px] flex items-center justify-center shrink-0">#${w.id}</span>
+                            <span class="text-xl font-black text-purple-950">${w.kr}</span>
+                            <button type="button" onclick="speakKoreanWithGemini('${w.kr.replace(/'/g, "\\'")}', this)" class="w-6 h-6 rounded-full bg-purple-100 hover:bg-yellow-300 text-purple-900 flex items-center justify-center text-xs transition" title="Listen">
+                                <i class="ph-fill ph-speaker-high"></i>
+                            </button>
+                        </div>
+                        <span class="bg-yellow-300 text-purple-950 font-extrabold text-xs px-2.5 py-0.5 rounded-full border border-yellow-500 text-right">
+                            ${w.en}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-purple-600 font-bold pt-1 border-t border-purple-100">
+                        <span class="truncate">${w.fullEn}</span>
+                        <button type="button" onclick="openReviewScreen(${w.levelNum})" class="text-purple-800 hover:underline shrink-0 ml-2">
+                            Stage ${w.levelNum}
+                        </button>
+                    </div>
+                </div>
+            `).join("");
+
+            drawerEl.innerHTML = `
+                <div class="bg-purple-50 rounded-3xl p-5 border-2 border-purple-300 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h4 class="text-lg font-black text-purple-950 flex items-center gap-2">
+                                <i class="ph-fill ph-check-seal text-yellow-500 text-xl"></i>
+                                <span>Learned Words Collection (${learnedWords.length} Words)</span>
+                            </h4>
+                            <p class="text-xs font-semibold text-purple-700">All words mastered across your completed stages</p>
+                        </div>
+                        <div class="relative min-w-[220px]">
+                            <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-purple-400"></i>
+                            <input 
+                                type="text"
+                                value="${profileWordsSearchQuery.replace(/"/g, '&quot;')}"
+                                oninput="setProfileWordsSearch(this.value)"
+                                placeholder="Filter learned words..."
+                                class="w-full pl-8 pr-3 py-1.5 rounded-full bg-white border-2 border-purple-300 text-xs font-bold text-purple-950 focus:outline-none focus:border-purple-700"
+                            />
+                        </div>
+                    </div>
+                    ${filtered.length > 0 ? `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                            ${cardsHtml}
+                        </div>
+                    ` : `
+                        <p class="text-xs font-bold text-purple-700 text-center py-4">No learned words match "${profileWordsSearchQuery}".</p>
+                    `}
+                </div>
+            `;
+        }
+
+        function showProfileScreen() {
+            playSound('pop');
+            const acct = authSession.activeAccount;
+            if (!acct || acct.provider === 'guest') {
+                openAccountModal();
+                return;
+            }
+
+            activeSession.mode = "profile";
+            const container = document.getElementById("appContainer");
+
+            const learnedWords = getLearnedWordsList();
+            const completedStagesCount = Object.values(gameState.levelStats || {}).filter(s => s && s.completed).length;
+            let totalScore = 0;
+            Object.values(gameState.levelStats || {}).forEach(st => {
+                if (st && st.bestScore) totalScore += st.bestScore;
+            });
+
+            const initials = (acct.displayName || acct.email || "U").trim().charAt(0).toUpperCase();
+            const avatarHtml = acct.photoURL
+                ? `<img src="${acct.photoURL}" alt="Avatar" class="w-16 h-16 rounded-3xl object-cover border-4 border-yellow-400 shadow-lg" onerror="this.style.display='none'" />`
+                : `<div class="w-16 h-16 rounded-3xl bg-yellow-400 text-purple-950 font-black text-3xl flex items-center justify-center border-4 border-white shadow-lg shrink-0">${initials}</div>`;
+
+            // Build Score Per Level rows
+            const levelScoreCardsHtml = LEVEL_META.map(meta => {
+                const lvl = meta.level;
+                const st = gameState.levelStats?.[lvl];
+                const isCompleted = Boolean(st && st.completed);
+                const isUnlocked = lvl <= (gameState.unlockedLevel || 1);
+
+                return `
+                    <div class="rounded-2xl p-4 border-2 transition flex items-center justify-between gap-3 ${isCompleted ? 'bg-white border-yellow-400 shadow-sm' : (isUnlocked ? 'bg-purple-50/90 border-purple-200' : 'bg-purple-100/40 border-purple-200/60 opacity-65')}">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl ${isCompleted ? 'bg-purple-900 text-yellow-300 border-2 border-yellow-400' : 'bg-purple-200 text-purple-800'} font-black text-xs flex flex-col items-center justify-center shrink-0">
+                                <span class="text-[9px] uppercase leading-none">LVL</span>
+                                <span class="text-sm leading-tight">${lvl}</span>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-extrabold text-sm text-purple-950 truncate">${meta.title}</div>
+                                <div class="text-[11px] font-semibold text-purple-600">
+                                    ${isCompleted ? `Accuracy: ${st.accuracy}% • Avg Speed: ${st.avgSpeedSec}s • 20/20 Words` : (isUnlocked ? 'Unlocked • Not completed yet' : 'Locked Stage')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 shrink-0">
+                            ${isCompleted ? `
+                                <div class="text-right">
+                                    <div class="text-sm font-black text-purple-950">${(st.bestScore || 0).toLocaleString()} PTS</div>
+                                    <div class="text-[10px] font-extrabold uppercase text-purple-700">Rank ${st.bestRank}</div>
+                                </div>
+                                <span class="w-9 h-9 rounded-xl bg-yellow-400 text-purple-950 font-black text-sm flex items-center justify-center border-2 border-purple-900 shadow">
+                                    ${st.bestRank}
+                                </span>
+                            ` : `
+                                <span class="text-xs font-extrabold text-purple-400 px-2.5 py-1 rounded-full bg-white border border-purple-200">0 PTS</span>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            container.innerHTML = `
+                <!-- Profile Header Banner -->
+                <div class="bubbly-panel-purple p-6 md:p-7 mb-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            ${avatarHtml}
+                            <div>
+                                <div class="inline-flex items-center gap-1.5 bg-green-400 text-purple-950 text-[11px] font-black px-3 py-0.5 rounded-full mb-1">
+                                    <i class="ph-fill ph-cloud-check"></i> LOGGED IN PROFILE
+                                </div>
+                                <h2 class="text-2xl md:text-3xl font-black text-white leading-tight">${acct.displayName || 'Korean Learner'}</h2>
+                                <p class="text-xs md:text-sm text-purple-200 font-semibold">${acct.email}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <button onclick="showMapScreen()" class="btn-yellow px-5 py-2.5 text-xs sm:text-sm flex items-center gap-1.5">
+                                <i class="ph-bold ph-map-trifold text-base"></i>
+                                <span>Back to 50-Level Map</span>
+                            </button>
+                            <button onclick="window.cloudAuthManager.signOutToGuest()" class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold px-5 py-2.5 rounded-full border-2 border-rose-200 shadow-lg text-xs sm:text-sm flex items-center gap-1.5 transition">
+                                <i class="ph-bold ph-sign-out text-base"></i>
+                                <span>Log Out</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Profile Card -->
+                <div class="bubbly-card p-6 md:p-8 mb-8 space-y-6">
+                    <!-- Top Summary Metrics -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Clickable Words Learned Card -->
+                        <button 
+                            type="button"
+                            onclick="toggleProfileLearnedWords()"
+                            class="text-left bg-gradient-to-br from-yellow-300 via-yellow-400 to-amber-400 hover:brightness-105 text-purple-950 p-5 rounded-3xl border-4 border-purple-900 shadow-lg transition transform hover:-translate-y-0.5 flex items-center justify-between gap-3 group">
+                            <div>
+                                <div class="text-xs font-black uppercase tracking-wider text-purple-900 flex items-center gap-1">
+                                    <i class="ph-fill ph-sparkle"></i> Words Learned (Click to View)
+                                </div>
+                                <div class="text-4xl font-black text-purple-950 my-1">
+                                    ${learnedWords.length} <span class="text-lg font-extrabold text-purple-800">/ 1,000</span>
+                                </div>
+                                <div class="text-xs font-extrabold text-purple-900 underline flex items-center gap-1">
+                                    <span>${profileShowWordsExpanded ? 'Hide learned words list' : 'Click to see all learned words'}</span>
+                                    <i class="ph-bold ${profileShowWordsExpanded ? 'ph-caret-up' : 'ph-caret-down'}"></i>
+                                </div>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-purple-950 text-yellow-300 flex items-center justify-center text-2xl shrink-0 shadow">
+                                <i class="ph-fill ph-books"></i>
+                            </div>
+                        </button>
+
+                        <!-- Total Score Card -->
+                        <div class="bg-purple-50 p-5 rounded-3xl border-2 border-purple-200 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-extrabold uppercase tracking-wider text-purple-600">Total Cumulative Score</div>
+                                <div class="text-3xl font-black text-purple-950 my-1">${totalScore.toLocaleString()} PTS</div>
+                                <div class="text-xs font-semibold text-purple-700">Across all 50 TOPIK stages</div>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-purple-200 text-purple-900 flex items-center justify-center text-2xl shrink-0">
+                                <i class="ph-fill ph-trophy"></i>
+                            </div>
+                        </div>
+
+                        <!-- Stages Completed Card -->
+                        <div class="bg-purple-50 p-5 rounded-3xl border-2 border-purple-200 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-extrabold uppercase tracking-wider text-purple-600">Stages Completed</div>
+                                <div class="text-3xl font-black text-purple-950 my-1">${completedStagesCount} <span class="text-lg font-bold text-purple-600">/ 50</span></div>
+                                <div class="text-xs font-semibold text-purple-700">Highest Unlocked: Stage ${Math.min(50, gameState.unlockedLevel || 1)}</div>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-purple-200 text-purple-900 flex items-center justify-center text-2xl shrink-0">
+                                <i class="ph-fill ph-flag-banner"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expandable Learned Words Drawer -->
+                    <div id="profileLearnedWordsDrawer" class="${profileShowWordsExpanded ? 'block' : 'hidden'}"></div>
+
+                    <!-- Score Per Level Breakdown -->
+                    <div class="pt-2">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h3 class="text-xl font-black text-purple-950">Score Per Level</h3>
+                                <p class="text-xs font-semibold text-purple-600">Your best score, accuracy, and speed rank for each of the 50 levels</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[520px] overflow-y-auto pr-1">
+                            ${levelScoreCardsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (profileShowWordsExpanded) {
+                renderProfileLearnedWordsDrawer();
+            }
+        }
+
         function updateAccountHeaderUI() {
             const slot = document.getElementById("accountHeaderSlot");
             if (!slot) return;
@@ -1833,12 +2113,12 @@
                     : `<span class="w-6 h-6 rounded-full bg-purple-800 text-yellow-300 font-black text-xs flex items-center justify-center">${initials}</span>`;
 
                 slot.innerHTML = `
-                    <button onclick="openAccountModal()" class="bg-white hover:bg-yellow-100 text-purple-950 font-extrabold pl-2 pr-3.5 py-1 rounded-full border-2 border-yellow-400 shadow-md text-xs sm:text-sm flex items-center gap-2 transition" title="Manage Google Account & Saved Progress">
+                    <button onclick="handleProfileHeaderClick()" class="bg-white hover:bg-yellow-100 text-purple-950 font-extrabold pl-2 pr-3.5 py-1 rounded-full border-2 border-yellow-400 shadow-md text-xs sm:text-sm flex items-center gap-2 transition" title="View Your Profile, Learned Words & Scores">
                         ${avatarHtml}
                         <div class="text-left leading-tight">
                             <div class="text-xs font-black text-purple-950 max-w-[120px] truncate">${acct.displayName || acct.email}</div>
-                            <div class="text-[10px] font-bold text-green-700 flex items-center gap-0.5">
-                                <i class="ph-fill ph-cloud-check"></i> Saved
+                            <div class="text-[10px] font-bold text-purple-700 flex items-center gap-0.5">
+                                <i class="ph-fill ph-user-circle"></i> View Profile
                             </div>
                         </div>
                     </button>
@@ -1879,6 +2159,13 @@
 
             const acct = authSession.activeAccount;
             const isSignedIn = acct && acct.provider !== 'guest';
+
+            // Once logged in, do not show the create account / log-in forms; redirect straight to the Profile page
+            if (isSignedIn) {
+                closeAccountModal();
+                showProfileScreen();
+                return;
+            }
 
             let totalScore = 0;
             Object.values(gameState.levelStats || {}).forEach(st => {
@@ -2388,7 +2675,7 @@
                                 <i class="ph-fill ph-sparkle"></i> 1,000 TOPIK GUIDE WORDS • 50 STEP-BY-STEP LEVELS
                             </div>
                             <h2 class="text-2xl md:text-4xl font-extrabold text-white leading-tight">
-                                Conquer all <span class="text-yellow-300 underline decoration-wavy decoration-yellow-400">1,000 Korean Words</span> Step-by-Step!
+                                Conquer <span class="text-yellow-300">1,000 of the most common Korean Words</span> Step-by-Step!
                             </h2>
                             <p class="text-purple-100 text-xs md:text-sm mt-2">
                                 Ordered in progressive difficulty waves: start with all <strong>Tier 1 Foundation</strong> topics (Stage 1: <strong>Core Expressions & Logic 1</strong>, Stage 2: <strong>Core Actions & Movement 1</strong>, etc.), then advance through <strong>Tier 2</strong>, <strong>Tier 3</strong>, and up to the highest difficulty tiers at Stage 50!
@@ -3078,7 +3365,7 @@
                     </div>
                     ` : `
                     <div class="bg-yellow-100 border-2 border-yellow-400 rounded-3xl p-4 mb-6 text-center">
-                        <div class="text-base font-black text-purple-950">🎉 Congratulations! You have conquered all 50 Levels (1,000 Words) of K-Vocab Pop!</div>
+                        <div class="text-base font-black text-purple-950">🎉 Congratulations! You have conquered all 50 Levels (1,000 Words) of 1K20KOREAN!</div>
                     </div>
                     `}
 
@@ -3120,7 +3407,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics, isSupported as isAnalyticsSupported } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import {
             getAuth,
             signInAnonymously,
@@ -3155,7 +3441,6 @@
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : USER_FIREBASE_CONFIG.projectId;
         let app = null;
-        let analytics = null;
         let db = null;
         let auth = null;
         let unsubscribeProfileListener = null;
@@ -3199,13 +3484,6 @@
                     app = initializeApp(firebaseConfig);
                     db = getFirestore(app);
                     auth = getAuth(app);
-
-                    // Initialize Firebase Analytics when supported by the browser environment
-                    isAnalyticsSupported().then((supported) => {
-                        if (supported) {
-                            analytics = getAnalytics(app);
-                        }
-                    }).catch(() => {});
 
                     // RULE 3: Authenticate FIRST before any Firestore queries
                     if (this.usingEnvConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -3608,9 +3886,9 @@
                     this.subscribeToActiveAccount('guest');
                     updateHeaderStats();
                     updateAccountHeaderUI();
-                    renderAccountModalContent();
+                    closeAccountModal();
                     showMapScreen();
-                    showToast("Signed out to Guest profile.", "ph-sign-out");
+                    showToast("Logged out to Guest profile.", "ph-sign-out");
                 } catch (err) {
                     console.error("Error signing out:", err);
                 }
