@@ -179,6 +179,18 @@
                     <span id="headerUnlockedCount" class="font-extrabold text-white text-lg">1 / 50</span>
                 </div>
 
+                <div id="accountHeaderSlot" class="flex items-center">
+                    <button onclick="openAccountModal()" class="bg-white hover:bg-yellow-100 text-purple-950 font-extrabold px-3.5 py-1.5 rounded-full border-2 border-yellow-400 shadow-md text-xs sm:text-sm flex items-center gap-2 transition">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+                            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.5H12v4.8h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                            <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/>
+                            <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 20.9 7.4 24 12 24z"/>
+                        </svg>
+                        <span id="accountBtnLabel">Sign in with Google</span>
+                    </button>
+                </div>
+
                 <button onclick="openAiTutorModal()" class="btn-yellow px-3.5 py-1.5 text-xs sm:text-sm flex items-center gap-1.5 shadow-md" title="Ask Gemini AI Korean Tutor">
                     <i class="ph-fill ph-sparkle text-purple-900 text-base"></i>
                     <span>✨ AI Tutor</span>
@@ -194,6 +206,29 @@
         <main id="appContainer" class="flex-1 flex flex-col">
             <!-- Screens injected via JS -->
         </main>
+
+        <div id="accountModalOverlay" class="fixed inset-0 z-50 hidden bg-purple-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bubbly-card max-w-md w-full p-6 md:p-7 flex flex-col animate-pop relative">
+                <div class="flex items-center justify-between border-b-2 border-purple-100 pb-3 mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 rounded-2xl bg-white text-purple-950 flex items-center justify-center text-xl shadow border-2 border-purple-300">
+                            <i class="ph-fill ph-user-circle text-2xl text-purple-800"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-purple-950">Account & Cloud Save</h3>
+                            <p class="text-xs font-semibold text-purple-600">Sign in with Email/Password or Google • Progress saved per account</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAccountModal()" class="w-9 h-9 rounded-full bg-purple-100 hover:bg-rose-100 text-purple-900 hover:text-rose-700 flex items-center justify-center font-bold transition">
+                        <i class="ph-bold ph-x text-lg"></i>
+                    </button>
+                </div>
+
+                <div id="accountModalBody" class="space-y-4 text-sm text-purple-950">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
 
         <!-- Gemini AI Interactive Modal (Story Generator, Sentence Checker & Free Q&A Tutor) -->
         <div id="aiModalOverlay" class="fixed inset-0 z-50 hidden bg-purple-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1740,27 +1775,289 @@
             awaitingNext: false
         };
 
-        // Load saved progress from localStorage if available
+        function getDefaultGameState() {
+            return {
+                unlockedLevel: 1,
+                practicedLevels: [1],
+                levelStats: {}
+            };
+        }
+
+        // Account & Cloud Auth State
+        let authSession = {
+            firebaseUser: null,        // Authenticated cloud user
+            activeAccount: null,       // { accountKey, email, displayName, photoURL, provider: 'google-oauth' | 'google-cloud' | 'guest' }
+            knownAccounts: [],         // List of Google accounts signed in on this device/cloud profile
+            cloudReady: false,
+            syncing: false
+        };
+
+        // Load progress for the active account from Cloud (via window.cloudAuthManager)
         function loadProgress() {
-            try {
-                const saved = localStorage.getItem("kVocabPopState_1000_v2");
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    gameState = { ...gameState, ...parsed };
-                }
-            } catch (e) {
-                console.warn("Could not load state:", e);
+            if (window.cloudAuthManager && window.cloudAuthManager.isReady) {
+                window.cloudAuthManager.loadCurrentAccountProgress();
+            } else {
+                updateHeaderStats();
             }
-            updateHeaderStats();
         }
 
         function saveProgress() {
-            try {
-                localStorage.setItem("kVocabPopState_1000_v2", JSON.stringify(gameState));
-            } catch (e) {
-                console.warn("Could not save state:", e);
-            }
             updateHeaderStats();
+            if (window.cloudAuthManager && window.cloudAuthManager.isReady) {
+                window.cloudAuthManager.saveCurrentAccountProgress(gameState);
+            }
+        }
+
+        function openAccountModal() {
+            playSound('pop');
+            const modal = document.getElementById("accountModalOverlay");
+            if (!modal) return;
+            renderAccountModalContent();
+            modal.classList.remove("hidden");
+        }
+
+        function closeAccountModal() {
+            const modal = document.getElementById("accountModalOverlay");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        function updateAccountHeaderUI() {
+            const slot = document.getElementById("accountHeaderSlot");
+            if (!slot) return;
+            const acct = authSession.activeAccount;
+
+            if (acct && acct.provider !== 'guest') {
+                const initials = (acct.displayName || acct.email || "G").trim().charAt(0).toUpperCase();
+                const avatarHtml = acct.photoURL
+                    ? `<img src="${acct.photoURL}" alt="Avatar" class="w-6 h-6 rounded-full object-cover border border-purple-700" onerror="this.style.display='none'" />`
+                    : `<span class="w-6 h-6 rounded-full bg-purple-800 text-yellow-300 font-black text-xs flex items-center justify-center">${initials}</span>`;
+
+                slot.innerHTML = `
+                    <button onclick="openAccountModal()" class="bg-white hover:bg-yellow-100 text-purple-950 font-extrabold pl-2 pr-3.5 py-1 rounded-full border-2 border-yellow-400 shadow-md text-xs sm:text-sm flex items-center gap-2 transition" title="Manage Google Account & Saved Progress">
+                        ${avatarHtml}
+                        <div class="text-left leading-tight">
+                            <div class="text-xs font-black text-purple-950 max-w-[120px] truncate">${acct.displayName || acct.email}</div>
+                            <div class="text-[10px] font-bold text-green-700 flex items-center gap-0.5">
+                                <i class="ph-fill ph-cloud-check"></i> Saved
+                            </div>
+                        </div>
+                    </button>
+                `;
+            } else {
+                slot.innerHTML = `
+                    <button onclick="openAccountModal()" class="bg-white hover:bg-yellow-100 text-purple-950 font-extrabold px-3.5 py-1.5 rounded-full border-2 border-yellow-400 shadow-md text-xs sm:text-sm flex items-center gap-2 transition">
+                        <i class="ph-bold ph-user-circle text-lg text-purple-800"></i>
+                        <span>Sign In / Register</span>
+                    </button>
+                `;
+            }
+        }
+
+        let authFormMode = "login"; // 'login' | 'register'
+
+        function setAuthFormMode(mode) {
+            authFormMode = mode;
+            renderAccountModalContent();
+        }
+
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById("authPasswordInput");
+            const eyeIcon = document.getElementById("pwdEyeIcon");
+            if (!pwdInput) return;
+            if (pwdInput.type === "password") {
+                pwdInput.type = "text";
+                if (eyeIcon) eyeIcon.className = "ph-bold ph-eye-slash";
+            } else {
+                pwdInput.type = "password";
+                if (eyeIcon) eyeIcon.className = "ph-bold ph-eye";
+            }
+        }
+
+        function renderAccountModalContent() {
+            const bodyEl = document.getElementById("accountModalBody");
+            if (!bodyEl) return;
+
+            const acct = authSession.activeAccount;
+            const isSignedIn = acct && acct.provider !== 'guest';
+
+            let totalScore = 0;
+            Object.values(gameState.levelStats || {}).forEach(st => {
+                if (st && st.bestScore) totalScore += st.bestScore;
+            });
+            const completedCount = Object.values(gameState.levelStats || {}).filter(s => s && s.completed).length;
+
+            const savedAccountsHtml = (authSession.knownAccounts || []).map(item => {
+                const isCurrent = acct && acct.accountKey === item.accountKey;
+                const itemScore = Object.values(item.gameState?.levelStats || {}).reduce((acc, s) => acc + (s?.bestScore || 0), 0);
+                const itemUnlocked = item.gameState?.unlockedLevel || 1;
+                const isPwdAccount = item.provider === "email-password" || item.hasPassword;
+                return `
+                    <div class="flex items-center justify-between gap-2 p-2.5 rounded-2xl border-2 ${isCurrent ? 'bg-yellow-100 border-yellow-500' : 'bg-white border-purple-200'}">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-full bg-purple-800 text-yellow-300 font-black text-xs flex items-center justify-center shrink-0">
+                                ${(item.displayName || item.email || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-extrabold text-xs text-purple-950 truncate flex items-center gap-1">
+                                    <span>${item.displayName}</span>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-bold">${isPwdAccount ? 'Email/Pwd' : 'Google'}</span>
+                                </div>
+                                <div class="text-[11px] text-purple-600 font-semibold truncate">${item.email} • Stage ${itemUnlocked}/50 (${itemScore.toLocaleString()} pts)</div>
+                            </div>
+                        </div>
+                        ${isCurrent ? `
+                            <span class="text-[10px] font-black uppercase bg-green-500 text-white px-2.5 py-1 rounded-full shrink-0">Active</span>
+                        ` : `
+                            <button type="button" onclick="window.cloudAuthManager.promptSwitchAccount('${item.accountKey}', '${item.email.replace(/'/g, "\\'")}', ${Boolean(isPwdAccount)})" class="btn-purple px-3 py-1 text-xs shrink-0">
+                                Switch
+                            </button>
+                        `}
+                    </div>
+                `;
+            }).join("");
+
+            const isRegister = authFormMode === "register";
+
+            bodyEl.innerHTML = `
+                <!-- Current Account Status Card -->
+                <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-12 h-12 rounded-2xl bg-purple-900 text-yellow-300 font-black text-xl flex items-center justify-center border-2 border-yellow-400 shrink-0">
+                                ${isSignedIn ? (acct.displayName || acct.email || 'U').charAt(0).toUpperCase() : '<i class="ph-fill ph-user"></i>'}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs font-extrabold uppercase tracking-wider text-purple-600">
+                                    ${isSignedIn ? (acct.provider === 'email-password' ? 'Signed in with Email' : 'Signed in with Google') : 'Playing as Guest'}
+                                </div>
+                                <div class="text-base font-black text-purple-950 truncate">
+                                    ${isSignedIn ? acct.displayName : 'Guest Learner'}
+                                </div>
+                                <div class="text-xs font-semibold text-purple-700 truncate">
+                                    ${isSignedIn ? acct.email : 'Sign in below to save progress to your account'}
+                                </div>
+                            </div>
+                        </div>
+                        ${isSignedIn ? `
+                            <button type="button" onclick="window.cloudAuthManager.signOutToGuest()" class="px-3 py-1.5 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-800 font-extrabold text-xs border border-rose-300 transition shrink-0">
+                                Sign Out
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-purple-200 text-center">
+                        <div class="bg-white rounded-xl p-2 border border-purple-100">
+                            <div class="text-[10px] font-bold text-purple-500 uppercase">Unlocked</div>
+                            <div class="text-sm font-black text-purple-950">${Math.min(50, gameState.unlockedLevel)} / 50</div>
+                        </div>
+                        <div class="bg-white rounded-xl p-2 border border-purple-100">
+                            <div class="text-[10px] font-bold text-purple-500 uppercase">Completed</div>
+                            <div class="text-sm font-black text-purple-950">${completedCount} Stages</div>
+                        </div>
+                        <div class="bg-white rounded-xl p-2 border border-purple-100">
+                            <div class="text-[10px] font-bold text-purple-500 uppercase">Total Score</div>
+                            <div class="text-sm font-black text-purple-950">${totalScore.toLocaleString()}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email & Password Authentication Form -->
+                <div class="bg-purple-50/90 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="text-xs font-extrabold text-purple-900 flex items-center gap-1.5">
+                            <i class="ph-fill ph-envelope-simple-open text-purple-700 text-base"></i>
+                            <span>${isRegister ? 'Create an Email Account' : 'Sign In with Email & Password'}</span>
+                        </div>
+                        <div class="inline-flex rounded-full bg-purple-200/80 p-0.5 border border-purple-300 text-[11px] font-extrabold">
+                            <button type="button" onclick="setAuthFormMode('login')" class="px-2.5 py-1 rounded-full transition ${!isRegister ? 'bg-purple-900 text-yellow-300 shadow' : 'text-purple-800 hover:text-purple-950'}">
+                                Sign In
+                            </button>
+                            <button type="button" onclick="setAuthFormMode('register')" class="px-2.5 py-1 rounded-full transition ${isRegister ? 'bg-purple-900 text-yellow-300 shadow' : 'text-purple-800 hover:text-purple-950'}">
+                                Create Account
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="emailPasswordAuthForm" onsubmit="window.cloudAuthManager.handleEmailPasswordAuth(event, '${authFormMode}')" class="space-y-2.5">
+                        ${isRegister ? `
+                        <div>
+                            <input 
+                                id="authDisplayNameInput"
+                                type="text"
+                                required
+                                placeholder="Display Name (e.g. Minji Kim)"
+                                class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
+                            />
+                        </div>
+                        ` : ''}
+                        <div>
+                            <input 
+                                id="authEmailInput"
+                                type="email"
+                                required
+                                autocomplete="email"
+                                placeholder="Email address (e.g. learner@example.com)"
+                                class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
+                            />
+                        </div>
+                        <div class="relative">
+                            <input 
+                                id="authPasswordInput"
+                                type="password"
+                                required
+                                minlength="6"
+                                autocomplete="${isRegister ? 'new-password' : 'current-password'}"
+                                placeholder="${isRegister ? 'Create a password (min. 6 characters)' : 'Enter your password'}"
+                                class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
+                            />
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-500 hover:text-purple-900" title="Show/Hide Password">
+                                <i id="pwdEyeIcon" class="ph-bold ph-eye"></i>
+                            </button>
+                        </div>
+
+                        <div id="authErrorBanner" class="hidden rounded-xl bg-rose-100 border border-rose-400 text-rose-800 px-3 py-2 text-xs font-bold"></div>
+
+                        <button type="submit" id="emailAuthSubmitBtn" class="btn-yellow w-full py-2.5 text-xs flex items-center justify-center gap-1.5">
+                            <i class="ph-bold ${isRegister ? 'ph-user-plus' : 'ph-sign-in'}"></i>
+                            <span>${isRegister ? 'Create Account & Save Progress' : 'Sign In & Load Progress'}</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Divider -->
+                <div class="flex items-center gap-3 text-[11px] font-bold text-purple-400 uppercase tracking-wider">
+                    <div class="flex-1 h-px bg-purple-200"></div>
+                    <span>OR</span>
+                    <div class="flex-1 h-px bg-purple-200"></div>
+                </div>
+
+                <!-- Google OAuth Sign-In Button -->
+                <div>
+                    <button type="button" onclick="window.cloudAuthManager.triggerGoogleOAuthPopup()" class="w-full py-2.5 px-4 rounded-2xl bg-white hover:bg-yellow-50 text-purple-950 font-extrabold border-2 border-purple-300 hover:border-purple-700 shadow flex items-center justify-center gap-2.5 transition text-xs">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
+                            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.5H12v4.8h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                            <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z"/>
+                            <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 20.9 7.4 24 12 24z"/>
+                        </svg>
+                        <span>Continue with Google OAuth</span>
+                    </button>
+                </div>
+
+                ${savedAccountsHtml ? `
+                <div class="space-y-2 pt-1">
+                    <div class="text-xs font-extrabold uppercase tracking-wider text-purple-600">Saved Accounts on This Device:</div>
+                    <div class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                        ${savedAccountsHtml}
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-2.5 text-[11px] font-semibold text-purple-900 flex items-center justify-between gap-2">
+                    <span><i class="ph-fill ph-cloud-arrow-up text-yellow-600 mr-1"></i>Each account keeps its own unlocked stages, scores, and ranks.</span>
+                    <span class="text-[10px] font-mono text-purple-500 shrink-0" id="cloudUidBadge">${authSession.firebaseUser ? 'Cloud Ready' : 'Connecting...'}</span>
+                </div>
+            `;
         }
 
         const audioCtx = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)
@@ -2819,6 +3116,581 @@
             loadProgress();
             showMapScreen();
         };
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics, isSupported as isAnalyticsSupported } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import {
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            GoogleAuthProvider,
+            signInWithPopup,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            updateProfile
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            collection,
+            getDocs,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration (k2korea-686de)
+        const USER_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAlPZD0jW8zlcJfZUPuyoF0wty_wPxvqxc",
+            authDomain: "k2korea-686de.firebaseapp.com",
+            projectId: "k2korea-686de",
+            storageBucket: "k2korea-686de.firebasestorage.app",
+            messagingSenderId: "631286380894",
+            appId: "1:631286380894:web:c2e66b2a55ceca610e37cf",
+            measurementId: "G-FX6HBKN16F"
+        };
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : USER_FIREBASE_CONFIG.projectId;
+        let app = null;
+        let analytics = null;
+        let db = null;
+        let auth = null;
+        let unsubscribeProfileListener = null;
+
+        function sanitizeAccountKey(emailOrId) {
+            return String(emailOrId || "guest")
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9_-]/g, "_");
+        }
+
+        async function hashPasswordSHA256(password, emailSalt) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(`${emailSalt.toLowerCase().trim()}::${password}`);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function showAuthModalError(msg) {
+            const errEl = document.getElementById("authErrorBanner");
+            if (errEl) {
+                errEl.textContent = msg;
+                errEl.classList.remove("hidden");
+            } else {
+                showToast(msg, "ph-warning-circle");
+            }
+        }
+
+        const cloudAuthManager = {
+            isReady: false,
+            usingEnvConfig: false,
+
+            async init() {
+                try {
+                    this.usingEnvConfig = (typeof __firebase_config !== 'undefined' && Boolean(__firebase_config));
+                    const firebaseConfig = this.usingEnvConfig
+                        ? JSON.parse(__firebase_config)
+                        : USER_FIREBASE_CONFIG;
+
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    // Initialize Firebase Analytics when supported by the browser environment
+                    isAnalyticsSupported().then((supported) => {
+                        if (supported) {
+                            analytics = getAnalytics(app);
+                        }
+                    }).catch(() => {});
+
+                    // RULE 3: Authenticate FIRST before any Firestore queries
+                    if (this.usingEnvConfig && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else if (!auth.currentUser) {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (!user) return;
+                        authSession.firebaseUser = user;
+                        authSession.cloudReady = true;
+                        this.isReady = true;
+                        const badgeEl = document.getElementById("cloudUidBadge");
+                        if (badgeEl) {
+                            badgeEl.textContent = `Connected (${USER_FIREBASE_CONFIG.projectId})`;
+                        }
+
+                        // If the user authenticated with real Firebase Email/Password or Google OAuth
+                        if (user.email || (user.providerData && user.providerData.length > 0)) {
+                            const primaryProvider = user.providerData[0]?.providerId || "password";
+                            const email = user.email || user.providerData[0]?.email || `${user.uid}@user.k2korea`;
+                            const displayName = user.displayName || user.providerData[0]?.displayName || email.split("@")[0];
+                            const photoURL = user.photoURL || user.providerData[0]?.photoURL || "";
+                            const isEmailPwd = primaryProvider === "password";
+                            await this.activateGoogleAccount({
+                                accountKey: `${isEmailPwd ? 'email' : 'google'}_${sanitizeAccountKey(email)}`,
+                                email,
+                                displayName,
+                                photoURL,
+                                provider: isEmailPwd ? "email-password" : "google-oauth",
+                                hasPassword: isEmailPwd
+                            });
+                        } else {
+                            await this.loadAllAccountsAndRestoreActive();
+                        }
+                    });
+                } catch (err) {
+                    console.error("Cloud auth initialization error:", err);
+                }
+            },
+
+            getAccountsCollectionRef() {
+                const user = auth?.currentUser;
+                if (!user) return null;
+                // RULE 1: Strict private user path
+                return collection(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts');
+            },
+
+            getSessionMetaDocRef() {
+                const user = auth?.currentUser;
+                if (!user) return null;
+                return doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_meta', 'session');
+            },
+
+            async loadAllAccountsAndRestoreActive() {
+                const user = auth?.currentUser;
+                if (!user) return;
+
+                try {
+                    const colRef = this.getAccountsCollectionRef();
+                    const snap = await getDocs(colRef);
+                    const accounts = [];
+                    snap.forEach(d => {
+                        const data = d.data();
+                        if (data && data.accountKey) {
+                            accounts.push({
+                                accountKey: data.accountKey,
+                                email: data.email || "",
+                                displayName: data.displayName || "Learner",
+                                photoURL: data.photoURL || "",
+                                provider: data.provider || "google-cloud",
+                                hasPassword: Boolean(data.passwordHash),
+                                gameState: data.gameState ? JSON.parse(data.gameState) : getDefaultGameState(),
+                                updatedAt: data.updatedAt || 0
+                            });
+                        }
+                    });
+
+                    authSession.knownAccounts = accounts.filter(a => a.provider !== 'guest');
+
+                    // Check last active account from session meta
+                    const metaRef = this.getSessionMetaDocRef();
+                    const metaSnap = await getDoc(metaRef);
+                    let activeKey = metaSnap.exists() ? metaSnap.data().activeAccountKey : null;
+
+                    let targetAccount = accounts.find(a => a.accountKey === activeKey);
+                    if (!targetAccount && authSession.knownAccounts.length > 0) {
+                        targetAccount = authSession.knownAccounts[0];
+                    }
+
+                    if (targetAccount) {
+                        await this.switchAccount(targetAccount.accountKey, false);
+                    } else {
+                        // Initialize guest profile
+                        const guestAcct = accounts.find(a => a.accountKey === 'guest') || {
+                            accountKey: 'guest',
+                            email: '',
+                            displayName: 'Guest Learner',
+                            photoURL: '',
+                            provider: 'guest',
+                            gameState: getDefaultGameState()
+                        };
+                        authSession.activeAccount = guestAcct;
+                        gameState = guestAcct.gameState || getDefaultGameState();
+                        updateHeaderStats();
+                        updateAccountHeaderUI();
+                        if (activeSession.mode === 'map') renderLevelCardsGrid();
+                    }
+                } catch (err) {
+                    console.error("Failed loading saved accounts:", err);
+                }
+            },
+
+            async triggerGoogleOAuthPopup() {
+                if (!auth) {
+                    showToast("Cloud service is still connecting...", "ph-cloud-warning");
+                    return;
+                }
+                try {
+                    const provider = new GoogleAuthProvider();
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                    const result = await signInWithPopup(auth, provider);
+                    if (result && result.user) {
+                        const u = result.user;
+                        const email = u.email || `${u.uid}@gmail.com`;
+                        const displayName = u.displayName || email.split("@")[0];
+                        await this.activateGoogleAccount({
+                            accountKey: `google_${sanitizeAccountKey(email)}`,
+                            email,
+                            displayName,
+                            photoURL: u.photoURL || "",
+                            provider: "google-oauth"
+                        });
+                        closeAccountModal();
+                    }
+                } catch (popupErr) {
+                    const emailInp = document.getElementById("authEmailInput");
+                    if (emailInp) {
+                        emailInp.focus();
+                        showToast("Popup blocked by sandbox — sign in or create an account with your Email & Password above!", "ph-envelope-simple");
+                    }
+                }
+            },
+
+            async handleEmailPasswordAuth(event, mode) {
+                event.preventDefault();
+                const nameInp = document.getElementById("authDisplayNameInput");
+                const emailInp = document.getElementById("authEmailInput");
+                const pwdInp = document.getElementById("authPasswordInput");
+                const submitBtn = document.getElementById("emailAuthSubmitBtn");
+                const errEl = document.getElementById("authErrorBanner");
+
+                if (errEl) errEl.classList.add("hidden");
+                if (!emailInp || !pwdInp) return;
+
+                const email = emailInp.value.trim().toLowerCase();
+                const password = pwdInp.value;
+                const displayName = (nameInp && nameInp.value.trim()) ? nameInp.value.trim() : email.split("@")[0];
+
+                if (!email || password.length < 6) {
+                    showAuthModalError("Please enter a valid email and a password of at least 6 characters.");
+                    return;
+                }
+
+                if (submitBtn) submitBtn.disabled = true;
+
+                try {
+                    // 1. If running directly against the user's Firebase project outside the sandbox token, try native Firebase Email/Password Auth first
+                    if (!this.usingEnvConfig && auth) {
+                        try {
+                            if (mode === "register") {
+                                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                                if (cred.user && displayName) {
+                                    await updateProfile(cred.user, { displayName });
+                                }
+                                closeAccountModal();
+                                return;
+                            } else {
+                                await signInWithEmailAndPassword(auth, email, password);
+                                closeAccountModal();
+                                return;
+                            }
+                        } catch (fbAuthErr) {
+                            // If native Firebase Email/Password throws a credential error, surface it clearly
+                            if (fbAuthErr.code === "auth/wrong-password" || fbAuthErr.code === "auth/invalid-credential") {
+                                showAuthModalError("Incorrect email or password. Please try again.");
+                                if (submitBtn) submitBtn.disabled = false;
+                                return;
+                            } else if (fbAuthErr.code === "auth/email-already-in-use") {
+                                showAuthModalError("An account with this email already exists. Switch to 'Sign In'!");
+                                if (submitBtn) submitBtn.disabled = false;
+                                return;
+                            } else if (fbAuthErr.code === "auth/user-not-found") {
+                                showAuthModalError("No account found with this email. Switch to 'Create Account' first!");
+                                if (submitBtn) submitBtn.disabled = false;
+                                return;
+                            }
+                            // If auth/operation-not-allowed (provider not toggled yet in console), fall through to Cloud Firestore encrypted password verification
+                        }
+                    }
+
+                    // 2. Cloud Firestore Per-Account Email + Hashed Password Authentication (works in all environments)
+                    const user = auth?.currentUser;
+                    if (!user) {
+                        showAuthModalError("Cloud connection is still initializing. Please try again in a moment.");
+                        if (submitBtn) submitBtn.disabled = false;
+                        return;
+                    }
+
+                    const accountKey = `email_${sanitizeAccountKey(email)}`;
+                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', accountKey);
+                    const snap = await getDoc(acctDocRef);
+                    const passwordHash = await hashPasswordSHA256(password, email);
+
+                    if (mode === "register") {
+                        if (snap.exists() && snap.data().passwordHash) {
+                            showAuthModalError("An account with this email already exists. Click 'Sign In' above to log in!");
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+                        await this.activateGoogleAccount({
+                            accountKey,
+                            email,
+                            displayName,
+                            photoURL: "",
+                            provider: "email-password",
+                            passwordHash,
+                            hasPassword: true
+                        });
+                        closeAccountModal();
+                    } else {
+                        // Login mode
+                        if (!snap.exists()) {
+                            showAuthModalError("No account found for this email. Click 'Create Account' to register!");
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+                        const data = snap.data();
+                        if (data.passwordHash && data.passwordHash !== passwordHash) {
+                            showAuthModalError("Incorrect password for this email account. Please try again.");
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+                        await this.activateGoogleAccount({
+                            accountKey,
+                            email: data.email || email,
+                            displayName: data.displayName || displayName,
+                            photoURL: data.photoURL || "",
+                            provider: "email-password",
+                            passwordHash: data.passwordHash || passwordHash,
+                            hasPassword: true
+                        });
+                        closeAccountModal();
+                    }
+                } catch (err) {
+                    console.error("Email/Password auth error:", err);
+                    showAuthModalError("Could not complete sign in. Please check your details and try again.");
+                } finally {
+                    if (submitBtn) submitBtn.disabled = false;
+                }
+            },
+
+            promptSwitchAccount(accountKey, email, requiresPassword) {
+                if (requiresPassword) {
+                    authFormMode = "login";
+                    renderAccountModalContent();
+                    const emailInp = document.getElementById("authEmailInput");
+                    const pwdInp = document.getElementById("authPasswordInput");
+                    if (emailInp) emailInp.value = email;
+                    if (pwdInp) pwdInp.focus();
+                    showAuthModalError(`Enter password for ${email} to switch to this account.`);
+                } else {
+                    this.switchAccount(accountKey);
+                }
+            },
+
+            async activateGoogleAccount(profileObj) {
+                const user = auth?.currentUser;
+                if (!user) return;
+
+                try {
+                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', profileObj.accountKey);
+                    const snap = await getDoc(acctDocRef);
+
+                    let loadedState = getDefaultGameState();
+                    if (snap.exists() && snap.data().gameState) {
+                        loadedState = JSON.parse(snap.data().gameState);
+                    } else if (authSession.activeAccount?.provider === 'guest' && Object.keys(gameState.levelStats || {}).length > 0 && authSession.knownAccounts.length === 0) {
+                        // If transitioning from guest on first-ever sign-in, preserve their current guest progress
+                        loadedState = JSON.parse(JSON.stringify(gameState));
+                    }
+
+                    const fullRecord = {
+                        accountKey: profileObj.accountKey,
+                        email: profileObj.email,
+                        displayName: profileObj.displayName,
+                        photoURL: profileObj.photoURL || "",
+                        provider: profileObj.provider || "email-password",
+                        gameState: JSON.stringify(loadedState),
+                        updatedAt: Date.now()
+                    };
+                    if (profileObj.passwordHash) {
+                        fullRecord.passwordHash = profileObj.passwordHash;
+                    }
+
+                    await setDoc(acctDocRef, fullRecord, { merge: true });
+                    await setDoc(this.getSessionMetaDocRef(), { activeAccountKey: profileObj.accountKey, updatedAt: Date.now() }, { merge: true });
+
+                    authSession.activeAccount = {
+                        ...profileObj,
+                        hasPassword: Boolean(profileObj.passwordHash || profileObj.hasPassword || snap.data()?.passwordHash),
+                        gameState: loadedState
+                    };
+
+                    // Update known accounts list
+                    const existingIdx = authSession.knownAccounts.findIndex(a => a.accountKey === profileObj.accountKey);
+                    if (existingIdx >= 0) {
+                        authSession.knownAccounts[existingIdx] = authSession.activeAccount;
+                    } else if (profileObj.provider !== 'guest') {
+                        authSession.knownAccounts.push(authSession.activeAccount);
+                    }
+
+                    gameState = loadedState;
+                    this.subscribeToActiveAccount(profileObj.accountKey);
+                    updateHeaderStats();
+                    updateAccountHeaderUI();
+                    renderAccountModalContent();
+                    if (activeSession.mode === "map") {
+                        renderLevelCardsGrid();
+                    } else {
+                        showMapScreen();
+                    }
+                    showToast(`Signed in as ${profileObj.displayName}! Progress loaded.`, "ph-cloud-check");
+                } catch (err) {
+                    console.error("Error activating Google account:", err);
+                }
+            },
+
+            async switchAccount(accountKey, showNotification = true) {
+                const user = auth?.currentUser;
+                if (!user) return;
+
+                try {
+                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', accountKey);
+                    const snap = await getDoc(acctDocRef);
+
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        const parsedState = data.gameState ? JSON.parse(data.gameState) : getDefaultGameState();
+                        authSession.activeAccount = {
+                            accountKey: data.accountKey,
+                            email: data.email || "",
+                            displayName: data.displayName || "Learner",
+                            photoURL: data.photoURL || "",
+                            provider: data.provider || "google-cloud",
+                            gameState: parsedState
+                        };
+                        gameState = parsedState;
+                        await setDoc(this.getSessionMetaDocRef(), { activeAccountKey: accountKey, updatedAt: Date.now() }, { merge: true });
+                        this.subscribeToActiveAccount(accountKey);
+                        updateHeaderStats();
+                        updateAccountHeaderUI();
+                        renderAccountModalContent();
+                        if (activeSession.mode === "map") {
+                            renderLevelCardsGrid();
+                        } else {
+                            showMapScreen();
+                        }
+                        if (showNotification) {
+                            showToast(`Switched to ${authSession.activeAccount.displayName}'s progress!`, "ph-user-switch");
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed switching account:", err);
+                }
+            },
+
+            async signOutToGuest() {
+                const user = auth?.currentUser;
+                if (!user) return;
+
+                try {
+                    const guestRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', 'guest');
+                    const snap = await getDoc(guestRef);
+                    const guestState = (snap.exists() && snap.data().gameState)
+                        ? JSON.parse(snap.data().gameState)
+                        : getDefaultGameState();
+
+                    authSession.activeAccount = {
+                        accountKey: 'guest',
+                        email: '',
+                        displayName: 'Guest Learner',
+                        photoURL: '',
+                        provider: 'guest',
+                        gameState: guestState
+                    };
+                    gameState = guestState;
+                    await setDoc(this.getSessionMetaDocRef(), { activeAccountKey: 'guest', updatedAt: Date.now() }, { merge: true });
+                    this.subscribeToActiveAccount('guest');
+                    updateHeaderStats();
+                    updateAccountHeaderUI();
+                    renderAccountModalContent();
+                    showMapScreen();
+                    showToast("Signed out to Guest profile.", "ph-sign-out");
+                } catch (err) {
+                    console.error("Error signing out:", err);
+                }
+            },
+
+            subscribeToActiveAccount(accountKey) {
+                const user = auth?.currentUser;
+                if (!user) return;
+                if (unsubscribeProfileListener) {
+                    unsubscribeProfileListener();
+                    unsubscribeProfileListener = null;
+                }
+                const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', accountKey);
+                unsubscribeProfileListener = onSnapshot(
+                    acctDocRef,
+                    (docSnap) => {
+                        if (!docSnap.exists()) return;
+                        const data = docSnap.data();
+                        if (data && data.gameState) {
+                            const remoteState = JSON.parse(data.gameState);
+                            gameState = remoteState;
+                            if (authSession.activeAccount && authSession.activeAccount.accountKey === accountKey) {
+                                authSession.activeAccount.gameState = remoteState;
+                            }
+                            const idx = authSession.knownAccounts.findIndex(a => a.accountKey === accountKey);
+                            if (idx >= 0) {
+                                authSession.knownAccounts[idx].gameState = remoteState;
+                            }
+                            updateHeaderStats();
+                            if (activeSession.mode === "map") {
+                                renderLevelCardsGrid();
+                            }
+                        }
+                    },
+                    (err) => {
+                        console.error("Realtime account sync error:", err);
+                    }
+                );
+            },
+
+            async saveCurrentAccountProgress(currentGameState) {
+                const user = auth?.currentUser;
+                if (!user) return;
+
+                const acct = authSession.activeAccount || {
+                    accountKey: 'guest',
+                    email: '',
+                    displayName: 'Guest Learner',
+                    photoURL: '',
+                    provider: 'guest'
+                };
+
+                try {
+                    const acctDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'vocab_accounts', acct.accountKey);
+                    await setDoc(acctDocRef, {
+                        accountKey: acct.accountKey,
+                        email: acct.email || "",
+                        displayName: acct.displayName || "Guest Learner",
+                        photoURL: acct.photoURL || "",
+                        provider: acct.provider || "guest",
+                        gameState: JSON.stringify(currentGameState),
+                        updatedAt: Date.now()
+                    }, { merge: true });
+
+                    const idx = authSession.knownAccounts.findIndex(a => a.accountKey === acct.accountKey);
+                    if (idx >= 0) {
+                        authSession.knownAccounts[idx].gameState = JSON.parse(JSON.stringify(currentGameState));
+                    }
+                } catch (err) {
+                    console.error("Failed saving progress to cloud:", err);
+                }
+            },
+
+            async loadCurrentAccountProgress() {
+                await this.loadAllAccountsAndRestoreActive();
+            }
+        };
+
+        window.cloudAuthManager = cloudAuthManager;
+        cloudAuthManager.init();
     </script>
 </body>
 </html>
