@@ -2204,7 +2204,7 @@
                         ` : `
                         <div class="mt-3 bg-yellow-50/90 rounded-2xl p-2.5 border-2 border-yellow-300 text-xs text-purple-900 font-medium flex items-center gap-2">
                             <i class="ph-fill ph-info text-base text-yellow-600 shrink-0"></i>
-                            <span>${lvl === 1 ? 'Review the 20 words or jump straight into Stage 1 Flashcards!' : (canReviewAndPractice ? 'Study the 20 words & complete the fill-in-the-blank sentence practice to unlock!' : `Complete Stage ${lvl - 1} to unlock the Study & Practice Quest for ${meta.title}.`)}</span>
+                            <span>${lvl === 1 ? 'Review the 20 words or jump straight into Stage 1 Flashcards!' : (canReviewAndPractice ? 'Step through the 20 Tutorial Flashcards to learn the words & unlock this stage!' : `Complete Stage ${lvl - 1} to unlock the Tutorial Flashcards for ${meta.title}.`)}</span>
                         </div>
                         `}
                     </div>
@@ -2214,8 +2214,8 @@
                             onclick="openReviewScreen(${lvl})"
                             ${!canReviewAndPractice ? 'disabled' : ''}
                             class="flex-1 py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 ${canReviewAndPractice ? 'btn-purple' : 'btn-disabled rounded-full font-bold'}">
-                            <i class="ph-bold ph-book-open-text text-base"></i>
-                            <span>Review & Practice</span>
+                            <i class="ph-bold ph-cards text-base"></i>
+                            <span>Tutorial & Review</span>
                         </button>
 
                         <button 
@@ -2362,8 +2362,8 @@
 
                     <div class="flex flex-wrap items-center gap-2.5">
                         <button onclick="startSentencePractice(${levelNum})" class="btn-yellow px-5 py-3 text-sm md:text-base flex items-center gap-2 animate-bounce">
-                            <i class="ph-fill ph-pencil-simple-line text-xl"></i>
-                            <span>${isPlayUnlocked ? 'Practice Sentences Again' : 'Start Sentence Practice to Unlock Stage ' + levelNum}</span>
+                            <i class="ph-fill ph-cards text-xl"></i>
+                            <span>${isPlayUnlocked ? 'Launch Tutorial Flashcards Again' : 'Start Tutorial Flashcards to Unlock Stage ' + levelNum}</span>
                         </button>
                         ${isPlayUnlocked ? `
                         <button onclick="startFlashcardGame(${levelNum})" class="btn-purple px-5 py-3 text-sm md:text-base flex items-center gap-2">
@@ -2382,10 +2382,10 @@
                 <!-- Bottom Sticky CTA -->
                 <div class="sticky bottom-4 z-20 flex justify-center">
                     <div class="bg-purple-950/95 border-4 border-yellow-400 rounded-full px-6 py-3 shadow-2xl flex items-center gap-4">
-                        <span class="text-sm font-bold text-white hidden sm:inline">Ready to test these words in context?</span>
+                        <span class="text-sm font-bold text-white hidden sm:inline">Want to step through each word one by one?</span>
                         <button onclick="startSentencePractice(${levelNum})" class="btn-yellow px-6 py-2 text-sm flex items-center gap-2">
-                            <i class="ph-fill ph-sparkle"></i>
-                            <span>${isPlayUnlocked ? 'Practice Blank Sentences' : 'Complete Sentence Practice & Unlock Stage ' + levelNum}</span>
+                            <i class="ph-fill ph-cards"></i>
+                            <span>${isPlayUnlocked ? 'Open Tutorial Flashcard Deck (20 Words)' : 'Complete Tutorial Deck & Unlock Stage ' + levelNum}</span>
                         </button>
                     </div>
                 </div>
@@ -2398,39 +2398,48 @@
             activeSession.mode = "practice";
             activeSession.level = levelNum;
 
+            // Introduce all 20 words that will come up in this level
             const allLevelWords = [...getWordsForLevel(levelNum)];
-            // Shuffle and pick 8 rich context sentences for the unlock practice quest (or player can practice more)
-            for (let i = allLevelWords.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [allLevelWords[i], allLevelWords[j]] = [allLevelWords[j], allLevelWords[i]];
-            }
-
-            activeSession.practiceQuestions = allLevelWords.slice(0, 8).map(word => {
-                // Pick 3 distractors from the same level
-                const others = allLevelWords.filter(w => w.id !== word.id);
-                const distractors = others.slice(0, 3);
-                const wordBank = [word.kr, ...distractors.map(d => d.kr)];
-                for (let i = wordBank.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [wordBank[i], wordBank[j]] = [wordBank[j], wordBank[i]];
-                }
-                return {
-                    word,
-                    wordBank
-                };
-            });
+            activeSession.practiceQuestions = allLevelWords.map((word, index) => ({
+                word,
+                cardNumber: index + 1
+            }));
 
             activeSession.practiceIndex = 0;
-            activeSession.practiceCorrect = 0;
+            activeSession.practiceCorrect = allLevelWords.length;
             activeSession.awaitingNext = false;
 
             renderPracticeStep();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function prevTutorialCard() {
+            if (activeSession.practiceIndex > 0) {
+                playSound('pop');
+                activeSession.practiceIndex--;
+                renderPracticeStep();
+            }
+        }
+
+        function nextTutorialCard() {
+            playSound('pop');
+            activeSession.practiceIndex++;
+            renderPracticeStep();
+        }
+
+        function jumpToTutorialCard(idx) {
+            if (idx >= 0 && idx < activeSession.practiceQuestions.length) {
+                playSound('pop');
+                activeSession.practiceIndex = idx;
+                renderPracticeStep();
+            }
         }
 
         function renderPracticeStep() {
             const container = document.getElementById("appContainer");
             const qIndex = activeSession.practiceIndex;
             const totalQ = activeSession.practiceQuestions.length;
+            const meta = LEVEL_META[activeSession.level - 1];
 
             if (qIndex >= totalQ) {
                 finishSentencePractice();
@@ -2439,154 +2448,162 @@
 
             const currentQ = activeSession.practiceQuestions[qIndex];
             const w = currentQ.word;
-            const progressPct = Math.round((qIndex / totalQ) * 100);
+            const progressPct = Math.round(((qIndex + 1) / totalQ) * 100);
+            const fullKrSentence = w.sentenceKr.replace('___', w.kr);
+            const highlightedKrSentence = w.sentenceKr.replace(
+                '___',
+                `<span class="underline decoration-4 decoration-yellow-400 font-black text-purple-950 bg-yellow-200/80 px-2 py-0.5 rounded-lg mx-0.5">${w.kr}</span>`
+            );
+            const highlightedEnSentence = w.sentenceEn.replace(
+                '___',
+                `<span class="underline decoration-2 decoration-purple-600 font-extrabold text-purple-950">${w.en}</span>`
+            );
 
-            const bankButtonsHtml = currentQ.wordBank.map(krOption => `
-                <button 
-                    type="button"
-                    onclick="fillPracticeInput('${krOption}')"
-                    class="bg-purple-100 hover:bg-yellow-300 text-purple-950 font-extrabold px-4 py-2 rounded-2xl border-2 border-purple-300 hover:border-purple-900 transition shadow-sm text-base">
-                    ${krOption}
-                </button>
-            `).join("");
+            // Mini dot/pill navigator for the 20 words
+            const dotsHtml = activeSession.practiceQuestions.map((item, idx) => {
+                const isCurrent = idx === qIndex;
+                const isDone = idx < qIndex;
+                return `
+                    <button
+                        type="button"
+                        onclick="jumpToTutorialCard(${idx})"
+                        title="${item.word.kr} (${item.word.en})"
+                        class="w-7 h-7 rounded-full text-[11px] font-black transition border ${
+                            isCurrent
+                                ? 'bg-yellow-400 text-purple-950 border-white scale-110 shadow'
+                                : (isDone ? 'bg-purple-600 text-yellow-300 border-purple-400 hover:bg-purple-500' : 'bg-purple-950/70 text-purple-300 border-purple-700 hover:bg-purple-800')
+                        }">
+                        ${idx + 1}
+                    </button>
+                `;
+            }).join("");
 
             container.innerHTML = `
                 <div class="max-w-2xl mx-auto w-full my-auto">
                     <!-- Top Bar -->
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <button onclick="openReviewScreen(${activeSession.level})" class="btn-purple px-4 py-1.5 text-xs flex items-center gap-1">
-                            <i class="ph-bold ph-arrow-left"></i> Study Sheet
+                            <i class="ph-bold ph-list-bullets"></i> All 20 Words List
                         </button>
-                        <div class="text-sm font-extrabold text-yellow-300">
-                            Level ${activeSession.level} Unlock Quest • Sentence ${qIndex + 1} of ${totalQ}
+                        <div class="text-xs sm:text-sm font-extrabold text-yellow-300 flex items-center gap-2">
+                            <span class="bg-purple-900/90 border border-purple-400 px-3 py-1 rounded-full">
+                                Stage ${activeSession.level}: ${meta ? meta.title : ''}
+                            </span>
+                            <span class="bg-yellow-400 text-purple-950 px-3 py-1 rounded-full font-black">
+                                Word ${qIndex + 1} of ${totalQ}
+                            </span>
                         </div>
                     </div>
 
                     <!-- Progress Bar -->
-                    <div class="w-full h-4 bg-purple-950 rounded-full p-1 border-2 border-purple-500 mb-6">
-                        <div class="h-full bg-gradient-to-r from-yellow-400 to-amber-300 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+                    <div class="w-full h-4 bg-purple-950 rounded-full p-1 border-2 border-purple-400 mb-5">
+                        <div class="h-full bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-400 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
                     </div>
 
-                    <!-- Practice Card -->
-                    <div id="practiceCard" class="bubbly-card p-6 md:p-8 text-center animate-pop">
-                        <span class="inline-block bg-purple-100 text-purple-900 font-extrabold text-xs px-3.5 py-1 rounded-full border border-purple-300 mb-4">
-                            FILL IN THE BLANK (KOREAN WORD)
-                        </span>
+                    <!-- Tutorial Study Flashcard -->
+                    <div id="practiceCard" class="bubbly-card p-6 sm:p-10 text-center animate-pop relative">
+                        <!-- Top Card Meta Row -->
+                        <div class="flex items-center justify-between gap-2 mb-4">
+                            <span class="inline-flex items-center gap-1.5 bg-purple-100 text-purple-900 font-extrabold text-xs px-3.5 py-1 rounded-full border border-purple-300">
+                                <i class="ph-fill ph-sparkle text-purple-700"></i>
+                                TUTORIAL FLASHCARD • TOPIK #${w.id}
+                            </span>
 
-                        <!-- Korean Sentence with Blank -->
-                        <div class="text-2xl md:text-3xl font-black text-purple-950 leading-relaxed mb-4">
-                            ${w.sentenceKr.replace('___', `<span class="inline-block bg-yellow-200 text-purple-900 border-b-4 border-purple-900 px-4 py-0.5 rounded-xl mx-1">?</span>`)}
+                            <button
+                                type="button"
+                                onclick="speakKoreanAudio('${w.kr.replace(/'/g, "\\'")}')"
+                                class="bg-yellow-300 hover:bg-yellow-400 text-purple-950 font-extrabold text-xs px-3.5 py-1.5 rounded-full border-2 border-purple-900 shadow-sm flex items-center gap-1.5 transition"
+                                title="Listen to Korean word">
+                                <i class="ph-fill ph-speaker-high text-base"></i>
+                                <span>Pronounce Word</span>
+                            </button>
                         </div>
 
-                        <!-- English Translation & Unique Context/Grammar Hint -->
-                        <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 mb-6 space-y-2 text-left">
-                            <p class="text-sm font-bold text-purple-900 text-center">
-                                "${w.sentenceEn.replace('___', `<span class="underline text-purple-700 font-extrabold">${w.en}</span>`)}"
+                        <!-- Center Stage: Word & Definition in Bold -->
+                        <div class="py-8 px-4 my-2 bg-gradient-to-b from-purple-50 via-white to-yellow-50/60 rounded-3xl border-4 border-purple-200 shadow-inner">
+                            <div class="text-5xl sm:text-6xl font-black text-purple-950 tracking-tight leading-none mb-4 break-words">
+                                ${w.kr}
+                            </div>
+
+                            <div class="inline-block bg-yellow-300 text-purple-950 font-black text-2xl sm:text-3xl px-6 py-2 rounded-2xl border-2 border-purple-900 shadow-sm">
+                                ${w.en}
+                            </div>
+
+                            ${w.fullEn && w.fullEn.toLowerCase() !== w.en.toLowerCase() ? `
+                            <div class="text-xs sm:text-sm font-bold text-purple-700 mt-3">
+                                Full Meaning: <span class="font-extrabold text-purple-950">${w.fullEn}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Subheading Below Word/Translation: Context & Usage -->
+                        <div class="mt-5 bg-purple-50/90 rounded-3xl p-5 border-2 border-purple-200 text-center space-y-2.5">
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="text-[11px] font-black uppercase tracking-wider text-purple-600 bg-white px-3 py-0.5 rounded-full border border-purple-200">
+                                    In Context
+                                </span>
+                                <button
+                                    type="button"
+                                    onclick="speakKoreanAudio('${fullKrSentence.replace(/'/g, "\\'")}')"
+                                    class="w-7 h-7 rounded-full bg-white hover:bg-yellow-300 text-purple-900 flex items-center justify-center border border-purple-300 transition shadow-sm"
+                                    title="Listen to example sentence">
+                                    <i class="ph-fill ph-speaker-high text-sm"></i>
+                                </button>
+                            </div>
+
+                            <!-- Subheading Korean Sentence -->
+                            <h4 class="text-lg sm:text-xl font-bold text-purple-950 leading-relaxed">
+                                ${highlightedKrSentence}
+                            </h4>
+
+                            <!-- Subheading English Sentence -->
+                            <p class="text-sm sm:text-base font-semibold text-purple-700">
+                                "${highlightedEnSentence}"
                             </p>
-                            <div class="bg-yellow-100/90 border border-yellow-400 rounded-xl px-3.5 py-2 text-xs text-purple-950 font-semibold flex items-start justify-between gap-2">
-                                <div class="flex items-start gap-2">
-                                    <i class="ph-fill ph-lightbulb-filament text-yellow-600 text-base shrink-0 mt-0.5"></i>
-                                    <div>
-                                        <span class="font-extrabold uppercase text-[10px] tracking-wider bg-yellow-300 px-1.5 py-0.5 rounded text-purple-950 mr-1">Unique Hint</span>
-                                        <span>${w.uniqueHint.replace(/^💡\s*/, '')}</span>
-                                    </div>
+
+                            <!-- Grammar / Nuance Sub-note -->
+                            <div class="pt-2">
+                                <div class="inline-flex items-center gap-1.5 bg-yellow-100/90 border border-yellow-400 rounded-xl px-3.5 py-1.5 text-xs font-bold text-purple-950">
+                                    <span>${w.uniqueHint}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Helpful Word Bank (Click or Type) -->
-                        <div class="mb-5">
-                            <div class="text-xs font-bold uppercase tracking-wider text-purple-500 mb-2">Tap a word below or type it into the box:</div>
-                            <div class="flex flex-wrap justify-center gap-2.5">
-                                ${bankButtonsHtml}
-                            </div>
-                        </div>
-
-                        <!-- Input Form -->
-                        <form id="practiceForm" onsubmit="handlePracticeSubmit(event)" class="flex flex-col sm:flex-row gap-3">
-                            <input 
-                                id="practiceInput"
-                                type="text" 
-                                autocomplete="off"
-                                placeholder="Type the Korean word (e.g. ${w.kr})..."
-                                class="flex-1 px-5 py-3.5 rounded-2xl border-4 border-purple-300 focus:border-purple-700 focus:outline-none text-lg font-extrabold text-center text-purple-950 bg-white shadow-inner"
-                            />
-                            <button type="submit" id="practiceSubmitBtn" class="btn-yellow px-7 py-3.5 text-base shrink-0">
-                                Check Answer
+                        <!-- Flashcard Navigation Controls -->
+                        <div class="mt-7 flex items-center justify-between gap-3">
+                            <button
+                                type="button"
+                                onclick="prevTutorialCard()"
+                                ${qIndex === 0 ? 'disabled' : ''}
+                                class="px-5 py-3.5 text-sm sm:text-base flex items-center gap-2 ${qIndex === 0 ? 'btn-disabled rounded-full font-bold' : 'btn-purple'}">
+                                <i class="ph-bold ph-arrow-left"></i>
+                                <span>Previous</span>
                             </button>
-                        </form>
 
-                        <!-- Feedback Banner -->
-                        <div id="practiceFeedback" class="hidden mt-5 p-4 rounded-2xl border-2 text-left"></div>
+                            <div class="text-xs font-extrabold text-purple-500 hidden sm:block">
+                                Use <kbd class="px-2 py-0.5 bg-purple-100 text-purple-900 rounded border border-purple-300">←</kbd> <kbd class="px-2 py-0.5 bg-purple-100 text-purple-900 rounded border border-purple-300">→</kbd> or Spacebar
+                            </div>
+
+                            <button
+                                type="button"
+                                id="tutorialNextBtn"
+                                onclick="nextTutorialCard()"
+                                class="btn-yellow px-7 py-3.5 text-sm sm:text-base flex items-center gap-2">
+                                <span>${qIndex + 1 === totalQ ? 'Finish Tutorial & Unlock Stage!' : 'Next Word'}</span>
+                                <i class="ph-bold ${qIndex + 1 === totalQ ? 'ph-lock-key-open' : 'ph-arrow-right'}"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 20-Word Quick Jump Bar -->
+                    <div class="mt-4 bg-purple-950/60 border border-purple-500/40 rounded-2xl p-3 flex flex-wrap items-center justify-center gap-1.5">
+                        ${dotsHtml}
                     </div>
                 </div>
             `;
 
-            const inputEl = document.getElementById("practiceInput");
-            if (inputEl) inputEl.focus();
-        }
-
-        function fillPracticeInput(val) {
-            if (activeSession.awaitingNext) return;
-            const inputEl = document.getElementById("practiceInput");
-            if (inputEl) {
-                inputEl.value = val;
-                inputEl.focus();
-            }
-        }
-
-        function handlePracticeSubmit(e) {
-            e.preventDefault();
-            if (activeSession.awaitingNext) {
-                activeSession.awaitingNext = false;
-                activeSession.practiceIndex++;
-                renderPracticeStep();
-                return;
-            }
-
-            const inputEl = document.getElementById("practiceInput");
-            const feedbackEl = document.getElementById("practiceFeedback");
-            const submitBtn = document.getElementById("practiceSubmitBtn");
-            const cardEl = document.getElementById("practiceCard");
-
-            const currentQ = activeSession.practiceQuestions[activeSession.practiceIndex];
-            const w = currentQ.word;
-            const userVal = normalizeAnswer(inputEl.value);
-
-            const isRight = userVal === normalizeAnswer(w.kr) || checkUserAnswer(w, userVal, "KR_TO_EN");
-
-            activeSession.awaitingNext = true;
-            inputEl.readOnly = true;
-
-            if (isRight) {
-                playSound('correct');
-                activeSession.practiceCorrect++;
-                feedbackEl.className = "mt-5 p-4 rounded-2xl border-2 bg-green-100 border-green-500 text-green-950 flex items-center justify-between";
-                feedbackEl.innerHTML = `
-                    <div>
-                        <div class="font-extrabold text-base flex items-center gap-1.5">
-                            <i class="ph-fill ph-check-circle text-green-600 text-xl"></i> Awesome! "${w.kr}" (${w.en}) fits the sentence!
-                        </div>
-                        <div class="text-xs font-semibold mt-0.5">${w.sentenceKr.replace('___', w.kr)}</div>
-                    </div>
-                `;
-            } else {
-                playSound('wrong');
-                cardEl.classList.remove("animate-pop");
-                cardEl.classList.add("animate-shake");
-                feedbackEl.className = "mt-5 p-4 rounded-2xl border-2 bg-amber-100 border-amber-500 text-amber-950 flex items-center justify-between";
-                feedbackEl.innerHTML = `
-                    <div>
-                        <div class="font-extrabold text-base flex items-center gap-1.5">
-                            <i class="ph-fill ph-lightbulb text-amber-600 text-xl"></i> Good try! The missing word is <span class="underline font-black">${w.kr}</span> (${w.en}).
-                        </div>
-                        <div class="text-xs font-semibold mt-0.5">${w.sentenceKr.replace('___', w.kr)}</div>
-                    </div>
-                `;
-            }
-
-            submitBtn.innerHTML = `Next Sentence <i class="ph-bold ph-arrow-right ml-1"></i>`;
-            submitBtn.focus();
+            const nextBtn = document.getElementById("tutorialNextBtn");
+            if (nextBtn) nextBtn.focus();
         }
 
         function finishSentencePractice() {
@@ -2609,7 +2626,7 @@
                     </div>
                     <h2 class="text-3xl font-black text-purple-950 mb-2">Stage ${lvl} (${meta.title}) Unlocked!</h2>
                     <p class="text-purple-700 font-semibold text-sm mb-6">
-                        You completed the context sentence practice (${activeSession.practiceCorrect} / ${activeSession.practiceQuestions.length} spot-on) and unlocked the 20-Word Flashcard Arena for <strong>${meta.title}</strong>!
+                        You reviewed all ${activeSession.practiceQuestions.length} Tutorial Flashcards and unlocked the Flashcard Arena for <strong>${meta.title}</strong>!
                     </p>
 
                     <div class="flex flex-col sm:flex-row gap-3 justify-center">
@@ -2617,8 +2634,12 @@
                             <i class="ph-fill ph-lightning text-2xl"></i>
                             <span>Start ${meta.title} Flashcards!</span>
                         </button>
+                        <button onclick="startSentencePractice(${lvl})" class="btn-purple px-6 py-4 text-base flex items-center justify-center gap-1.5">
+                            <i class="ph-bold ph-arrows-counter-clockwise"></i>
+                            <span>Review Cards Again</span>
+                        </button>
                         <button onclick="showMapScreen()" class="btn-purple px-6 py-4 text-base">
-                            Back to 50-Level Map
+                            50-Level Map
                         </button>
                     </div>
                 </div>
@@ -2923,11 +2944,11 @@
                                 Next Up: Stage ${lvl + 1} — ${LEVEL_META[lvl].title}
                             </div>
                             <p class="text-xs text-purple-800 font-semibold mt-0.5">
-                                Review the 20 upcoming words in context and complete the fill-in-the-blank practice to unlock Stage ${lvl + 1}!
+                                Step through the 20 Tutorial Flashcards to learn the upcoming words in context and unlock Stage ${lvl + 1}!
                             </p>
                         </div>
-                        <button onclick="openReviewScreen(${lvl + 1})" class="btn-yellow px-5 py-3 text-sm shrink-0 flex items-center gap-1.5">
-                            <span>Review & Unlock Stage ${lvl + 1}</span>
+                        <button onclick="startSentencePractice(${lvl + 1})" class="btn-yellow px-5 py-3 text-sm shrink-0 flex items-center gap-1.5">
+                            <span>Start Stage ${lvl + 1} Tutorial</span>
                             <i class="ph-bold ph-arrow-right"></i>
                         </button>
                     </div>
@@ -2970,6 +2991,21 @@
             initBubbles();
             loadProgress();
             showMapScreen();
+
+            // Allow Left/Right arrow keys or Spacebar to flip through Tutorial Flashcards
+            window.addEventListener("keydown", function (e) {
+                if (activeSession.mode !== "practice") return;
+                const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+                if (tag === "input" || tag === "textarea") return;
+
+                if (e.key === "ArrowRight") {
+                    e.preventDefault();
+                    nextTutorialCard();
+                } else if (e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    prevTutorialCard();
+                }
+            });
         };
     </script>
 
