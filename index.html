@@ -159,9 +159,9 @@
                 </div>
                 <div>
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-yellow-300 drop-shadow">
-                        1K <span class="text-white">2KOREAN!</span>
+                        2K<span class="text-white">2KOREAN!</span>
                     </h1>
-                    <p class="text-xs text-purple-200 font-medium">2,662 TOPIK Words • 133 Topic & Difficulty Levels</p>
+                    <p class="text-xs text-purple-200 font-medium">2,662 TOPIK Words • 133 Topic Levels + 26 Milestone Reviews</p>
                 </div>
             </div>
 
@@ -176,7 +176,7 @@
                 <div class="flex items-center gap-2 bg-purple-900/90 border-2 border-purple-400/70 px-3.5 py-1.5 rounded-full">
                     <i class="ph-fill ph-lock-key-open text-purple-300 text-xl"></i>
                     <span class="text-xs uppercase tracking-wider text-purple-200">Unlocked</span>
-                    <span id="headerUnlockedCount" class="font-extrabold text-white text-lg">1 / 133</span>
+                    <span id="headerUnlockedCount" class="font-extrabold text-white text-lg">1 / 159</span>
                 </div>
 
                 <div id="accountHeaderSlot" class="flex items-center">
@@ -267,6 +267,7 @@
                 return fallbackValue;
             }
         }
+        window.safeJsonParse = safeJsonParse;
 
         const RAW_TOPIK_2662 = [
             [1,"가계부","household account book"],[2,"가구점","furniture store"],[3,"가까이","near"],[4,"가꾸다","to cultivate"],[5,"가난","poverty"],
@@ -1854,9 +1855,12 @@
 
         const VOCAB_DATABASE = [];
         const LEVEL_META = [];
-        const TOTAL_LEVELS = 133;
+        const REGULAR_LEVEL_COUNT = 133;
+        const REVIEW_INTERVAL = 5;
+        const PASS_SCORE = 2000;
+        let TOTAL_LEVELS = 159;
 
-        (function initialize133Levels() {
+        (function initializeLevelsWithReviews() {
             const annotatedWords = RAW_TOPIK_2662.map(([id, kr, en]) => {
                 const { topic, icon } = classifyWordTopic(id, kr, en);
                 const { sentenceKr, sentenceEn, uniqueHint } = createContextSentences(id, kr, en, topic);
@@ -1920,9 +1924,9 @@
                 overflowPool.push(...list);
             });
 
-            // Sort remaining words by difficulty and group into 20-word chunks up to 133 total levels
+            // Sort remaining words by difficulty and group into 20-word chunks up to 133 regular levels
             overflowPool.sort((a, b) => a.diffScore - b.diffScore);
-            while (overflowPool.length >= 20 && rawChunks.length < TOTAL_LEVELS) {
+            while (overflowPool.length >= 20 && rawChunks.length < REGULAR_LEVEL_COUNT) {
                 const slice = overflowPool.splice(0, 20);
                 const counts = {};
                 slice.forEach(w => { counts[w.topic] = (counts[w.topic] || 0) + 1; });
@@ -1936,7 +1940,7 @@
                 });
             }
 
-            // Group chunks by topic and number them ascending by difficulty (1 = easiest foundation, 2 = next step, etc.)
+            // Group chunks by topic and number them ascending by difficulty
             const chunksByTopic = {};
             rawChunks.forEach(ch => {
                 if (!chunksByTopic[ch.topic]) chunksByTopic[ch.topic] = [];
@@ -1958,7 +1962,7 @@
                 });
             });
 
-            // Sort all 133 levels primarily by their step/difficulty number (all "... 1" levels first, then "... 2", etc.)
+            // Sort all 133 regular levels primarily by their step/difficulty number
             rawChunks.sort((a, b) => {
                 if (a.topicNumber !== b.topicNumber) {
                     return a.topicNumber - b.topicNumber;
@@ -1968,25 +1972,66 @@
                 return a.avgDiff - b.avgDiff;
             });
 
+            // Interleave a Milestone Review Level after every 5 regular levels
+            let stageCounter = 1;
+            let recentFiveStageNums = [];
+            let recentFiveWordsPool = [];
+            let reviewBlockCounter = 0;
+
             rawChunks.forEach((ch, index) => {
-                const levelNum = index + 1;
+                const currentStageNum = stageCounter++;
+                const regNum = index + 1;
+
                 ch.words.forEach(w => {
-                    w.assignedLevel = levelNum;
+                    w.assignedLevel = currentStageNum;
                     VOCAB_DATABASE.push(w);
                 });
+
                 LEVEL_META.push({
-                    level: levelNum,
+                    level: currentStageNum,
+                    regularLevelNum: regNum,
+                    isReviewLevel: false,
                     title: ch.title,
                     topic: ch.topic,
                     topicNumber: ch.topicNumber,
                     totalInTopic: ch.totalInTopic,
                     tierLabel: ch.tierLabel,
                     subtitle: `20 Words • ${ch.tierLabel}`,
-                    icon: ch.icon
+                    icon: ch.icon,
+                    words: ch.words
                 });
+
+                recentFiveStageNums.push(currentStageNum);
+                recentFiveWordsPool.push(...ch.words);
+
+                // After every 5 regular levels, insert a Milestone Review Level
+                if (regNum % REVIEW_INTERVAL === 0) {
+                    reviewBlockCounter++;
+                    const reviewStageNum = stageCounter++;
+                    const firstReg = regNum - REVIEW_INTERVAL + 1;
+                    const lastReg = regNum;
+                    LEVEL_META.push({
+                        level: reviewStageNum,
+                        isReviewLevel: true,
+                        reviewNumber: reviewBlockCounter,
+                        sourceStageNums: [...recentFiveStageNums],
+                        sourcePoolWords: [...recentFiveWordsPool],
+                        title: `Milestone Review ${reviewBlockCounter}`,
+                        topic: "Milestone Review",
+                        topicNumber: reviewBlockCounter,
+                        totalInTopic: Math.floor(REGULAR_LEVEL_COUNT / REVIEW_INTERVAL),
+                        tierLabel: `Reviews Topic Levels ${firstReg}–${lastReg}`,
+                        subtitle: `A quick review to solidify what you've learned.`,
+                        icon: "ph-arrows-clockwise"
+                    });
+                    recentFiveStageNums = [];
+                    recentFiveWordsPool = [];
+                }
             });
 
-            // Keep any remaining words (e.g., #2661, #2662) indexed in VOCAB_DATABASE for dictionary/synonym lookup
+            TOTAL_LEVELS = LEVEL_META.length;
+
+            // Keep any remaining words indexed in VOCAB_DATABASE for synonym lookup
             overflowPool.forEach(w => {
                 w.assignedLevel = TOTAL_LEVELS;
                 VOCAB_DATABASE.push(w);
@@ -1995,14 +2040,15 @@
 
         // Persistent Game State
         let gameState = {
-            unlockedLevel: 1,         // Starts at Level 1
-            practicedLevels: [1],     // Level 1 is ready to play
+            unlockedLevel: 1,         // Starts at Stage 1
+            practicedLevels: [1],     // Stage 1 is ready to play
+            missedWordCounts: {},     // { [wordId]: timesMissed } used to weight review levels
             levelStats: {
                 // levelNum: { bestScore, bestRank, accuracy, avgSpeedSec, completed }
             }
         };
 
-        // UI Filter State for the 50-Level Map
+        // UI Filter State for the Level Map
         let mapFilterState = {
             topic: "ALL",
             search: ""
@@ -2032,6 +2078,7 @@
             return {
                 unlockedLevel: 1,
                 practicedLevels: [1],
+                missedWordCounts: {},
                 levelStats: {}
             };
         }
@@ -2086,12 +2133,19 @@
         function getLearnedWordsList() {
             const learned = [];
             for (let lvl = 1; lvl <= TOTAL_LEVELS; lvl++) {
-                if (gameState.levelStats && gameState.levelStats[lvl]?.completed) {
+                const meta = LEVEL_META[lvl - 1];
+                if (meta && !meta.isReviewLevel && isLevelPassed(lvl)) {
                     const words = getWordsForLevel(lvl);
-                    words.forEach(w => learned.push({ ...w, levelNum: lvl, levelTitle: LEVEL_META[lvl - 1]?.title || `Stage ${lvl}` }));
+                    words.forEach(w => learned.push({ ...w, levelNum: lvl, levelTitle: meta.title || `Stage ${lvl}` }));
                 }
             }
             return learned;
+        }
+
+        function isLevelPassed(lvl) {
+            const st = gameState.levelStats?.[lvl];
+            if (!st) return false;
+            return Boolean(st.bestScore >= PASS_SCORE);
         }
 
         let profileShowWordsExpanded = false;
@@ -2202,7 +2256,7 @@
             const container = document.getElementById("appContainer");
 
             const learnedWords = getLearnedWordsList();
-            const completedStagesCount = Object.values(gameState.levelStats || {}).filter(s => s && s.completed).length;
+            const completedStagesCount = LEVEL_META.filter(m => isLevelPassed(m.level)).length;
             let totalScore = 0;
             Object.values(gameState.levelStats || {}).forEach(st => {
                 if (st && st.bestScore) totalScore += st.bestScore;
@@ -2217,31 +2271,31 @@
             const levelScoreCardsHtml = LEVEL_META.map(meta => {
                 const lvl = meta.level;
                 const st = gameState.levelStats?.[lvl];
-                const isCompleted = Boolean(st && st.completed);
+                const isCompleted = isLevelPassed(lvl);
                 const isUnlocked = lvl <= (gameState.unlockedLevel || 1);
 
                 return `
                     <div class="rounded-2xl p-4 border-2 transition flex items-center justify-between gap-3 ${isCompleted ? 'bg-white border-yellow-400 shadow-sm' : (isUnlocked ? 'bg-purple-50/90 border-purple-200' : 'bg-purple-100/40 border-purple-200/60 opacity-65')}">
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-10 h-10 rounded-xl ${isCompleted ? 'bg-purple-900 text-yellow-300 border-2 border-yellow-400' : 'bg-purple-200 text-purple-800'} font-black text-xs flex flex-col items-center justify-center shrink-0">
-                                <span class="text-[9px] uppercase leading-none">LVL</span>
+                                <span class="text-[9px] uppercase leading-none">${meta.isReviewLevel ? 'REV' : 'LVL'}</span>
                                 <span class="text-sm leading-tight">${lvl}</span>
                             </div>
                             <div class="min-w-0">
                                 <div class="font-extrabold text-sm text-purple-950 truncate">${meta.title}</div>
                                 <div class="text-[11px] font-semibold text-purple-600">
-                                    ${isCompleted ? `Accuracy: ${st.accuracy}% • Avg Speed: ${st.avgSpeedSec}s • 20/20 Words` : (isUnlocked ? 'Unlocked • Not completed yet' : 'Locked Stage')}
+                                    ${st ? `Best: ${(st.bestScore || 0).toLocaleString()} PTS • Accuracy: ${st.accuracy}% • Avg: ${st.avgSpeedSec}s` : (isUnlocked ? 'Unlocked • Need 2,000+ PTS to pass' : 'Locked Stage')}
                                 </div>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-2.5 shrink-0">
-                            ${isCompleted ? `
+                            ${st ? `
                                 <div class="text-right">
-                                    <div class="text-sm font-black text-purple-950">${(st.bestScore || 0).toLocaleString()} PTS</div>
-                                    <div class="text-[10px] font-extrabold uppercase text-purple-700">Rank ${st.bestRank}</div>
+                                    <div class="text-sm font-black ${isCompleted ? 'text-purple-950' : 'text-rose-600'}">${(st.bestScore || 0).toLocaleString()} PTS</div>
+                                    <div class="text-[10px] font-extrabold uppercase ${isCompleted ? 'text-purple-700' : 'text-rose-600'}">${isCompleted ? `Rank ${st.bestRank}` : 'Below 2,000'}</div>
                                 </div>
-                                <span class="w-9 h-9 rounded-xl bg-yellow-400 text-purple-950 font-black text-sm flex items-center justify-center border-2 border-purple-900 shadow">
+                                <span class="w-9 h-9 rounded-xl ${isCompleted ? 'bg-yellow-400 text-purple-950 border-purple-900' : 'bg-rose-100 text-rose-800 border-rose-400'} font-black text-sm flex items-center justify-center border-2 shadow">
                                     ${st.bestRank}
                                 </span>
                             ` : `
@@ -2311,7 +2365,7 @@
                             <div>
                                 <div class="text-xs font-extrabold uppercase tracking-wider text-purple-600">Total Cumulative Score</div>
                                 <div class="text-3xl font-black text-purple-950 my-1">${totalScore.toLocaleString()} PTS</div>
-                                <div class="text-xs font-semibold text-purple-700">Across all 133 TOPIK stages</div>
+                                <div class="text-xs font-semibold text-purple-700">Across all ${TOTAL_LEVELS} stages (2,000+ PTS to pass)</div>
                             </div>
                             <div class="w-12 h-12 rounded-2xl bg-purple-200 text-purple-900 flex items-center justify-center text-2xl shrink-0">
                                 <i class="ph-fill ph-trophy"></i>
@@ -2321,8 +2375,8 @@
                         <!-- Stages Completed Card -->
                         <div class="bg-purple-50 p-5 rounded-3xl border-2 border-purple-200 flex items-center justify-between gap-3">
                             <div>
-                                <div class="text-xs font-extrabold uppercase tracking-wider text-purple-600">Stages Completed</div>
-                                <div class="text-3xl font-black text-purple-950 my-1">${completedStagesCount} <span class="text-lg font-bold text-purple-600">/ 133</span></div>
+                                <div class="text-xs font-extrabold uppercase tracking-wider text-purple-600">Stages Passed (2,000+ PTS)</div>
+                                <div class="text-3xl font-black text-purple-950 my-1">${completedStagesCount} <span class="text-lg font-bold text-purple-600">/ ${TOTAL_LEVELS}</span></div>
                                 <div class="text-xs font-semibold text-purple-700">Highest Unlocked: Stage ${Math.min(TOTAL_LEVELS, gameState.unlockedLevel || 1)}</div>
                             </div>
                             <div class="w-12 h-12 rounded-2xl bg-purple-200 text-purple-900 flex items-center justify-center text-2xl shrink-0">
@@ -2339,7 +2393,7 @@
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <h3 class="text-xl font-black text-purple-950">Score Per Level</h3>
-                                <p class="text-xs font-semibold text-purple-600">Your best score, accuracy, and speed rank for each of the 133 levels</p>
+                                <p class="text-xs font-semibold text-purple-600">Your best score, accuracy, and speed rank for each of the ${TOTAL_LEVELS} stages</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[520px] overflow-y-auto pr-1">
@@ -2429,7 +2483,7 @@
             Object.values(gameState.levelStats || {}).forEach(st => {
                 if (st && st.bestScore) totalScore += st.bestScore;
             });
-            const completedCount = Object.values(gameState.levelStats || {}).filter(s => s && s.completed).length;
+            const completedCount = LEVEL_META.filter(m => isLevelPassed(m.level)).length;
 
             const savedAccountsHtml = (authSession.knownAccounts || []).map((item, idx) => {
                 const isCurrent = acct && acct.accountKey === item.accountKey;
@@ -2447,7 +2501,7 @@
                                     <span>${item.displayName}</span>
                                     <span class="text-[9px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 font-bold">${isPwdAccount ? 'Email/Pwd' : 'Google'}</span>
                                 </div>
-                                <div class="text-[11px] text-purple-600 font-semibold truncate">${item.email} • Stage ${itemUnlocked}/133 (${itemScore.toLocaleString()} pts)</div>
+                                <div class="text-[11px] text-purple-600 font-semibold truncate">${item.email} • Stage ${itemUnlocked}/${TOTAL_LEVELS} (${itemScore.toLocaleString()} pts)</div>
                             </div>
                         </div>
                         ${isCurrent ? `
@@ -2493,7 +2547,7 @@
                     <div class="grid grid-cols-3 gap-2 pt-2 border-t border-purple-200 text-center">
                         <div class="bg-white rounded-xl p-2 border border-purple-100">
                             <div class="text-[10px] font-bold text-purple-500 uppercase">Unlocked</div>
-                            <div class="text-sm font-black text-purple-950">${Math.min(TOTAL_LEVELS, gameState.unlockedLevel)} / 133</div>
+                            <div class="text-sm font-black text-purple-950">${Math.min(TOTAL_LEVELS, gameState.unlockedLevel)} / ${TOTAL_LEVELS}</div>
                         </div>
                         <div class="bg-white rounded-xl p-2 border border-purple-100">
                             <div class="text-[10px] font-bold text-purple-500 uppercase">Completed</div>
@@ -2654,45 +2708,93 @@
                     osc.start(now);
                     osc.stop(now + 0.25);
                 } else if (type === 'fanfare') {
-                    const chord = [440, 554.37, 659.25, 880];
-                    chord.forEach((freq, i) => {
+                    const chord = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+                    chord.forEach((freq, idx) => {
                         const osc = audioCtx.createOscillator();
                         const gain = audioCtx.createGain();
                         osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(freq, now + i * 0.08);
-                        gain.gain.setValueAtTime(0.18, now + i * 0.08);
-                        gain.gain.exponentialRampToValueAtTime(0.005, now + i * 0.08 + 0.5);
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.08 + 0.35);
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
-                        osc.start(now + i * 0.08);
-                        osc.stop(now + i * 0.08 + 0.5);
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.35);
                     });
                 }
-            } catch (e) {}
+            } catch (err) {
+                // Ignore audio context errors on restricted autoplay
+            }
         }
 
         function toggleSound() {
             activeSession.soundEnabled = !activeSession.soundEnabled;
-            const icon = document.getElementById('soundIcon');
-            icon.className = activeSession.soundEnabled ? 'ph-fill ph-speaker-high text-xl' : 'ph-fill ph-speaker-slash text-xl text-purple-400';
+            const icon = document.getElementById("soundIcon");
+            if (icon) {
+                icon.className = activeSession.soundEnabled
+                    ? "ph-fill ph-speaker-high text-xl"
+                    : "ph-fill ph-speaker-slash text-xl text-purple-400";
+            }
             if (activeSession.soundEnabled) playSound('pop');
         }
 
+        let toastTimeout = null;
         function showToast(message, iconClass = "ph-sparkle") {
             const toast = document.getElementById("toastNotification");
             const msgEl = document.getElementById("toastMessage");
             const iconEl = document.getElementById("toastIcon");
+            if (!toast || !msgEl || !iconEl) return;
+
             msgEl.textContent = message;
-            iconEl.className = `ph-fill ${iconClass} text-2xl text-purple-900`;
+            iconEl.className = `ph-fill ${iconClass} text-2xl text-purple-800`;
             toast.classList.remove("hidden");
-            setTimeout(() => {
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
                 toast.classList.add("hidden");
             }, 3200);
         }
 
+        function selectWeightedReviewWords(poolWords, count = 20) {
+            if (!poolWords || poolWords.length === 0) return [];
+            const missedMap = gameState.missedWordCounts || {};
+            const candidates = poolWords.map(w => {
+                const misses = Number(missedMap[w.id] || 0);
+                // Base weight = 1; each previous incorrect answer boosts selection weight significantly (+5 per miss)
+                const weight = 1 + misses * 5;
+                return { word: w, weight, misses };
+            });
+
+            const selected = [];
+            const remaining = [...candidates];
+
+            while (selected.length < count && remaining.length > 0) {
+                const totalWeight = remaining.reduce((sum, item) => sum + item.weight, 0);
+                let rand = Math.random() * totalWeight;
+                let chosenIdx = 0;
+
+                for (let i = 0; i < remaining.length; i++) {
+                    rand -= remaining[i].weight;
+                    if (rand <= 0) {
+                        chosenIdx = i;
+                        break;
+                    }
+                }
+
+                selected.push(remaining[chosenIdx].word);
+                remaining.splice(chosenIdx, 1);
+            }
+
+            return selected;
+        }
+
         function getWordsForLevel(levelNum) {
-            const startIdx = (levelNum - 1) * 20;
-            return VOCAB_DATABASE.slice(startIdx, startIdx + 20);
+            const meta = LEVEL_META[levelNum - 1];
+            if (!meta) return [];
+            if (meta.isReviewLevel) {
+                return selectWeightedReviewWords(meta.sourcePoolWords, 20);
+            }
+            return meta.words || [];
         }
 
         function normalizeAnswer(str) {
@@ -2798,7 +2900,7 @@
                 if (mapFilterState.topic !== "ALL" && meta.topic !== mapFilterState.topic) return false;
                 if (searchLower) {
                     const inTitle = meta.title.toLowerCase().includes(searchLower) || meta.subtitle.toLowerCase().includes(searchLower);
-                    const levelWords = getWordsForLevel(meta.level);
+                    const levelWords = meta.isReviewLevel ? (meta.sourcePoolWords || []) : (meta.words || []);
                     const inWords = levelWords.some(w => w.kr.includes(searchLower) || w.fullEn.toLowerCase().includes(searchLower));
                     return inTitle || inWords;
                 }
@@ -2817,44 +2919,56 @@
 
             gridEl.innerHTML = filteredMeta.map(meta => {
                 const lvl = meta.level;
-                const isCompleted = Boolean(gameState.levelStats[lvl]?.completed && (gameState.levelStats[lvl]?.accuracy ?? 0) >= 90);
-                const prevCompleted = lvl === 1 ? true : Boolean(gameState.levelStats[lvl - 1]?.completed && (gameState.levelStats[lvl - 1]?.accuracy ?? 0) >= 90);
+                const isReview = Boolean(meta.isReviewLevel);
+                const isCompleted = isLevelPassed(lvl);
+                const prevCompleted = lvl === 1 ? true : isLevelPassed(lvl - 1);
                 const isPracticed = gameState.practicedLevels.includes(lvl);
-                const isPlayUnlocked = lvl === 1 || (prevCompleted && isPracticed);
+                // Review levels can be played immediately once the preceding 5th level is passed, or after viewing tutorial
+                const isPlayUnlocked = lvl === 1 || (prevCompleted && (isPracticed || isReview));
                 const canReviewAndPractice = lvl === 1 || prevCompleted;
 
                 const stats = gameState.levelStats[lvl] || null;
 
+                // Count how many missed words exist in this review pool
+                let missedInPoolCount = 0;
+                if (isReview && meta.sourcePoolWords) {
+                    missedInPoolCount = meta.sourcePoolWords.filter(w => (gameState.missedWordCounts?.[w.id] || 0) > 0).length;
+                }
+
                 let statusBadge = "";
                 if (isCompleted) {
-                    statusBadge = `<span class="bg-yellow-400 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white shadow">RANK ${stats.bestRank} • ${stats.bestScore} PTS</span>`;
+                    statusBadge = `<span class="bg-yellow-400 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white shadow">PASSED • ${stats.bestScore.toLocaleString()} PTS (${stats.bestRank})</span>`;
                 } else if (isPlayUnlocked) {
-                    statusBadge = `<span class="bg-green-400 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white">${stats ? `BEST: ${stats.accuracy}% (NEED 90%)` : 'READY TO PLAY!'}</span>`;
+                    statusBadge = `<span class="bg-green-400 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white">${stats ? `BEST: ${stats.bestScore.toLocaleString()} (NEED 2,000)` : 'READY TO PLAY!'}</span>`;
                 } else if (canReviewAndPractice) {
                     statusBadge = `<span class="bg-amber-300 text-purple-950 text-xs font-extrabold px-3 py-1 rounded-full border-2 border-white animate-pulse">TUTORIAL TO UNLOCK</span>`;
                 } else {
-                    statusBadge = `<span class="bg-purple-950/90 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-purple-500"><i class="ph-fill ph-lock-key mr-1"></i>GET 90%+ ON LVL ${lvl - 1}</span>`;
+                    statusBadge = `<span class="bg-purple-950/90 text-purple-300 text-xs font-bold px-3 py-1 rounded-full border border-purple-500"><i class="ph-fill ph-lock-key mr-1"></i>SCORE 2,000+ ON STG ${lvl - 1}</span>`;
                 }
 
+                const cardBorderStyle = isReview
+                    ? "border-amber-400 bg-gradient-to-b from-amber-50/95 via-white to-purple-50/95"
+                    : "";
+
                 return `
-                <div class="bubbly-card p-5 flex flex-col justify-between relative overflow-hidden ${!canReviewAndPractice ? 'opacity-75 grayscale-[25%]' : ''}">
+                <div class="bubbly-card ${cardBorderStyle} p-5 flex flex-col justify-between relative overflow-hidden ${!canReviewAndPractice ? 'opacity-75 grayscale-[25%]' : ''}">
                     <div>
                         <div class="flex items-center justify-between gap-2 mb-3">
-                            <span class="text-xs font-extrabold uppercase tracking-wider bg-purple-100 text-purple-900 px-3 py-1 rounded-full border border-purple-300">
-                                Stage ${lvl} / ${TOTAL_LEVELS} • 20 Words
+                            <span class="text-xs font-extrabold uppercase tracking-wider ${isReview ? 'bg-amber-300 text-purple-950 border-amber-500' : 'bg-purple-100 text-purple-900 border-purple-300'} px-3 py-1 rounded-full border">
+                                ${isReview ? `<i class="ph-fill ph-star mr-1"></i>Review Stage ${lvl}` : `Stage ${lvl} / ${TOTAL_LEVELS} • 20 Words`}
                             </span>
                             ${statusBadge}
                         </div>
 
                         <div class="flex items-center gap-3.5 my-2">
-                            <div class="w-13 h-13 p-3 rounded-2xl bg-gradient-to-br from-purple-700 to-purple-900 text-yellow-300 flex items-center justify-center text-2xl shadow-md border-2 border-yellow-400 shrink-0">
+                            <div class="w-13 h-13 p-3 rounded-2xl ${isReview ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-purple-950 border-purple-900' : 'bg-gradient-to-br from-purple-700 to-purple-900 text-yellow-300 border-yellow-400'} flex items-center justify-center text-2xl shadow-md border-2 shrink-0">
                                 <i class="ph-fill ${meta.icon}"></i>
                             </div>
                             <div>
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <h3 class="text-lg font-extrabold text-purple-950 leading-tight">${meta.title}</h3>
-                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-yellow-300 text-purple-950 border border-yellow-500">
-                                        Tier ${meta.topicNumber} of ${meta.totalInTopic}
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${isReview ? 'bg-purple-900 text-yellow-300 border-purple-700' : 'bg-yellow-300 text-purple-950 border-yellow-500'} border">
+                                        ${isReview ? '5-Level Review' : `Tier ${meta.topicNumber} of ${meta.totalInTopic}`}
                                     </span>
                                 </div>
                                 <p class="text-xs text-purple-700 font-semibold mt-0.5">${meta.subtitle}</p>
@@ -2864,12 +2978,12 @@
                         ${stats ? `
                         <div class="mt-3 bg-purple-50 rounded-2xl p-2.5 border-2 border-purple-200 grid grid-cols-3 gap-2 text-center">
                             <div>
-                                <div class="text-[10px] text-purple-600 font-bold">BEST RANK</div>
-                                <div class="text-base font-extrabold text-purple-900">${stats.bestRank}</div>
+                                <div class="text-[10px] text-purple-600 font-bold">BEST SCORE</div>
+                                <div class="text-base font-extrabold ${stats.bestScore >= PASS_SCORE ? 'text-green-700' : 'text-rose-600'}">${stats.bestScore.toLocaleString()}</div>
                             </div>
                             <div>
                                 <div class="text-[10px] text-purple-600 font-bold">ACCURACY</div>
-                                <div class="text-base font-extrabold ${stats.accuracy >= 90 ? 'text-green-700' : 'text-rose-600'}">${stats.accuracy}%</div>
+                                <div class="text-base font-extrabold text-purple-900">${stats.accuracy}%</div>
                             </div>
                             <div>
                                 <div class="text-[10px] text-purple-600 font-bold">AVG SPEED</div>
@@ -2877,9 +2991,15 @@
                             </div>
                         </div>
                         ` : `
-                        <div class="mt-3 bg-yellow-50/90 rounded-2xl p-2.5 border-2 border-yellow-300 text-xs text-purple-900 font-medium flex items-center gap-2">
-                            <i class="ph-fill ph-info text-base text-yellow-600 shrink-0"></i>
-                            <span>${lvl === 1 ? 'Review the 20 words or jump straight into Stage 1! Score 90%+ to unlock Stage 2.' : (canReviewAndPractice ? 'Step through the 20 Tutorial Flashcards to unlock this stage!' : `Score at least 90% on Stage ${lvl - 1} to unlock ${meta.title}.`)}</span>
+                        <div class="mt-3 ${isReview ? 'bg-amber-100/90 border-amber-400' : 'bg-yellow-50/90 border-yellow-300'} rounded-2xl p-2.5 border-2 text-xs text-purple-900 font-medium flex items-center gap-2">
+                            <i class="ph-fill ${isReview ? 'ph-arrows-clockwise text-amber-700' : 'ph-info text-yellow-600'} text-base shrink-0"></i>
+                            <span>${isReview
+                                ? 'Review 20 words from the last 5 levels to unlock the next level!'
+                                : (lvl === 1
+                                    ? 'Score 2,000+ points in Stage 1 to unlock Stage 2!'
+                                    : (canReviewAndPractice
+                                        ? 'Step through the 20 Tutorial Flashcards to unlock this stage!'
+                                        : `Beat the previous level to unlock ${meta.title}`))}</span>
                         </div>
                         `}
                     </div>
@@ -2890,7 +3010,7 @@
                             ${!canReviewAndPractice ? 'disabled' : ''}
                             class="flex-1 py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 ${canReviewAndPractice ? 'btn-purple' : 'btn-disabled rounded-full font-bold'}">
                             <i class="ph-bold ph-cards text-base"></i>
-                            <span>Tutorial & Review</span>
+                            <span>${isReview ? 'Preview 20 Words' : 'Tutorial & Review'}</span>
                         </button>
 
                         <button 
@@ -2898,7 +3018,7 @@
                             ${!isPlayUnlocked ? 'disabled' : ''}
                             class="flex-1 py-2 px-3 text-xs sm:text-sm flex items-center justify-center gap-1.5 ${isPlayUnlocked ? 'btn-yellow' : 'btn-disabled rounded-full font-bold'}">
                             <i class="ph-fill ${isPlayUnlocked ? 'ph-play-circle' : 'ph-lock-key'} text-base"></i>
-                            <span>${isPlayUnlocked ? 'Play Flashcards' : 'Locked'}</span>
+                            <span>${isPlayUnlocked ? (isReview ? 'Play Review' : 'Play Flashcards') : 'Locked'}</span>
                         </button>
                     </div>
                 </div>
@@ -2911,7 +3031,7 @@
             activeSession.mode = "map";
             const container = document.getElementById("appContainer");
 
-            const uniqueTopics = ["ALL", ...Array.from(new Set(LEVEL_META.map(m => m.topic)))];
+            const uniqueTopics = ["ALL", "Milestone Review", ...Array.from(new Set(LEVEL_META.filter(m => !m.isReviewLevel).map(m => m.topic)))];
             const topicPillsHtml = uniqueTopics.map(t => {
                 const active = mapFilterState.topic === t;
                 const count = t === "ALL" ? TOTAL_LEVELS : LEVEL_META.filter(m => m.topic === t).length;
@@ -2919,7 +3039,7 @@
                     <button 
                         onclick="setTopicFilter('${t}')"
                         class="px-3.5 py-1.5 rounded-full text-xs font-extrabold transition border-2 ${active ? 'bg-yellow-400 text-purple-950 border-white shadow-md scale-105' : 'bg-purple-900/80 text-purple-100 border-purple-500 hover:bg-purple-800'}">
-                        ${t === "ALL" ? `All ${TOTAL_LEVELS} Levels` : `${t} (${count})`}
+                        ${t === "ALL" ? `All ${TOTAL_LEVELS} Stages` : `${t} (${count})`}
                     </button>
                 `;
             }).join("");
@@ -2930,24 +3050,25 @@
                     <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
                         <div class="max-w-2xl">
                             <div class="inline-flex items-center gap-2 bg-yellow-400 text-purple-950 font-extrabold text-xs px-3.5 py-1 rounded-full mb-3 shadow">
-                                <i class="ph-fill ph-sparkle"></i> 2,662 TOPIK WORDS • 133 STEP-BY-STEP LEVELS
+                                <i class="ph-fill ph-sparkle"></i> 2,662 TOPIK WORDS • 133 TOPIC LEVELS + 26 MILESTONE REVIEWS
                             </div>
                             <h2 class="text-2xl md:text-4xl font-extrabold text-white leading-tight">
                                 Conquer <span class="text-yellow-300">2,662 Essential Korean Words</span> Step-by-Step!
                             </h2>
                             <p class="text-purple-100 text-xs md:text-sm mt-2">
-                                Ordered in progressive difficulty waves: start with all <strong>Tier 1 Foundation</strong> topics (Stage 1: <strong>Core Expressions & Logic 1</strong>, Stage 2: <strong>Core Actions & Movement 1</strong>, etc.), then advance through <strong>Tier 2</strong>, <strong>Tier 3</strong>, and up to the highest difficulty tiers at Stage 133!
+                                Score <strong>2,000+ points</strong> on each stage to advance! After every 5 topic levels, tackle a special <strong>Milestone Review Level</strong> featuring 20 random words from the previous 5 stages—automatically weighted toward any words you missed!
                             </p>
                         </div>
                         <div class="bg-purple-950/70 border-2 border-yellow-400 rounded-3xl p-4 text-center min-w-[220px] shadow-xl">
-                            <div class="text-xs font-bold uppercase tracking-wider text-yellow-300 mb-1">Ranking Formula</div>
+                            <div class="text-xs font-bold uppercase tracking-wider text-yellow-300 mb-1">Pass Requirement</div>
+                            <div class="text-2xl font-black text-white my-1">2,000+ PTS</div>
                             <div class="flex justify-center gap-1.5 my-2">
                                 <span class="w-8 h-8 rounded-xl bg-yellow-400 text-purple-950 font-black flex items-center justify-center shadow">S</span>
                                 <span class="w-8 h-8 rounded-xl bg-purple-500 text-white font-black flex items-center justify-center">A</span>
                                 <span class="w-8 h-8 rounded-xl bg-purple-700 text-white font-black flex items-center justify-center">B</span>
                                 <span class="w-8 h-8 rounded-xl bg-purple-900 text-purple-200 font-black flex items-center justify-center">C</span>
                             </div>
-                            <p class="text-[11px] text-purple-200">Scored on <strong>Accuracy %</strong> + <strong>Typing Speed</strong>!</p>
+                            <p class="text-[11px] text-purple-200">100 base + Speed & Streak bonuses!</p>
                         </div>
                     </div>
 
@@ -2983,12 +3104,14 @@
             activeSession.level = levelNum;
             const words = getWordsForLevel(levelNum);
             const meta = LEVEL_META[levelNum - 1];
-            const isPlayUnlocked = levelNum === 1 || gameState.practicedLevels.includes(levelNum);
+            const isPlayUnlocked = levelNum === 1 || meta.isReviewLevel || gameState.practicedLevels.includes(levelNum);
 
             const container = document.getElementById("appContainer");
 
-            const wordRowsHtml = words.map((w, idx) => `
-                <div class="bg-white rounded-2xl p-4 border-2 border-purple-200 hover:border-yellow-400 transition shadow-sm flex flex-col justify-between">
+            const wordRowsHtml = words.map((w, idx) => {
+                const missCount = gameState.missedWordCounts?.[w.id] || 0;
+                return `
+                <div class="bg-white rounded-2xl p-4 border-2 ${missCount > 0 ? 'border-rose-400' : 'border-purple-200'} hover:border-yellow-400 transition shadow-sm flex flex-col justify-between">
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-1">
                             <div class="flex items-center gap-2">
@@ -2997,6 +3120,7 @@
                                 <button type="button" onclick="speakWordById(${w.id}, false)" class="w-7 h-7 rounded-full bg-purple-100 hover:bg-yellow-300 text-purple-900 flex items-center justify-center text-sm transition" title="Listen to pronunciation">
                                     <i class="ph-fill ph-speaker-high"></i>
                                 </button>
+                                ${missCount > 0 ? `<span class="text-[10px] font-black bg-rose-100 text-rose-700 border border-rose-300 px-2 py-0.5 rounded-full">Missed ${missCount}×</span>` : ''}
                             </div>
                             <div class="flex items-center gap-1.5">
                                 <span class="bg-yellow-300 text-purple-950 font-extrabold text-sm px-3 py-0.5 rounded-full border border-yellow-500 text-right">
@@ -3007,7 +3131,7 @@
                         <p class="text-xs font-semibold text-purple-600 pl-9">${w.notes}</p>
                     </div>
                 </div>
-            `).join("");
+            `}).join("");
 
             container.innerHTML = `
                 <div class="bubbly-panel-purple p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -3017,19 +3141,19 @@
                         </button>
                         <div>
                             <h2 class="text-2xl font-extrabold text-yellow-300">Stage ${levelNum}: ${meta.title}</h2>
-                            <p class="text-xs md:text-sm text-purple-100">${meta.subtitle} — Study all 20 words! (90% accuracy required to unlock next level)</p>
+                            <p class="text-xs md:text-sm text-purple-100">${meta.subtitle} — Score 2,000+ points to pass & unlock the next stage!</p>
                         </div>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2.5">
                         <button onclick="startSentencePractice(${levelNum})" class="btn-yellow px-5 py-3 text-sm md:text-base flex items-center gap-2 animate-bounce">
                             <i class="ph-fill ph-cards text-xl"></i>
-                            <span>${isPlayUnlocked ? 'Launch Tutorial Flashcards Again' : 'Start Tutorial Flashcards to Unlock Stage ' + levelNum}</span>
+                            <span>${isPlayUnlocked ? 'Launch Tutorial Flashcards' : 'Start Tutorial Flashcards to Unlock Stage ' + levelNum}</span>
                         </button>
                         ${isPlayUnlocked ? `
                         <button onclick="startFlashcardGame(${levelNum})" class="btn-purple px-5 py-3 text-sm md:text-base flex items-center gap-2">
                             <i class="ph-fill ph-play-circle text-xl"></i>
-                            <span>Play Flashcards</span>
+                            <span>${meta.isReviewLevel ? 'Play Milestone Review' : 'Play Flashcards'}</span>
                         </button>
                         ` : ''}
                     </div>
@@ -3331,7 +3455,7 @@
 
                         <div class="flex items-center gap-2 sm:gap-3">
                             <div class="bg-purple-950/90 border-2 border-purple-400 px-3 py-1 rounded-full text-xs font-extrabold text-purple-200">
-                                PASS: 90% (18/20)
+                                PASS: ${PASS_SCORE.toLocaleString()}+ PTS
                             </div>
                             <div class="bg-purple-950/90 border-2 border-yellow-400 px-3.5 py-1 rounded-full text-xs font-extrabold text-yellow-300">
                                 CARD ${idx + 1} / ${total}
@@ -3371,6 +3495,11 @@
                             <div class="text-4xl sm:text-5xl font-black text-purple-950 tracking-tight px-4 break-words">
                                 ${mainPrompt}
                             </div>
+                            ${(gameState.missedWordCounts?.[w.id] || 0) > 0 && LEVEL_META[activeSession.level - 1]?.isReviewLevel ? `
+                            <div class="mt-3 inline-flex items-center gap-1 bg-rose-100 text-rose-800 border border-rose-300 px-3 py-0.5 rounded-full text-xs font-extrabold">
+                                <i class="ph-fill ph-target"></i> Priority Review Word (Missed ${gameState.missedWordCounts[w.id]}× previously)
+                            </div>
+                            ` : ''}
                         </div>
 
                         <!-- Answer Input Form -->
@@ -3462,6 +3591,11 @@
             } else {
                 playSound('wrong');
                 activeSession.streak = 0;
+                // Record missed word so future Review Levels weight toward it
+                if (!gameState.missedWordCounts) gameState.missedWordCounts = {};
+                gameState.missedWordCounts[w.id] = (gameState.missedWordCounts[w.id] || 0) + 1;
+                saveProgress();
+
                 cardBox.classList.remove("animate-pop");
                 cardBox.classList.add("animate-shake");
 
@@ -3494,7 +3628,7 @@
             const meta = LEVEL_META[lvl - 1];
             const total = activeSession.words.length;
             const accuracyPct = Math.round((activeSession.correctCount / total) * 100);
-            const passedLevel = accuracyPct >= 90;
+            const passedLevel = activeSession.score >= PASS_SCORE;
 
             if (passedLevel) {
                 playSound('fanfare');
@@ -3507,13 +3641,14 @@
 
             const rankInfo = calculateRank(accuracyPct, avgSpeedSec);
 
-            // Save level stats; only mark completed & unlock next level if accuracy >= 90%
+            // Save level stats; only mark completed & unlock next level if score >= 2000
             const prevStats = gameState.levelStats[lvl] || { bestScore: 0, bestRank: "C", accuracy: 0, completed: false };
-            const isNowCompleted = Boolean(prevStats.completed || passedLevel);
+            const newBestScore = Math.max(prevStats.bestScore || 0, activeSession.score);
+            const isNowCompleted = Boolean(newBestScore >= PASS_SCORE);
 
             gameState.levelStats[lvl] = {
                 completed: isNowCompleted,
-                bestScore: Math.max(prevStats.bestScore || 0, activeSession.score),
+                bestScore: newBestScore,
                 bestRank: activeSession.score >= (prevStats.bestScore || 0) ? rankInfo.rank : prevStats.bestRank,
                 accuracy: Math.max(prevStats.accuracy || 0, accuracyPct),
                 avgSpeedSec: avgSpeedSec
@@ -3521,24 +3656,30 @@
 
             if (passedLevel && lvl < TOTAL_LEVELS && gameState.unlockedLevel < lvl + 1) {
                 gameState.unlockedLevel = lvl + 1;
+                // If the next stage is a Milestone Review level, automatically mark it ready to play!
+                if (LEVEL_META[lvl]?.isReviewLevel && !gameState.practicedLevels.includes(lvl + 1)) {
+                    gameState.practicedLevels.push(lvl + 1);
+                }
             }
             saveProgress();
 
             const hasNextLevel = lvl < TOTAL_LEVELS;
+            const nextMeta = hasNextLevel ? LEVEL_META[lvl] : null;
+            const pointsShort = Math.max(0, PASS_SCORE - activeSession.score);
             const container = document.getElementById("appContainer");
 
             container.innerHTML = `
                 <div class="max-w-2xl mx-auto w-full my-auto bubbly-card p-7 md:p-10 text-center animate-pop">
                     <div class="inline-flex items-center gap-2 ${passedLevel ? 'bg-purple-900 text-yellow-300' : 'bg-rose-600 text-white'} text-xs font-extrabold px-4 py-1.5 rounded-full mb-4">
                         <i class="ph-fill ${passedLevel ? 'ph-confetti' : 'ph-warning-circle'}"></i>
-                        ${passedLevel ? `STAGE ${lvl} (${meta.title}) PASSED!` : `STAGE ${lvl} (${meta.title}) — 90% REQUIRED TO UNLOCK NEXT LEVEL`}
+                        ${passedLevel ? `STAGE ${lvl} (${meta.title}) PASSED!` : `STAGE ${lvl} (${meta.title}) — 2,000+ PTS REQUIRED TO PASS`}
                     </div>
 
                     <h2 class="text-3xl sm:text-4xl font-black text-purple-950 mb-1">${passedLevel ? rankInfo.title : 'Almost There! Keep Practicing!'}</h2>
                     <p class="text-sm font-semibold text-purple-700 mb-6">
                         ${passedLevel
-                            ? `Great job! You achieved ${accuracyPct}% accuracy (${activeSession.correctCount}/${total}) and passed the 90% threshold!`
-                            : `You got ${accuracyPct}% (${activeSession.correctCount}/${total} words). You need at least 90% (18/${total} words correct) to unlock Stage ${lvl + 1}.`}
+                            ? `Awesome job! You scored <strong>${activeSession.score.toLocaleString()} PTS</strong>, beating the ${PASS_SCORE.toLocaleString()}-point pass requirement!`
+                            : `You scored <strong>${activeSession.score.toLocaleString()} PTS</strong> (${pointsShort.toLocaleString()} pts shy of ${PASS_SCORE.toLocaleString()}). Answer accurately and build streaks to score 2,000+ points and unlock Stage ${lvl + 1}!`}
                     </p>
 
                     <!-- Rank Badge & Stats -->
@@ -3547,14 +3688,15 @@
                             <span class="text-xs font-bold text-purple-200 uppercase">RANK</span>
                             <span class="text-5xl font-black text-yellow-300 my-1">${rankInfo.rank}</span>
                         </div>
-                        <div class="bg-purple-50 p-4 rounded-3xl border-2 border-purple-200 flex flex-col justify-center">
-                            <span class="text-xs font-bold text-purple-600 uppercase">SCORE</span>
-                            <span class="text-2xl font-black text-purple-950 mt-1">${activeSession.score.toLocaleString()}</span>
-                        </div>
                         <div class="bg-purple-50 p-4 rounded-3xl border-2 ${passedLevel ? 'border-green-400 bg-green-50' : 'border-rose-400 bg-rose-50'} flex flex-col justify-center">
-                            <span class="text-xs font-bold ${passedLevel ? 'text-green-700' : 'text-rose-700'} uppercase">ACCURACY (90% REQ)</span>
-                            <span class="text-2xl font-black ${passedLevel ? 'text-green-900' : 'text-rose-900'} mt-1">${accuracyPct}%</span>
-                            <span class="text-[11px] font-semibold ${passedLevel ? 'text-green-700' : 'text-rose-700'}">${activeSession.correctCount} / ${total} words</span>
+                            <span class="text-xs font-bold ${passedLevel ? 'text-green-700' : 'text-rose-700'} uppercase">SCORE (2,000 REQ)</span>
+                            <span class="text-2xl font-black ${passedLevel ? 'text-green-900' : 'text-rose-900'} mt-1">${activeSession.score.toLocaleString()}</span>
+                            <span class="text-[11px] font-semibold ${passedLevel ? 'text-green-700' : 'text-rose-700'}">${passedLevel ? 'Passed!' : `Need ${pointsShort} more`}</span>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-3xl border-2 border-purple-200 flex flex-col justify-center">
+                            <span class="text-xs font-bold text-purple-600 uppercase">ACCURACY</span>
+                            <span class="text-2xl font-black text-purple-950 mt-1">${accuracyPct}%</span>
+                            <span class="text-[11px] font-semibold text-purple-600">${activeSession.correctCount} / ${total} words</span>
                         </div>
                         <div class="bg-purple-50 p-4 rounded-3xl border-2 border-purple-200 flex flex-col justify-center">
                             <span class="text-xs font-bold text-purple-600 uppercase">AVG SPEED</span>
@@ -3567,31 +3709,33 @@
                     <div class="bg-yellow-100 border-2 border-yellow-400 rounded-3xl p-4 mb-6 text-left flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div>
                             <div class="text-sm font-black text-purple-950 flex items-center gap-1.5">
-                                <i class="ph-fill ph-sparkle text-yellow-600 text-lg"></i>
-                                Unlocked: Stage ${lvl + 1} — ${LEVEL_META[lvl].title}
+                                <i class="ph-fill ${nextMeta.isReviewLevel ? 'ph-arrows-clockwise' : 'ph-sparkle'} text-yellow-600 text-lg"></i>
+                                Unlocked: Stage ${lvl + 1} — ${nextMeta.title}
                             </div>
                             <p class="text-xs text-purple-800 font-semibold mt-0.5">
-                                Step through the 20 Tutorial Flashcards to learn the upcoming words and unlock Stage ${lvl + 1}!
+                                ${nextMeta.isReviewLevel
+                                    ? 'Milestone Review Stage! Test yourself on 20 random words from the last 5 levels, weighted toward any words you missed!'
+                                    : `Step through the 20 Tutorial Flashcards to learn the upcoming words and unlock Stage ${lvl + 1}!`}
                             </p>
                         </div>
-                        <button onclick="startSentencePractice(${lvl + 1})" class="btn-yellow px-5 py-3 text-sm shrink-0 flex items-center gap-1.5">
-                            <span>Start Stage ${lvl + 1} Tutorial</span>
+                        <button onclick="${nextMeta.isReviewLevel ? `startFlashcardGame(${lvl + 1})` : `startSentencePractice(${lvl + 1})`}" class="btn-yellow px-5 py-3 text-sm shrink-0 flex items-center gap-1.5">
+                            <span>${nextMeta.isReviewLevel ? `Play ${nextMeta.title}` : `Start Stage ${lvl + 1} Tutorial`}</span>
                             <i class="ph-bold ph-arrow-right"></i>
                         </button>
                     </div>
                     ` : `
                     <div class="bg-yellow-100 border-2 border-yellow-400 rounded-3xl p-4 mb-6 text-center">
-                        <div class="text-base font-black text-purple-950">🎉 Congratulations! You have conquered all 133 Levels (2,662 Words) of 1K 2KOREAN!</div>
+                        <div class="text-base font-black text-purple-950">🎉 Congratulations! You have conquered all ${TOTAL_LEVELS} Stages (2,662 Words + Reviews) of 2K2KOREAN!</div>
                     </div>
                     `) : `
                     <div class="bg-rose-100 border-2 border-rose-400 rounded-3xl p-4 mb-6 text-left flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div>
                             <div class="text-sm font-black text-rose-950 flex items-center gap-1.5">
                                 <i class="ph-fill ph-lock-key text-rose-600 text-lg"></i>
-                                Stage ${lvl + 1} Still Locked — Need 90%+ Accuracy
+                                Stage ${lvl + 1} Still Locked — Need 2,000+ Points
                             </div>
                             <p class="text-xs text-rose-800 font-semibold mt-0.5">
-                                Review the 20 words in the Tutorial Deck or replay Stage ${lvl} now to get at least 18/20 words right!
+                                Review the 20 words in the Tutorial Deck or replay Stage ${lvl} now to reach at least 2,000 points!
                             </p>
                         </div>
                         <button onclick="startSentencePractice(${lvl})" class="btn-purple px-5 py-3 text-sm shrink-0 flex items-center gap-1.5">
@@ -3606,7 +3750,7 @@
                             <i class="ph-bold ph-arrows-clockwise"></i> ${passedLevel ? `Replay Stage ${lvl}` : `Try Stage ${lvl} Again`}
                         </button>
                         <button onclick="showMapScreen()" class="btn-purple px-6 py-3 text-sm flex items-center gap-1.5">
-                            <i class="ph-bold ph-map-trifold"></i> 133-Level Map
+                            <i class="ph-bold ph-map-trifold"></i> ${TOTAL_LEVELS}-Stage Map
                         </button>
                     </div>
                 </div>
