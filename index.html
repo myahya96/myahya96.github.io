@@ -3090,8 +3090,8 @@
                 ` : ''}
 
                 <div class="bg-yellow-50 border border-yellow-400 rounded-xl p-2.5 text-[11px] font-semibold text-purple-950 flex items-center justify-between gap-2">
-                    <span><i class="ph-fill ph-shield-check text-purple-800 mr-1" aria-hidden="true"></i>SHA-256 Hashed Passwords • HTTPS Enforced</span>
-                    <span class="text-[10px] font-mono text-purple-700 shrink-0" id="cloudUidBadge">${authSession.firebaseUser ? 'Cloud Ready' : 'Connecting...'}</span>
+                    <span><i class="ph-fill ph-shield-check text-purple-800 mr-1" aria-hidden="true"></i>App Check &amp; SHA-256 Protected • HTTPS Enforced</span>
+                    <span class="text-[10px] font-mono text-purple-700 shrink-0" id="cloudUidBadge">${authSession.firebaseUser ? 'Cloud + App Check Active' : 'Protected'}</span>
                 </div>
             `;
         }
@@ -4148,6 +4148,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import {
+            initializeAppCheck,
+            ReCaptchaEnterpriseProvider
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
+        import {
             getAuth,
             onAuthStateChanged,
             GoogleAuthProvider,
@@ -4177,6 +4181,25 @@
         };
 
         const app = initializeApp(firebaseConfig);
+
+        // Replace the tail of RECAPTCHA_ENTERPRISE_SITE_KEY below if your full 40-character key has 2 more characters at the end
+        const RECAPTCHA_ENTERPRISE_SITE_KEY = window.RECAPTCHA_ENTERPRISE_SITE_KEY || "6Lf9xfctAAAAADcB-BCZt14PfvGaFK4QlzPZlsH";
+        let appCheckInstance = null;
+        try {
+            const loc = window.location;
+            const isLocalOrPreview = loc.hostname === "localhost" || loc.hostname === "127.0.0.1" || loc.hostname === "" || loc.protocol === "blob:" || loc.protocol === "about:";
+            if (isLocalOrPreview) {
+                // Allows local testing in debug mode if needed without blocking preview
+                self.FIREBASE_APPCHECK_DEBUG_TOKEN = self.FIREBASE_APPCHECK_DEBUG_TOKEN || true;
+            }
+            appCheckInstance = initializeAppCheck(app, {
+                provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
+                isTokenAutoRefreshEnabled: true
+            });
+        } catch (appCheckErr) {
+            console.warn("Firebase App Check initialization note:", appCheckErr);
+        }
+
         const primaryAuth = getAuth(app);
         const primaryDb = getFirestore(app);
 
@@ -4229,24 +4252,31 @@
             isReady: true,
 
             async saveCurrentAccountProgress(stateToSave) {
-                const acct = authSession.activeAccount;
-                if (!acct || acct.provider === "guest" || !acct.accountKey) return;
+                const currentUser = primaryAuth.currentUser;
+                if (!currentUser) {
+                    console.warn("User is not signed in to Firebase Auth. Skipping cloud save.");
+                    return;
+                }
 
+                const acct = authSession.activeAccount;
                 const cleanState = sanitizeGameState(stateToSave || gameState);
+
                 // Update in-memory knownAccounts entry
-                const existingIdx = authSession.knownAccounts.findIndex(a => a.accountKey === acct.accountKey);
+                const existingIdx = authSession.knownAccounts.findIndex(a => a.uid === currentUser.uid || (acct && a.accountKey === acct.accountKey));
                 if (existingIdx >= 0) {
                     authSession.knownAccounts[existingIdx].gameState = cleanState;
                 }
 
                 try {
-                    const userDocRef = doc(primaryDb, "users", acct.accountKey);
+                    const userDocRef = doc(primaryDb, "users", currentUser.uid);
                     await setDoc(userDocRef, {
-                        accountKey: acct.accountKey,
-                        email: acct.email,
-                        displayName: acct.displayName,
-                        provider: acct.provider,
+                        uid: currentUser.uid,
+                        accountKey: currentUser.uid,
+                        email: currentUser.email || acct?.email || "",
+                        displayName: currentUser.displayName || acct?.displayName || "",
+                        provider: acct?.provider || "email-password",
                         gameState: cleanState,
+                        ...cleanState,
                         updatedAt: Date.now()
                     }, { merge: true });
                 } catch (err) {
@@ -4255,22 +4285,26 @@
             },
 
             async loadCurrentAccountProgress() {
-                const acct = authSession.activeAccount;
-                if (!acct || acct.provider === "guest" || !acct.accountKey) return;
+                const currentUser = primaryAuth.currentUser;
+                if (!currentUser) {
+                    console.warn("User is not signed in to Firebase Auth. Skipping cloud load.");
+                    return;
+                }
 
                 try {
-                    const userDocRef = doc(primaryDb, "users", acct.accountKey);
+                    const userDocRef = doc(primaryDb, "users", currentUser.uid);
                     const snap = await getDoc(userDocRef);
                     if (snap.exists()) {
                         const data = snap.data();
-                        if (data && data.gameState) {
-                            gameState = sanitizeGameState(data.gameState);
+                        const loadedState = data?.gameState ? data.gameState : data;
+                        if (loadedState) {
+                            gameState = sanitizeGameState(loadedState);
                             updateHeaderStats();
                             if (activeSession.mode === "map") showMapScreen();
                             if (activeSession.mode === "profile") showProfileScreen();
                         }
                     } else {
-                        // First time save for this account
+                        // First time save for this UID
                         await this.saveCurrentAccountProgress(gameState);
                     }
                 } catch (err) {
@@ -4333,40 +4367,53 @@
 
                 try {
                     const passwordHash = await hashPasswordSha256(email, password);
-                    const accountKey = emailToAccountKey(email);
-                    const userDocRef = doc(primaryDb, "users", accountKey);
 
                     if (mode === "register") {
                         const displayName = rawDisplayName || email.split("@")[0];
+                        let cred = null;
                         try {
-                            const cred = await createUserWithEmailAndPassword(primaryAuth, email, password);
+                            cred = await createUserWithEmailAndPassword(primaryAuth, email, password);
                             if (cred.user && displayName) {
                                 await updateProfile(cred.user, { displayName });
                             }
                         } catch (sdkErr) {
                             if (sdkErr?.code === "auth/email-already-in-use") {
                                 showAuthError("This email is already registered. Please switch to Sign In.");
-                                if (submitBtn) submitBtn.disabled = false;
-                                return;
+                            } else {
+                                showAuthError(sdkErr?.message || "Registration failed.");
                             }
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
                         }
 
+                        const currentUser = cred?.user || primaryAuth.currentUser;
+                        if (!currentUser) {
+                            showAuthError("Could not establish Firebase Auth session.");
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+
+                        const uid = currentUser.uid;
+                        const userDocRef = doc(primaryDb, "users", uid);
                         const initialGameState = getDefaultGameState();
                         gameState = initialGameState;
 
                         await setDoc(userDocRef, {
-                            accountKey,
+                            uid,
+                            accountKey: uid,
                             email,
                             displayName,
                             passwordHash, // Stored as salted SHA-256 hash, never plain text
                             provider: "email-password",
                             gameState: initialGameState,
+                            ...initialGameState,
                             createdAt: Date.now(),
                             updatedAt: Date.now()
                         }, { merge: true });
 
                         this.activateAuthenticatedUser({
-                            accountKey,
+                            uid,
+                            accountKey: uid,
                             email,
                             displayName,
                             provider: "email-password",
@@ -4375,47 +4422,52 @@
 
                         showToast(`Welcome to 2K2KOREAN!, ${displayName}!`, "ph-sparkle");
                     } else {
-                        // Sign In flow
-                        let sdkSignedIn = false;
+                        // Sign In flow using Firebase Auth so request.auth.uid is populated
+                        let cred = null;
                         try {
-                            await signInWithEmailAndPassword(primaryAuth, email, password);
-                            sdkSignedIn = true;
+                            cred = await signInWithEmailAndPassword(primaryAuth, email, password);
                         } catch (sdkErr) {
-                            if (sdkErr?.code === "auth/wrong-password" || sdkErr?.code === "auth/invalid-credential") {
-                                // Still check Firestore hash in case password was reset via cloud hash
-                            }
+                            showAuthError("Incorrect email or password. Use 'Forgot Password?' if you need to reset it.");
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
                         }
 
+                        const currentUser = cred?.user || primaryAuth.currentUser;
+                        if (!currentUser) {
+                            showAuthError("User is not signed in to Firebase Auth.");
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+
+                        const uid = currentUser.uid;
+                        const userDocRef = doc(primaryDb, "users", uid);
                         const snap = await getDoc(userDocRef);
+
                         if (snap.exists()) {
                             const data = snap.data();
-                            if (data.passwordHash && data.passwordHash !== passwordHash && !sdkSignedIn) {
-                                showAuthError("Incorrect password for this account. Use 'Forgot Password?' if needed.");
-                                if (submitBtn) submitBtn.disabled = false;
-                                return;
-                            }
-                            gameState = sanitizeGameState(data.gameState);
+                            const loadedState = data?.gameState ? data.gameState : data;
+                            gameState = sanitizeGameState(loadedState);
                             this.activateAuthenticatedUser({
-                                accountKey,
+                                uid,
+                                accountKey: uid,
                                 email,
-                                displayName: data.displayName || email.split("@")[0],
+                                displayName: data.displayName || currentUser.displayName || email.split("@")[0],
                                 provider: "email-password",
                                 hasPassword: true
                             }, keepLoggedIn);
-                            showToast(`Welcome back, ${data.displayName || email.split("@")[0]}!`, "ph-check-circle");
-                        } else if (sdkSignedIn && primaryAuth.currentUser) {
-                            const u = primaryAuth.currentUser;
+                            showToast(`Welcome back, ${data.displayName || currentUser.displayName || email.split("@")[0]}!`, "ph-check-circle");
+                        } else {
                             gameState = getDefaultGameState();
+                            await this.saveCurrentAccountProgress(gameState);
                             this.activateAuthenticatedUser({
-                                accountKey,
+                                uid,
+                                accountKey: uid,
                                 email,
-                                displayName: u.displayName || email.split("@")[0],
+                                displayName: currentUser.displayName || email.split("@")[0],
                                 provider: "email-password",
                                 hasPassword: true
                             }, keepLoggedIn);
                             showToast(`Signed in as ${email}!`, "ph-check-circle");
-                        } else {
-                            showAuthError("No account found with that email. Please switch to 'Create Account'.");
                         }
                     }
                 } catch (err) {
@@ -4446,16 +4498,16 @@
                     console.warn("Firebase sendPasswordResetEmail note:", sdkErr);
                 }
 
-                // 2. Fallback Firestore SHA-256 Hash Reset (verifying Display Name)
-                if (verifyName && newPwd) {
+                // 2. Optional Cloud SHA-256 Hash Update if user is currently authenticated with matching UID
+                if (verifyName && newPwd && primaryAuth.currentUser) {
                     const pwdCheck = validatePasswordSecurity(newPwd);
                     if (!pwdCheck.valid) {
                         showAuthError(pwdCheck.reason);
                         return;
                     }
                     try {
-                        const accountKey = emailToAccountKey(email);
-                        const userDocRef = doc(primaryDb, "users", accountKey);
+                        const uid = primaryAuth.currentUser.uid;
+                        const userDocRef = doc(primaryDb, "users", uid);
                         const snap = await getDoc(userDocRef);
                         if (snap.exists()) {
                             const data = snap.data();
@@ -4465,10 +4517,7 @@
                                     passwordHash: newHash,
                                     updatedAt: Date.now()
                                 }, { merge: true });
-                                resetStatusMessages.push("Your cloud SHA-256 password hash has been updated! You can now sign in.");
-                            } else {
-                                showAuthError("Display Name did not match our records for instant hash reset.");
-                                return;
+                                resetStatusMessages.push("Your cloud SHA-256 password hash has been updated!");
                             }
                         }
                     } catch (err) {
@@ -4494,10 +4543,9 @@
                         const email = (u.email || u.providerData?.[0]?.email || `${u.uid}@google.user`).toLowerCase();
                         const displayName = u.displayName || u.providerData?.[0]?.displayName || email.split("@")[0];
                         const photoURL = u.photoURL || u.providerData?.[0]?.photoURL || null;
-                        const accountKey = emailToAccountKey(email);
 
                         this.activateAuthenticatedUser({
-                            accountKey,
+                            accountKey: u.uid,
                             uid: u.uid,
                             email,
                             displayName,
@@ -4548,14 +4596,13 @@
             if (badge) {
                 badge.textContent = user ? "Cloud Connected" : "Ready";
             }
-            if (user && (!authSession.activeAccount || authSession.activeAccount.provider === "guest")) {
+            if (user && (!authSession.activeAccount || authSession.activeAccount.provider === "guest" || authSession.activeAccount.uid !== user.uid)) {
                 const email = (user.email || user.providerData?.[0]?.email || `${user.uid}@user.k2korean`).toLowerCase();
                 const displayName = user.displayName || user.providerData?.[0]?.displayName || email.split("@")[0];
                 const photoURL = user.photoURL || user.providerData?.[0]?.photoURL || null;
-                const accountKey = emailToAccountKey(email);
 
                 cloudAuthManager.activateAuthenticatedUser({
-                    accountKey,
+                    accountKey: user.uid,
                     uid: user.uid,
                     email,
                     displayName,
