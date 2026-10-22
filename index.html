@@ -698,9 +698,18 @@
             if (overlay) overlay.classList.add("hidden");
         }
 
-        let cookieConsentState = "pending";
+        let cookieConsentState = (function() {
+            try {
+                return localStorage.getItem("k2korean_cookie_consent") || "pending";
+            } catch (e) {
+                return "pending";
+            }
+        })();
         function acceptCookieConsent(level) {
             cookieConsentState = level;
+            try {
+                localStorage.setItem("k2korean_cookie_consent", level);
+            } catch (e) {}
             const banner = document.getElementById("cookieConsentBanner");
             if (banner) banner.classList.add("hidden");
             showToast("Cookie preferences saved.", "ph-check-circle");
@@ -2588,6 +2597,247 @@
             };
         }
 
+        const RANK_PRIORITY_MAP = { S: 4, A: 3, B: 2, C: 1 };
+
+        function normalizeGameState(rawState, rootDocData = null) {
+            const def = getDefaultGameState();
+            const src = (rawState && typeof rawState === "object") ? rawState : {};
+            const root = (rootDocData && typeof rootDocData === "object") ? rootDocData : {};
+
+            const mergedLevelStats = {};
+            const rawStatsSources = [root.levelStats, src.levelStats];
+            rawStatsSources.forEach(statsObj => {
+                if (!statsObj || typeof statsObj !== "object") return;
+                Object.keys(statsObj).forEach(lvlKey => {
+                    const st = statsObj[lvlKey];
+                    if (!st || typeof st !== "object") return;
+                    const prev = mergedLevelStats[lvlKey] || {};
+                    const scoreA = Number(prev.bestScore || 0);
+                    const scoreB = Number(st.bestScore || 0);
+                    const bestScore = Math.max(scoreA, scoreB);
+                    const accA = Number(prev.accuracy || 0);
+                    const accB = Number(st.accuracy || 0);
+                    const accuracy = Math.max(accA, accB);
+                    const spdA = Number(prev.avgSpeedSec || 0);
+                    const spdB = Number(st.avgSpeedSec || 0);
+                    const avgSpeedSec = (spdA > 0 && spdB > 0) ? Math.min(spdA, spdB) : (spdA > 0 ? spdA : spdB);
+                    const rankA = prev.bestRank || "C";
+                    const rankB = st.bestRank || "C";
+                    const bestRank = (RANK_PRIORITY_MAP[rankB] || 0) >= (RANK_PRIORITY_MAP[rankA] || 0) ? rankB : rankA;
+                    const completed = Boolean(prev.completed || st.completed || bestScore >= PASS_SCORE);
+                    mergedLevelStats[lvlKey] = {
+                        bestScore,
+                        bestRank,
+                        accuracy,
+                        avgSpeedSec,
+                        completed
+                    };
+                });
+            });
+
+            let derivedUnlocked = 1;
+            Object.keys(mergedLevelStats).forEach(lvlKey => {
+                const lvlNum = Number(lvlKey);
+                const st = mergedLevelStats[lvlKey];
+                if (lvlNum >= 1 && st && (st.completed || Number(st.bestScore || 0) >= PASS_SCORE)) {
+                    derivedUnlocked = Math.max(derivedUnlocked, Math.min(TOTAL_LEVELS, lvlNum + 1));
+                }
+            });
+
+            const unlockedLevel = Math.min(
+                TOTAL_LEVELS,
+                Math.max(
+                    1,
+                    Number(src.unlockedLevel || 1),
+                    Number(root.unlockedLevel || 1),
+                    derivedUnlocked
+                )
+            );
+
+            const practicedSet = new Set([1]);
+            [root.practicedLevels, src.practicedLevels].forEach(arr => {
+                if (Array.isArray(arr)) {
+                    arr.forEach(n => {
+                        const lvlNum = Number(n);
+                        if (lvlNum >= 1 && lvlNum <= TOTAL_LEVELS) practicedSet.add(lvlNum);
+                    });
+                }
+            });
+            for (let l = 1; l <= unlockedLevel; l++) {
+                practicedSet.add(l);
+            }
+
+            const mergedMissed = {};
+            [root.missedWordCounts, src.missedWordCounts].forEach(mObj => {
+                if (!mObj || typeof mObj !== "object") return;
+                Object.keys(mObj).forEach(wId => {
+                    const cnt = Number(mObj[wId] || 0);
+                    if (cnt > 0) {
+                        mergedMissed[wId] = Math.max(Number(mergedMissed[wId] || 0), cnt);
+                    }
+                });
+            });
+
+            const victoryPoints = Math.max(
+                0,
+                Number(src.victoryPoints || 0),
+                Number(root.victoryPoints || 0)
+            );
+
+            return {
+                unlockedLevel,
+                practicedLevels: Array.from(practicedSet).sort((a, b) => a - b),
+                missedWordCounts: mergedMissed,
+                levelStats: mergedLevelStats,
+                victoryPoints
+            };
+        }
+
+        function mergeGameStates(stateA, stateB) {
+            const normA = normalizeGameState(stateA);
+            const normB = normalizeGameState(stateB);
+            return normalizeGameState(normB, normA);
+        }
+
+        window.normalizeGameState = normalizeGameState;
+        window.mergeGameStates = mergeGameStates;
+
+        function getAccountStorageKey(acctOrId) {
+            if (!acctOrId) return "";
+            if (typeof acctOrId === "string") {
+                return "k2korean_progress_" + acctOrId.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "_");
+            }
+            const uidPart = acctOrId.uid || acctOrId.accountKey || "";
+            if (uidPart) {
+                return "k2korean_progress_" + String(uidPart).trim().replace(/[^a-z0-9_-]/g, "_");
+            }
+            if (acctOrId.email) {
+                return "k2korean_progress_" + String(acctOrId.email).toLowerCase().trim().replace(/[^a-z0-9_-]/g, "_");
+            }
+            return "";
+        }
+
+        const localProgressStore = {
+            saveAccountProgress(acct, stateToSave) {
+                if (!acct || acct.provider === "guest") return;
+                const clean = normalizeGameState(stateToSave || gameState);
+                try {
+                    const primaryKey = getAccountStorageKey(acct.uid || acct.accountKey);
+                    if (primaryKey) {
+                        const existingRaw = localStorage.getItem(primaryKey);
+                        const existing = existingRaw ? safeJsonParse(existingRaw, null) : null;
+                        const merged = existing ? mergeGameStates(existing, clean) : clean;
+                        localStorage.setItem(primaryKey, JSON.stringify(merged));
+                    }
+                    if (acct.email) {
+                        const emailKey = getAccountStorageKey(acct.email);
+                        if (emailKey) {
+                            const existingEmailRaw = localStorage.getItem(emailKey);
+                            const existingEmail = existingEmailRaw ? safeJsonParse(existingEmailRaw, null) : null;
+                            const mergedEmail = existingEmail ? mergeGameStates(existingEmail, clean) : clean;
+                            localStorage.setItem(emailKey, JSON.stringify(mergedEmail));
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Local storage progress save note:", e);
+                }
+            },
+
+            loadAccountProgress(acct) {
+                if (!acct || acct.provider === "guest") return null;
+                let result = null;
+                try {
+                    const primaryKey = getAccountStorageKey(acct.uid || acct.accountKey);
+                    if (primaryKey) {
+                        const raw = localStorage.getItem(primaryKey);
+                        if (raw) {
+                            const parsed = safeJsonParse(raw, null);
+                            if (parsed) result = normalizeGameState(parsed);
+                        }
+                    }
+                    if (acct.email) {
+                        const emailKey = getAccountStorageKey(acct.email);
+                        if (emailKey) {
+                            const rawEmail = localStorage.getItem(emailKey);
+                            if (rawEmail) {
+                                const parsedEmail = safeJsonParse(rawEmail, null);
+                                if (parsedEmail) {
+                                    result = result ? mergeGameStates(result, parsedEmail) : normalizeGameState(parsedEmail);
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Local storage progress load note:", e);
+                }
+                return result;
+            },
+
+            saveSessionMeta() {
+                try {
+                    const payload = {
+                        activeAccount: authSession.activeAccount,
+                        keepLoggedIn: Boolean(authSession.keepLoggedIn),
+                        loginTimestamp: authSession.loginTimestamp || Date.now(),
+                        lastActivityTimestamp: authSession.lastActivityTimestamp || Date.now(),
+                        knownAccounts: (authSession.knownAccounts || []).map(a => ({
+                            uid: a.uid || a.accountKey,
+                            accountKey: a.accountKey || a.uid,
+                            email: a.email || "",
+                            displayName: a.displayName || "",
+                            photoURL: a.photoURL || null,
+                            provider: a.provider || "email-password",
+                            hasPassword: Boolean(a.hasPassword),
+                            gameState: normalizeGameState(a.gameState)
+                        }))
+                    };
+                    localStorage.setItem("k2korean_session_meta_v1", JSON.stringify(payload));
+                } catch (e) {
+                    console.warn("Session meta save note:", e);
+                }
+            },
+
+            restoreSessionMeta() {
+                try {
+                    const raw = localStorage.getItem("k2korean_session_meta_v1");
+                    if (!raw) return;
+                    const data = safeJsonParse(raw, null);
+                    if (!data || typeof data !== "object") return;
+
+                    if (Array.isArray(data.knownAccounts)) {
+                        authSession.knownAccounts = data.knownAccounts.map(a => ({
+                            ...a,
+                            gameState: normalizeGameState(a.gameState)
+                        }));
+                    }
+
+                    if (data.activeAccount && data.activeAccount.provider !== "guest") {
+                        const now = Date.now();
+                        const keep = Boolean(data.keepLoggedIn);
+                        const loginStart = Number(data.loginTimestamp || now);
+                        const lastActive = Number(data.lastActivityTimestamp || now);
+                        const maxAbs = keep ? ABSOLUTE_TIMEOUT_KEEP_MS : ABSOLUTE_TIMEOUT_DEFAULT_MS;
+                        const expiredAbs = (now - loginStart) >= maxAbs;
+                        const expiredIdle = !keep && ((now - lastActive) >= IDLE_TIMEOUT_MS);
+
+                        if (!expiredAbs && !expiredIdle) {
+                            authSession.activeAccount = data.activeAccount;
+                            authSession.keepLoggedIn = keep;
+                            authSession.loginTimestamp = loginStart;
+                            authSession.lastActivityTimestamp = now;
+                            const cachedState = this.loadAccountProgress(data.activeAccount);
+                            if (cachedState) {
+                                gameState = mergeGameStates(gameState, cachedState);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Session meta restore note:", e);
+                }
+            }
+        };
+        window.localProgressStore = localProgressStore;
+
         // Account & Cloud Auth State
         let authSession = {
             firebaseUser: null,        // Authenticated cloud user
@@ -2601,8 +2851,17 @@
             hasShownInitialLoginModal: false
         };
 
+        // Immediately restore any valid saved session & cached progress before initial render
+        localProgressStore.restoreSessionMeta();
+
+        let lastActivityPersistTime = 0;
         function recordUserActivity() {
-            authSession.lastActivityTimestamp = Date.now();
+            const now = Date.now();
+            authSession.lastActivityTimestamp = now;
+            if (isUserAuthenticated() && now - lastActivityPersistTime > 15000) {
+                lastActivityPersistTime = now;
+                localProgressStore.saveSessionMeta();
+            }
         }
 
         function startSessionExpiryMonitor() {
@@ -2642,16 +2901,34 @@
             }, 30000); // Check every 30 seconds
         }
 
-        // Load progress for the active account from Cloud (via window.cloudAuthManager)
+        // Load progress for the active account from local cache + Cloud (via window.cloudAuthManager)
         function loadProgress() {
+            if (authSession.activeAccount && authSession.activeAccount.provider !== "guest") {
+                const cached = localProgressStore.loadAccountProgress(authSession.activeAccount);
+                if (cached) {
+                    gameState = mergeGameStates(gameState, cached);
+                }
+            }
+            updateHeaderStats();
             if (window.cloudAuthManager && window.cloudAuthManager.isReady) {
                 window.cloudAuthManager.loadCurrentAccountProgress();
-            } else {
-                updateHeaderStats();
             }
         }
 
         function saveProgress() {
+            gameState = normalizeGameState(gameState);
+            if (authSession.activeAccount && authSession.activeAccount.provider !== "guest") {
+                localProgressStore.saveAccountProgress(authSession.activeAccount, gameState);
+                const idx = authSession.knownAccounts.findIndex(a =>
+                    (authSession.activeAccount.uid && a.uid === authSession.activeAccount.uid) ||
+                    (authSession.activeAccount.accountKey && a.accountKey === authSession.activeAccount.accountKey) ||
+                    (authSession.activeAccount.email && a.email === authSession.activeAccount.email)
+                );
+                if (idx >= 0) {
+                    authSession.knownAccounts[idx].gameState = mergeGameStates(authSession.knownAccounts[idx].gameState, gameState);
+                }
+                localProgressStore.saveSessionMeta();
+            }
             updateHeaderStats();
             if (window.cloudAuthManager && window.cloudAuthManager.isReady) {
                 window.cloudAuthManager.saveCurrentAccountProgress(gameState);
@@ -4488,6 +4765,8 @@
 
         // Initialize view, session monitor, BGM, and mandatory initial login modal on load
         window.addEventListener("DOMContentLoaded", () => {
+            updateAccountHeaderUI();
+            updateHeaderStats();
             syncSocialBarVisibility();
             showMapScreen();
             startSessionExpiryMonitor();
@@ -4508,13 +4787,13 @@
             if (cookieBanner && cookieConsentState === "pending") {
                 cookieBanner.classList.remove("hidden");
             }
-            // Force open the Login modal when the app is opened if not yet signed in
+            // Open the Login modal on initial visit only if no authenticated session is restored
             setTimeout(() => {
-                if (!isUserAuthenticated() && !authSession.hasShownInitialLoginModal) {
+                if (!isUserAuthenticated() && !authSession.firebaseUser && !authSession.hasShownInitialLoginModal) {
                     authSession.hasShownInitialLoginModal = true;
                     openAccountModal();
                 }
-            }, 250);
+            }, 900);
         });
     </script>
 
@@ -4563,22 +4842,19 @@
 
         const app = initializeApp(firebaseConfig);
 
-        // Replace the tail of RECAPTCHA_ENTERPRISE_SITE_KEY below if your full 40-character key has 2 more characters at the end
-        const RECAPTCHA_ENTERPRISE_SITE_KEY = window.RECAPTCHA_ENTERPRISE_SITE_KEY || "6Lf9xfctAAAAADcB-BCZt14PfvGaFK4QlzPZlsH";
+        // Optional App Check: only initialize if explicitly enabled with a full 40-char reCAPTCHA Enterprise key
+        // (Initializing AppCheck with an incomplete key blocks Firestore getDoc/setDoc requests)
+        const RECAPTCHA_ENTERPRISE_SITE_KEY = window.RECAPTCHA_ENTERPRISE_SITE_KEY || "";
         let appCheckInstance = null;
-        try {
-            const loc = window.location;
-            const isLocalOrPreview = loc.hostname === "localhost" || loc.hostname === "127.0.0.1" || loc.hostname === "" || loc.protocol === "blob:" || loc.protocol === "about:";
-            if (isLocalOrPreview) {
-                // Allows local testing in debug mode if needed without blocking preview
-                self.FIREBASE_APPCHECK_DEBUG_TOKEN = self.FIREBASE_APPCHECK_DEBUG_TOKEN || true;
+        if (window.ENABLE_FIREBASE_APP_CHECK === true && RECAPTCHA_ENTERPRISE_SITE_KEY.length >= 40) {
+            try {
+                appCheckInstance = initializeAppCheck(app, {
+                    provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
+                    isTokenAutoRefreshEnabled: true
+                });
+            } catch (appCheckErr) {
+                console.warn("Firebase App Check initialization note:", appCheckErr);
             }
-            appCheckInstance = initializeAppCheck(app, {
-                provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
-                isTokenAutoRefreshEnabled: true
-            });
-        } catch (appCheckErr) {
-            console.warn("Firebase App Check initialization note:", appCheckErr);
         }
 
         const primaryAuth = getAuth(app);
@@ -4619,47 +4895,98 @@
         }
 
         function sanitizeGameState(rawState, rootDocData = null) {
-            const def = getDefaultGameState();
-            if (!rawState || typeof rawState !== "object") return def;
-            const nestedVp = Number(rawState.victoryPoints || 0);
-            const rootVp = Number(rootDocData?.victoryPoints || 0);
-            const nestedUnlocked = Number(rawState.unlockedLevel || 1);
-            const rootUnlocked = Number(rootDocData?.unlockedLevel || 1);
-            return {
-                unlockedLevel: Math.max(1, nestedUnlocked, rootUnlocked),
-                practicedLevels: Array.isArray(rawState.practicedLevels) ? rawState.practicedLevels : [1],
-                missedWordCounts: (rawState.missedWordCounts && typeof rawState.missedWordCounts === "object") ? rawState.missedWordCounts : {},
-                levelStats: (rawState.levelStats && typeof rawState.levelStats === "object") ? rawState.levelStats : {},
-                victoryPoints: Math.max(0, nestedVp, rootVp)
-            };
+            return normalizeGameState(rawState, rootDocData);
         }
 
         const cloudAuthManager = {
             isReady: true,
             hasLoadedCloudState: false,
+            userDocUnsubscribe: null,
+
+            subscribeToUserProgress(uid) {
+                if (this.userDocUnsubscribe) {
+                    this.userDocUnsubscribe();
+                    this.userDocUnsubscribe = null;
+                }
+                if (!uid) return;
+                const userDocRef = doc(primaryDb, "users", uid);
+                this.userDocUnsubscribe = onSnapshot(userDocRef, (snap) => {
+                    if (!snap.exists()) return;
+                    const data = snap.data();
+                    const cloudState = sanitizeGameState(data?.gameState || data, data);
+                    const merged = mergeGameStates(gameState, cloudState);
+                    const changed = JSON.stringify(merged) !== JSON.stringify(normalizeGameState(gameState));
+                    gameState = merged;
+                    this.hasLoadedCloudState = true;
+                    if (authSession.activeAccount) {
+                        localProgressStore.saveAccountProgress(authSession.activeAccount, gameState);
+                        localProgressStore.saveSessionMeta();
+                    }
+                    updateHeaderStats();
+                    if (changed) {
+                        if (activeSession.mode === "map") renderLevelCardsGrid();
+                        if (activeSession.mode === "profile") showProfileScreen();
+                    }
+                }, (err) => {
+                    console.warn("User progress live listener note:", err);
+                });
+            },
 
             async saveCurrentAccountProgress(stateToSave) {
-                const currentUser = primaryAuth.currentUser;
-                if (!currentUser) {
-                    console.warn("User is not signed in to Firebase Auth. Skipping cloud save.");
-                    return;
+                const acct = authSession.activeAccount;
+                let cleanState = sanitizeGameState(stateToSave || gameState);
+
+                // Always persist locally immediately so page refreshes never lose progress
+                if (acct && acct.provider !== "guest") {
+                    const localCached = localProgressStore.loadAccountProgress(acct);
+                    if (localCached) {
+                        cleanState = mergeGameStates(localCached, cleanState);
+                    }
+                    gameState = cleanState;
+                    localProgressStore.saveAccountProgress(acct, cleanState);
+                    localProgressStore.saveSessionMeta();
                 }
 
-                const acct = authSession.activeAccount;
-                const cleanState = sanitizeGameState(stateToSave || gameState);
-                let totalScore = 0;
-                Object.values(cleanState.levelStats || {}).forEach(st => {
-                    if (st && st.bestScore) totalScore += st.bestScore;
-                });
-
-                // Update in-memory knownAccounts entry
-                const existingIdx = authSession.knownAccounts.findIndex(a => a.uid === currentUser.uid || (acct && a.accountKey === acct.accountKey));
-                if (existingIdx >= 0) {
-                    authSession.knownAccounts[existingIdx].gameState = cleanState;
+                const currentUser = primaryAuth.currentUser;
+                if (!currentUser) {
+                    return;
                 }
 
                 try {
                     const userDocRef = doc(primaryDb, "users", currentUser.uid);
+
+                    // Guard against overwriting higher cloud progress if initial cloud load hasn't completed yet
+                    if (!this.hasLoadedCloudState) {
+                        try {
+                            const existingSnap = await getDoc(userDocRef);
+                            if (existingSnap.exists()) {
+                                const existingData = existingSnap.data();
+                                const cloudState = sanitizeGameState(existingData?.gameState || existingData, existingData);
+                                cleanState = mergeGameStates(cloudState, cleanState);
+                                gameState = cleanState;
+                                if (acct && acct.provider !== "guest") {
+                                    localProgressStore.saveAccountProgress(acct, cleanState);
+                                }
+                            }
+                        } catch (readErr) {
+                            console.warn("Pre-save cloud read check note:", readErr);
+                        }
+                    }
+
+                    let totalScore = 0;
+                    Object.values(cleanState.levelStats || {}).forEach(st => {
+                        if (st && st.bestScore) totalScore += st.bestScore;
+                    });
+
+                    // Update in-memory knownAccounts entry
+                    const existingIdx = authSession.knownAccounts.findIndex(a =>
+                        a.uid === currentUser.uid || (acct && a.accountKey === acct.accountKey)
+                    );
+                    if (existingIdx >= 0) {
+                        authSession.knownAccounts[existingIdx].gameState = cleanState;
+                    }
+                    localProgressStore.saveSessionMeta();
+
                     await setDoc(userDocRef, {
                         uid: currentUser.uid,
                         accountKey: currentUser.uid,
@@ -4669,21 +4996,32 @@
                         totalScore,
                         victoryPoints: Number(cleanState.victoryPoints || 0),
                         unlockedLevel: Number(cleanState.unlockedLevel || 1),
+                        practicedLevels: cleanState.practicedLevels,
+                        missedWordCounts: cleanState.missedWordCounts,
+                        levelStats: cleanState.levelStats,
                         gameState: cleanState,
-                        ...cleanState,
                         lastSeenAt: Date.now(),
                         updatedAt: Date.now()
                     }, { merge: true });
                     this.hasLoadedCloudState = true;
+                    updateHeaderStats();
                 } catch (err) {
                     console.warn("Firestore save warning:", err);
                 }
             },
 
             async loadCurrentAccountProgress() {
+                const acct = authSession.activeAccount;
+                if (acct && acct.provider !== "guest") {
+                    const localCached = localProgressStore.loadAccountProgress(acct);
+                    if (localCached) {
+                        gameState = mergeGameStates(gameState, localCached);
+                        updateHeaderStats();
+                    }
+                }
+
                 const currentUser = primaryAuth.currentUser;
                 if (!currentUser) {
-                    console.warn("User is not signed in to Firebase Auth. Skipping cloud load.");
                     return;
                 }
 
@@ -4693,21 +5031,30 @@
                     if (snap.exists()) {
                         const data = snap.data();
                         const loadedState = data?.gameState ? data.gameState : data;
-                        if (loadedState) {
-                            const mergedState = sanitizeGameState(loadedState, data);
-                            // Preserve any in-memory VP if higher than what was fetched
-                            mergedState.victoryPoints = Math.max(Number(mergedState.victoryPoints || 0), Number(gameState.victoryPoints || 0));
-                            gameState = mergedState;
-                            this.hasLoadedCloudState = true;
-                            updateHeaderStats();
-                            if (activeSession.mode === "map") showMapScreen();
-                            if (activeSession.mode === "profile") showProfileScreen();
+                        const cloudState = sanitizeGameState(loadedState, data);
+                        const mergedState = mergeGameStates(gameState, cloudState);
+                        const needsCloudSyncBack = JSON.stringify(mergedState) !== JSON.stringify(cloudState);
+                        gameState = mergedState;
+                        this.hasLoadedCloudState = true;
+
+                        if (acct && acct.provider !== "guest") {
+                            localProgressStore.saveAccountProgress(acct, gameState);
+                            localProgressStore.saveSessionMeta();
+                        }
+
+                        updateHeaderStats();
+                        if (activeSession.mode === "map") showMapScreen();
+                        if (activeSession.mode === "profile") showProfileScreen();
+
+                        if (needsCloudSyncBack) {
+                            await this.saveCurrentAccountProgress(gameState);
                         }
                     } else {
-                        // First time save for this UID
+                        // First time cloud document creation for this UID
                         this.hasLoadedCloudState = true;
                         await this.saveCurrentAccountProgress(gameState);
                     }
+                    this.subscribeToUserProgress(currentUser.uid);
                     if (window.multiplayerManager) {
                         window.multiplayerManager.updatePresenceHeartbeat();
                     }
@@ -4717,21 +5064,46 @@
             },
 
             activateAuthenticatedUser(accountObj, keepLoggedInFlag = false) {
+                const prevAccountKey = authSession.activeAccount?.accountKey || authSession.activeAccount?.uid;
+                const nextAccountKey = accountObj.accountKey || accountObj.uid;
+
+                // Load cached progress for this specific account before activating
+                const cachedForTarget = localProgressStore.loadAccountProgress(accountObj);
+                if (prevAccountKey && prevAccountKey !== nextAccountKey) {
+                    gameState = cachedForTarget ? sanitizeGameState(cachedForTarget) : getDefaultGameState();
+                } else if (cachedForTarget) {
+                    gameState = mergeGameStates(gameState, cachedForTarget);
+                }
+
                 authSession.activeAccount = accountObj;
                 authSession.keepLoggedIn = Boolean(keepLoggedInFlag);
-                authSession.loginTimestamp = Date.now();
+                authSession.loginTimestamp = authSession.loginTimestamp || Date.now();
                 authSession.lastActivityTimestamp = Date.now();
 
-                const existingIdx = authSession.knownAccounts.findIndex(a => a.accountKey === accountObj.accountKey);
+                const existingIdx = authSession.knownAccounts.findIndex(a =>
+                    a.accountKey === accountObj.accountKey || (accountObj.uid && a.uid === accountObj.uid)
+                );
                 if (existingIdx >= 0) {
-                    authSession.knownAccounts[existingIdx] = { ...authSession.knownAccounts[existingIdx], ...accountObj };
+                    const prevKnownState = authSession.knownAccounts[existingIdx].gameState;
+                    if (prevKnownState) {
+                        gameState = mergeGameStates(gameState, prevKnownState);
+                    }
+                    authSession.knownAccounts[existingIdx] = {
+                        ...authSession.knownAccounts[existingIdx],
+                        ...accountObj,
+                        gameState: sanitizeGameState(gameState)
+                    };
                 } else {
                     authSession.knownAccounts.push({ ...accountObj, gameState: sanitizeGameState(gameState) });
                 }
 
+                localProgressStore.saveAccountProgress(accountObj, gameState);
+                localProgressStore.saveSessionMeta();
+
                 updateAccountHeaderUI();
+                updateHeaderStats();
                 closeAccountModal();
-                showMapScreen();
+                if (activeSession.mode === "map") showMapScreen();
                 this.loadCurrentAccountProgress();
             },
 
@@ -4800,7 +5172,8 @@
 
                         const uid = currentUser.uid;
                         const userDocRef = doc(primaryDb, "users", uid);
-                        const initialGameState = getDefaultGameState();
+                        // Preserve any Stage 1 progress earned right before registering
+                        const initialGameState = sanitizeGameState(gameState);
                         gameState = initialGameState;
 
                         await setDoc(userDocRef, {
@@ -4848,31 +5221,30 @@
                         const userDocRef = doc(primaryDb, "users", uid);
                         const snap = await getDoc(userDocRef);
 
+                        const targetAcct = {
+                            uid,
+                            accountKey: uid,
+                            email,
+                            displayName: currentUser.displayName || email.split("@")[0],
+                            provider: "email-password",
+                            hasPassword: true
+                        };
+                        const cachedLocal = localProgressStore.loadAccountProgress(targetAcct);
+
                         if (snap.exists()) {
                             const data = snap.data();
+                            targetAcct.displayName = data.displayName || targetAcct.displayName;
                             const loadedState = data?.gameState ? data.gameState : data;
-                            gameState = sanitizeGameState(loadedState, data);
+                            const cloudState = sanitizeGameState(loadedState, data);
+                            gameState = cachedLocal ? mergeGameStates(cloudState, cachedLocal) : cloudState;
                             this.hasLoadedCloudState = true;
-                            this.activateAuthenticatedUser({
-                                uid,
-                                accountKey: uid,
-                                email,
-                                displayName: data.displayName || currentUser.displayName || email.split("@")[0],
-                                provider: "email-password",
-                                hasPassword: true
-                            }, keepLoggedIn);
-                            showToast(`Welcome back, ${data.displayName || currentUser.displayName || email.split("@")[0]}!`, "ph-check-circle");
+                            this.activateAuthenticatedUser(targetAcct, keepLoggedIn);
+                            showToast(`Welcome back, ${targetAcct.displayName}!`, "ph-check-circle");
                         } else {
-                            gameState = getDefaultGameState();
+                            gameState = cachedLocal ? sanitizeGameState(cachedLocal) : getDefaultGameState();
+                            this.hasLoadedCloudState = true;
+                            this.activateAuthenticatedUser(targetAcct, keepLoggedIn);
                             await this.saveCurrentAccountProgress(gameState);
-                            this.activateAuthenticatedUser({
-                                uid,
-                                accountKey: uid,
-                                email,
-                                displayName: currentUser.displayName || email.split("@")[0],
-                                provider: "email-password",
-                                hasPassword: true
-                            }, keepLoggedIn);
                             showToast(`Signed in as ${email}!`, "ph-check-circle");
                         }
                     }
@@ -4980,18 +5352,29 @@
 
             async signOutToGuest(openLoginAfter = false) {
                 try {
+                    if (primaryAuth.currentUser && authSession.activeAccount && authSession.activeAccount.provider !== "guest") {
+                        await this.saveCurrentAccountProgress(gameState);
+                    }
+                } catch (e) {}
+                if (this.userDocUnsubscribe) {
+                    this.userDocUnsubscribe();
+                    this.userDocUnsubscribe = null;
+                }
+                try {
                     await signOut(primaryAuth);
                 } catch (e) {}
                 authSession.activeAccount = null;
                 authSession.keepLoggedIn = false;
                 this.hasLoadedCloudState = false;
+                localProgressStore.saveSessionMeta();
                 gameState = getDefaultGameState();
                 updateAccountHeaderUI();
+                updateHeaderStats();
                 showMapScreen();
                 if (openLoginAfter) {
                     openAccountModal();
                 } else {
-                    showToast("Signed out. Stage 1 remains available in Guest Preview mode.", "ph-sign-out");
+                    showToast("Signed out. Your progress is safely saved to your account.", "ph-sign-out");
                 }
             }
         };
