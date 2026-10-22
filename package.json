@@ -1,0 +1,14 @@
+{
+  "name": "korean-vocab-pop",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node --check server.js && node --check vocab-data.js",
+    "start": "node server.js",
+    "lint": "node --check server.js && node --check vocab-data.js"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

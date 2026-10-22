@@ -1,0 +1,1775 @@
+const RAW_TOPIK_2662 = [
+    [1,"가계부","household account book"],[2,"가구점","furniture store"],[3,"가까이","near"],[4,"가꾸다","to cultivate"],[5,"가난","poverty"],
+    [6,"가늘다","to be thin"],[7,"가능","possibility, potentiality"],[8,"가능성","possibility"],[9,"가능하다","to be possible"],[10,"가득","full"],
+    [11,"가라앉다","to sink"],[12,"가렵다","to be itchy"],[13,"가루비누","powder soap"],[14,"가리다","to distinguish"],[15,"가리키다","to indicate"],
+    [16,"가만히","motionlessly"],[17,"가뭄","drought"],[18,"가사","housework"],[19,"가상","virtual"],[20,"가스","gas"],
+    [21,"가습기","humidifier"],[22,"가입","entry"],[23,"가전제품","home appliances"],[24,"가정","family"],[25,"가족적","being family-oriented"],
+    [26,"가축","livestock"],[27,"가치","value"],[28,"각각","separately, each"],[29,"각자","each one"],[30,"각종","various"],
+    [31,"간격","interval"],[32,"간절히","eagerly"],[33,"간접적","being indirect"],[34,"간판","signboard"],[35,"간호","nursing"],
+    [36,"갈다","to change"],[37,"갈등","conflict"],[38,"갈수록","more and more"],[39,"갈아입다","to change clothes"],[40,"감각","sense"],
+    [41,"감기다","to be twined"],[42,"감독","director"],[43,"감동적","moving (emotionally)"],[44,"감상","appreciation"],[45,"감소","reduction"],
+    [46,"감정","emotion"],[47,"감탄","admiration"],[48,"강물","river water"],[49,"강변","riverside"],[50,"강사","teacher"],
+    [51,"강수량","rain precipitation"],[52,"강연","lecture"],[53,"강우량","(the amount of) rainfall"],[54,"강의","lecture"],[55,"강의실","lecture hall"],
+    [56,"강조","emphasis"],[57,"강하다","to be strong"],[58,"갖추다","to prepare"],[59,"갚다","to return, to reward"],[60,"개강","start of course (lecture)"],
+    [61,"개구리","frog"],[62,"개구쟁이","naughty child"],[63,"개다","to clear up"],[64,"개막식","opening ceremony"],[65,"개발","development"],
+    [66,"개방","opening, opening to the public"],[67,"개방적","being open"],[68,"개선","improvement"],[69,"개성","individuality"],[70,"개성적","being characteristic"],
+    [71,"개인적","being personal"],[72,"개최","hosting (an event)"],[73,"객관적","being objective"],[74,"객실","guest room"],[75,"갸름하다","to be slim and long"],
+    [76,"걔","that person"],[77,"거래","transaction"],[78,"거미","spider"],[79,"거북이","turtle"],[80,"거스름돈","change"],
+    [81,"거절","rejection"],[82,"거짓","lies"],[83,"거치다","to go through"],[84,"거품","bubble"],[85,"걱정거리","worries"],
+    [86,"건강식","healthy diet"],[87,"건강식품","healthy food"],[88,"건너","across"],[89,"건네다","to hand over, to start (a conversation)"],[90,"건더기","solid ingredients of a soup"],
+    [91,"건망증","forgetfulness"],[92,"건설","construction"],[93,"건전지","batteries"],[94,"건조","dry"],[95,"건축","architecture"],
+    [96,"건축가","architect"],[97,"걸레","rag"],[98,"걸레질","mopping"],[99,"걸음","steps"],[100,"검다","black"],
+    [101,"검사","inspection"],[102,"검색","search"],[103,"검색어","search word"],[104,"겁","fear"],[105,"겉","side, outside"],
+    [106,"겉모습","appearance"],[107,"게다가","besides, in addition"],[108,"게시판","bulletin board"],[109,"게으르다","to be lazy"],[110,"게임기","game machine"],
+    [111,"겨우","barely, finally"],[112,"격려","encouragement"],[113,"겪다","to experience, to go through"],[114,"견디다","to endure"],[115,"결과적","being as a result"],
+    [116,"결국","after all"],[117,"결론","conclusion"],[118,"결말","end (of a story)"],[119,"결석","absence"],[120,"결승전","final game/round"],
+    [121,"결심","decision"],[122,"결코","never"],[123,"결혼기념일","wedding anniversary"],[124,"결혼식장","wedding hall"],[125,"겸손","humility"],
+    [126,"겹치다","overlap"],[127,"경고","warning"],[128,"경력","career"],[129,"경비","security"],[130,"경비원","security guard"],
+    [131,"경영","management"],[132,"경영자","executive, CEO"],[133,"경영학","business administration"],[134,"경우","case, circumstance"],[135,"경쟁","competition"],
+    [136,"경쟁력","competitiveness"],[137,"경제","economy"],[138,"경제력","economic power"],[139,"경제적","being economic"],[140,"경제학","economics"],
+    [141,"계산","calculation, accounting"],[142,"계산대","cashier"],[143,"계산서","check, bill"],[144,"계약","contract"],[145,"계약금","down payment"],
+    [146,"계약서","(written) contract"],[147,"계좌","bank account"],[148,"계층","hierarchy"],[149,"계획성","planning"],[150,"계획적","being planned, as planned"],
+    [151,"고개","head, hill"],[152,"고객","client, customer"],[153,"고구마","sweet potato"],[154,"고궁","traditional Korean palace"],[155,"고급","high grade"],
+    [156,"고래","whale"],[157,"고마움","thankfulness"],[158,"고무신","rubber shoes"],[159,"고무줄","rubber band"],[160,"고민","worry, trouble"],
+    [161,"고백","confession"],[162,"고생","hardship"],[163,"고소하다","to be nutty"],[164,"고속","high speed"],[165,"고속도로","highway"],
+    [166,"고아원","orphanage"],[167,"고유하다","unique"],[168,"고지서","notice"],[169,"고집","persistence"],[170,"고춧가루","pepper powder"],
+    [171,"고층","upper floors"],[172,"고통","pain"],[173,"곤란","difficulty"],[174,"골고루","evenly"],[175,"골목길","alley"],
+    [176,"골치가 아프다","to be annoying"],[177,"곰","bear"],[178,"곱슬머리","natural curly hair"],[179,"곳곳","here and there, everywhere"],[180,"공공요금","utility charges"],
+    [181,"공공장소","public place"],[182,"공동","joint"],[183,"공동생활","community life"],[184,"공사","construction"],[185,"공손하다","to be polite"],
+    [186,"공연장","performance hall"],[187,"공장","factory"],[188,"공주","princess"],[189,"공통","common"],[190,"공통점","common point"],
+    [191,"공포","fear"],[192,"공해","pollution"],[193,"과로","overwork"],[194,"과목","(class) subject"],[195,"과소비","waste (of use)"],
+    [196,"과속","speed violation"],[197,"과식","overeating"],[198,"과연","as expected"],[199,"과외","tutor lesson"],[200,"과음","excessive drinking"],
+    [201,"과장","manager"],[202,"과장하다","to exaggerate"],[203,"과정","process"],[204,"과제","task"],[205,"과학자","scientists"],
+    [206,"과학적","being scientific"],[207,"관객","audience"],[208,"관계없다","to be unrelated"],[209,"관계자","the person concerned"],[210,"관광","tourism"],
+    [211,"관광객","tourist"],[212,"관광지","tourist attraction"],[213,"관람","viewing"],[214,"관람객","audience"],[215,"관련","relation"],
+    [216,"관련성","relevance"],[217,"관리","management"],[218,"관리실","management room"],[219,"관용어","idiom"],[220,"관찰","observation"],
+    [221,"광장","square, plaza"],[222,"괜히","for no reason"],[223,"괴로움","agony, distress"],[224,"괴로워하다","to be distressed"],[225,"괴롭다","to be painful"],
+    [226,"괴롭히다","to harass, to bully"],[227,"굉장하다","to be great, to be wonderful"],[228,"굉장히","extremely, to a great extent"],[229,"교사","teacher"],[230,"교외","suburbs"],
+    [231,"교육","education"],[232,"교육자","educator"],[233,"교육학","pedagogy"],[234,"교재","teaching materials"],[235,"교통수단","transportation"],
+    [236,"교통편","transportation"],[237,"교포","overseas resident"],[238,"교환","exchange"],[239,"구두쇠","a stingy person"],[240,"구르다","to roll"],
+    [241,"구매","purchase"],[242,"구멍","hole"],[243,"구별","distinction"],[244,"구분","classification"],[245,"구성","composition"],
+    [246,"구이","grill"],[247,"구인","a job offer"],[248,"구입","purchase"],[249,"구조","structure"],[250,"구조대","rescue team"],
+    [251,"구체적","being specific"],[252,"국가","nation"],[253,"국그릇","soup bowl"],[254,"국내선","domestic flights"],[255,"국문학","(the country's) literature"],
+    [256,"국물","soup broth"],[257,"국민","citizens"],[258,"국악","traditional Korean music"],[259,"국외","outside the country"],[260,"국제결혼","international marriage"],
+    [261,"국제선","international flights"],[262,"국화","chrysanthemum"],[263,"군대","army"],[264,"군데","place"],[265,"굵다","to be thick"],
+    [266,"궁금증","curiosity"],[267,"궁금하다","to be curious"],[268,"권하다","to recommend, to offer"],[269,"귀걸이","earrings"],[270,"귀국","return (to home country)"],
+    [271,"귀신","ghost"],[272,"귀중하다","to be valuable"],[273,"귀찮다","to be bothersome, to be tedious"],[274,"귀하다","to be noble, to be rare, to be fine"],[275,"규칙적","being regular"],
+    [276,"그네","swing"],[277,"그녀","girlfriend, she"],[278,"그늘","shade"],[279,"그대로","as it is"],[280,"그래도","(but) still"],
+    [281,"그래야","so that"],[282,"그래프","graph"],[283,"그러니","therefore"],[284,"그러다가","and then"],[285,"그러므로","hence"],
+    [286,"그러자","and then"],[287,"그러하다","so, as such, like that"],[288,"그루","(how to count trees), stump"],[289,"그룹","group"],[290,"그리","so, very, that"],
+    [291,"그리워하다","to miss, to be nostalgic"],[292,"그리하여","then"],[293,"그림책","picture book"],[294,"그립다","to be nostalgic, to be missed"],[295,"그만두다","to quit"],
+    [296,"그만큼","that much"],[297,"그저","just"],[298,"근데","by the way"],[299,"근로자","worker, laborer"],[300,"근무","work"],
+    [301,"근육","muscle"],[302,"글쎄","oh well"],[303,"글쓴이","author"],[304,"글씨","handwriting, letter"],[305,"글자","letter, character"],
+    [306,"긁다","to scratch"],[307,"금","gold"],[308,"금메달","gold medal"],[309,"금액","amount of money"],[310,"금지","ban"],
+    [311,"급히","suddenly, urgently"],[312,"긍정적","being positive, being affirmative"],[313,"기계","machine"],[314,"기념","commemoration"],[315,"기념관","memorial hall"],
+    [316,"기념일","anniversary"],[317,"기념품","souvenir"],[318,"기능","function"],[319,"기다","to crawl"],[320,"기대","expectation"],
+    [321,"기도","prayer"],[322,"기둥","pillar"],[323,"기록","record"],[324,"기본","basic"],[325,"기본적","being fundamental, being basic"],
+    [326,"기부","donation"],[327,"기쁨","joy, happiness"],[328,"기술","skill, technique"],[329,"기술자","technician"],[330,"기억","memory"],
+    [331,"기억나다","to remember, to recall"],[332,"기억력","memory"],[333,"기업","company, corporation"],[334,"기업인","entrepreneur"],[335,"기운","energy, vitality"],
+    [336,"기울이다","to tilt, to devote"],[337,"기준","standard, criteria"],[338,"기차역","train station"],[339,"기차표","train ticket"],[340,"기초","basic, fundamental"],
+    [341,"기행문","travelogue, travel essay"],[342,"기호","symbol, preference"],[343,"기혼","married"],[344,"기회","opportunity, chance"],[345,"기후","climate"],
+    [346,"긴장감","nervousness"],[347,"길가","roadside"],[348,"길거리","street"],[349,"길이","length"],[350,"김장","making Kimchi for winter"],
+    [351,"깊다","to be deep"],[352,"깊이","depth, deeply"],[353,"까다","to peel"],[354,"까다롭다","to be picky, to have a high standard"],[355,"깔다","to spread, to lay"],
+    [356,"깜빡","forgetfully, with a blink"],[357,"깨끗이","cleanly, clearly"],[358,"깨닫다","to realize"],[359,"깨뜨리다","to break, to shatter"],[360,"깨소금","sesame salt"],
+    [361,"깨우다","to wake someone up"],[362,"깻잎","sesame leaf"],[363,"꺼지다","to go out, to be extinguished"],[364,"껍질","peel, skin, bark"],[365,"꼬리","tail"],
+    [366,"꼬박꼬박","regularly, faithfully"],[367,"꼭대기","summit, top"],[368,"꼴찌","the last place"],[369,"꼼꼼하다","to be meticulous"],[370,"꼼꼼히","thoroughly, meticulously"],
+    [371,"꽃병","flower vase"],[372,"꽤","quite, fairly"],[373,"꾸미다","to decorate"],[374,"꾸준히","steadily"],[375,"꾸짖다","to scold"],
+    [376,"꿀","honey"],[377,"꿀벌","honey bee"],[378,"꿈꾸다","to dream"],[379,"끈","string, strap"],[380,"끊다","to cut, to quit"],
+    [381,"끊어지다","to be cut, to break"],[382,"끊임없다","to be incessant, to be unceasing"],[383,"끌다","to pull, to attract"],[384,"끝내","finally, eventually"],[385,"끼어들다","to cut in, to interrupt"],
+    [386,"나날이","day by day"],[387,"나들이","picnic, outing"],[388,"나름","depending on"],[389,"나머지","remainder, surplus"],[390,"나물","seasoned vegetables"],
+    [391,"나뭇잎","tree leaf"],[392,"나서다","to step forward, to get involved"],[393,"나아가다","to move forward, to advance"],[394,"나아지다","to improve, to get better"],[395,"나타내다","to display, to reveal"],
+    [396,"낙서","doodle, scribbling"],[397,"낙엽","fallen leaves"],[398,"난로","stove, heater"],[399,"난방","heating"],[400,"날개","wings"],
+    [401,"날다","to fly"],[402,"날아다니다","to fly around"],[403,"날아가다","to fly away"],[404,"날아오다","to fly toward"],[405,"날짜","date"],
+    [406,"날카롭다","to be sharp"],[407,"남기다","to leave behind"],[408,"남녀","men and women"],[409,"남녀노소","everyone of all ages and genders"],[410,"남다","to remain, to be left over"],
+    [411,"남대문","Namdaemun Gate"],[412,"남매","brother and sister"],[413,"남부","southern part"],[414,"남성","male, man"],[415,"남성복","men's clothing"],
+    [416,"남아","boy"],[417,"남자친구","boyfriend"],[418,"남향","facing south"],[419,"납부","payment"],[420,"낭비","waste"],
+    [421,"낯설다","to be unfamiliar, to be strange"],[422,"낳다","to give birth, to produce"],[423,"내과","internal medicine"],[424,"내년","next year"],[425,"내놓다","to put out, to offer"],
+    [426,"내다","to pay, to produce, to put out"],[427,"내려가다","to go down"],[428,"내려놓다","to put down"],[429,"내려오다","to come down"],[430,"내리다","to get off, to descend"],
+    [431,"내밀다","to stick out, to push out"],[432,"내부","interior, inside"],[433,"내성적","being introverted"],[434,"내쉬다","to exhale"],[435,"내용","content, substance"],
+    [436,"내용물","contents"],[437,"내일모레","the day after tomorrow"],[438,"냄비","pot, saucepan"],[439,"냄새","smell, odor"],[440,"냉동","freezing, frozen"],
+    [441,"냉동실","freezer"],[442,"냉면","cold noodles"],[443,"냉방","air conditioning"],[444,"냉수","cold water"],[445,"냉장","refrigeration"],
+    [446,"너무나","so much, exceedingly"],[447,"너희","you (plural)"],[448,"넉넉하다","to be enough, to be ample"],[449,"널다","to hang out (laundry)"],[450,"널리","widely"],
+    [451,"넓히다","to widen, to expand"],[452,"넘겨주다","to hand over"],[453,"넘기다","to turn over, to pass"],[454,"넘다","to cross, to exceed"],[455,"넘어뜨리다","to knock down"],
+    [456,"넘어서다","to cross over, to surpass"],[457,"넘어지다","to fall down, to trip"],[458,"넘치다","to overflow"],[459,"넣다","to put in"],[460,"네모","square, rectangle"],
+    [461,"네모나다","to be square"],[462,"네티즌","netizen"],[463,"녀석","fellow, guy, chap"],[464,"년생","born in the year of"],[465,"노래방","karaoke room"],
+    [466,"노력","effort, endeavor"],[467,"노선","route, line"],[468,"노약자","the elderly and infirm"],[469,"노인","elderly person"],[470,"노인정","senior citizens' center"],
+    [471,"노총각","old bachelor"],[472,"노트","notebook"],[473,"녹다","to melt"],[474,"녹음","recording"],[475,"녹음기","recorder"],
+    [476,"녹이다","to melt (something)"],[477,"녹차","green tea"],[478,"논","rice paddy"],[479,"논문","thesis, research paper"],[480,"논의","discussion"],
+    [481,"논쟁","argument, controversy"],[482,"놀라움","surprise, amazement"],[483,"놀리다","to tease, to make fun of"],[484,"놀이터","playground"],[485,"농구장","basketball court"],
+    [486,"농담","joke"],[487,"농부","farmer"],[488,"농사","farming"],[489,"농산물","agricultural products"],[490,"농업","agriculture"],
+    [491,"농장","farm"],[492,"농촌","farming village, rural area"],[493,"높낮이","height, pitch"],[494,"높다","to be high"],[495,"높이","height, high"],
+    [496,"높이다","to raise, to elevate"],[497,"놓아두다","to leave as it is"],[498,"놓치다","to miss (a bus/opportunity)"],[499,"뇌","brain"],[500,"누구누구","who and who"],
+    [501,"누나가","older sister"],[502,"누르다","to press"],[503,"눈가","around the eyes"],[504,"눈길","snowy road, line of vision"],[505,"눈동자","pupil of the eye"],
+    [506,"눈뜨다","to open one's eyes, to awaken"],[507,"눈물","tears"],[508,"눈병","eye disease"],[509,"눈부시다","to be dazzling"],[510,"눈빛","look in one's eyes"],
+    [511,"눈사람","snowman"],[512,"눈살","brow (frowning)"],[513,"눈썹","eyebrow"],[514,"눈앞","right before one's eyes"],[515,"눈치","tact, sense"],
+    [516,"눕히다","to lay down"],[517,"느끼다","to feel"],[518,"느낌","feeling, impression"],[519,"느리다","to be slow"],[520,"늘다","to increase, to improve"],
+    [521,"늘어나다","to stretch, to grow"],[522,"늘어놓다","to scatter, to arrange"],[523,"늘이다","to lengthen, to stretch"],[524,"늙다","to get old"],[525,"능동적","being proactive, active"],
+    [526,"능력","ability, capability"],[527,"능률","efficiency"],[528,"능숙하다","to be proficient, skilled"],[529,"늦가을","late autumn"],[530,"늦게","late"],
+    [531,"늦더위","late summer heat"],[532,"늦둥이","child born to older parents"],[533,"늦봄","late spring"],[534,"늦어지다","to be delayed, to become late"],[535,"늦여름","late summer"],
+    [536,"늦잠","oversleeping"],[537,"다가가다","to approach"],[538,"다가서다","to step closer"],[539,"다가오다","to approach, to come near"],[540,"다녀가다","to drop by and leave"],
+    [541,"다녀오다","to go and come back"],[542,"다니다","to attend, to commute"],[543,"다듬다","to trim, to refine"],[544,"다락방","attic"],[545,"다루다","to handle, to deal with"],
+    [546,"다름없다","to be no different from"],[547,"다리미","iron (for clothes)"],[548,"다리미질","ironing"],[549,"다만","only, merely, provided that"],[550,"다물다","to close (one's mouth)"],
+    [551,"다방","teahouse"],[552,"다수","majority, large number"],[553,"다양성","diversity"],[554,"다양하다","to be various, diverse"],[555,"다이어트","diet"],
+    [556,"다정하다","to be affectionate, kind"],[557,"다짐","resolution, pledge"],[558,"다치다","to get hurt, injured"],[559,"다투다","to quarrel, to compete"],[560,"다행히","fortunately"],
+    [561,"대형","large size"],[562,"댄스","dance"],[563,"더구나","furthermore, moreover"],[564,"더러워지다","to get dirty"],[565,"더욱","even more"],
+    [566,"더위","heat, hotness"],[567,"더하다","to add on, to get worse"],[568,"덕","thanks (to someone)"],[569,"던지다","to throw"],[570,"덜","less, not yet"],
+    [571,"덜다","to cut back, to reduce"],[572,"데다","to get burned"],[573,"데려오다","to bring (a person)"],[574,"데치다","to blanch, to boil quickly"],[575,"도구","tool"],
+    [576,"도난","theft"],[577,"도대체","how on earth"],[578,"도둑","thief"],[579,"도망가다","to escape, to run away"],[580,"도서","books"],
+    [581,"도시락","lunchbox"],[582,"도장","seal, stamp"],[583,"도전","challenge"],[584,"도중","on the way"],[585,"독","poison"],
+    [586,"독감","influenza, flu"],[587,"독립","independence"],[588,"독방","single room, solitary room"],[589,"독신자","unmarried single person"],[590,"독특하다","to be unique"],
+    [591,"돌","stone, rock"],[592,"돌다","to spin, to get around"],[593,"돌려받다","to get returned"],[594,"돌려보내다","to send back, to return"],[595,"돌려주다","to return, to give back"],
+    [596,"돌리다","to turn"],[597,"돌보다","to take care of"],[598,"돌솥","stone pot"],[599,"돌아다니다","to walk around"],[600,"돌아보다","to look back"],
+    [601,"돌아서다","to turn back"],[602,"돌잔치","1st birthday party"],[603,"동굴","cave"],[604,"동료","colleague"],[605,"동물원","zoo"],
+    [606,"동부","eastern part"],[607,"동서양","East and West"],[608,"동시","simultaneous, same time"],[609,"동양화","oriental painting"],[610,"동영상","video"],
+    [611,"동일하다","to be identical, the same"],[612,"동작","motion, action"],[613,"동창","alumni, schoolmate"],[614,"동창회","alumni association"],[615,"동해안","east coast"],
+    [616,"동호회","club, society"],[617,"동화","fairy tale"],[618,"동화책","children's book"],[619,"되도록","as much as possible"],[620,"되돌리다","to turn back, to regain"],
+    [621,"되돌아보다","to look back, to reflect"],[622,"되살아나다","to revive, to come back to life"],[623,"두려움","fear"],[624,"두려워하다","to fear, to be afraid of"],[625,"두세","two or three"],
+    [626,"두통","headache"],[627,"두통약","headache medicine"],[628,"둔하다","to be dull, slow"],[629,"둘러보다","to look around"],[630,"둥글다","to be round"],
+    [631,"뒤떨어지다","to fall behind, to be inferior"],[632,"뒤집다","to flip, to turn over"],[633,"뒤풀이","after-party"],[634,"뒷모습","back view, appearance from behind"],[635,"뒷문","back door, back gate"],
+    [636,"뒷이야기","behind-the-scenes story"],[637,"뒷자리","back seat"],[638,"드디어","finally"],[639,"드라이","dry, blow-dry"],[640,"드림","dream, sincerely (in letters)"],
+    [641,"드물다","to be rare"],[642,"든든하다","to be reassuring, reliable"],[643,"들려주다","to tell, to let someone hear"],[644,"들르다","to stop by, to drop in"],[645,"들리다","to be heard"],
+    [646,"들어보다","to try listening"],[647,"들어주다","to listen to, to grant"],[648,"들이다","to spend (time, effort), to let in"],[649,"등록","registration"],[650,"등록금","registration fee, tuition fee"],
+    [651,"등록증","registration card"],[652,"등불","lamp, light"],[653,"디스크","disc, herniated disc"],[654,"디자이너","designer"],[655,"디지털","digital"],
+    [656,"따다","to pick, to earn, to open"],[657,"따라다니다","to follow around"],[658,"따라서","therefore, hence"],[659,"따로따로","separately"],[660,"따지다","to question closely, to calculate"],
+    [661,"딱","perfectly, just, firmly"],[662,"딱딱하다","to be hard, stiff"],[663,"딴","another, other"],[664,"땅","land, ground"],[665,"땅콩","peanuts"],
+    [666,"때때로","sometimes, occasionally"],[667,"때로","now and then"],[668,"떠오르다","to float, to come to mind"],[669,"떨다","to shiver, to shake"],[670,"떨리다","to tremble, to feel nervous"],
+    [671,"떨어뜨리다","to drop"],[672,"떼다","to detach, to remove"],[673,"또박또박","clearly, word by word"],[674,"또한","also, furthermore"],[675,"똑같이","similarly, in the same way"],
+    [676,"똑똑하다","to be clever, smart"],[677,"뚜렷하다","to be clear, distinct"],[678,"뚫다","to pierce, to make a hole"],[679,"뚱뚱하다","to be fat, overweight"],[680,"뛰어가다","to run (to a place)"],
+    [681,"뛰어나다","to be outstanding, superior"],[682,"뛰어내리다","to jump down"],[683,"뛰어넘다","to jump over"],[684,"뛰어다니다","to run around"],[685,"뛰어오다","to come running"],
+    [686,"뛰쳐나가다","to rush out"],[687,"뜨거워지다","to become hot"],[688,"뜻밖에","unexpectedly"],[689,"띠","zodiac sign, belt, band"],[690,"램프","lamp"],
+    [691,"레몬","lemon"],[692,"레포츠","leisure sports"],[693,"렌즈","lens"],[694,"렌터카","rental car"],[695,"로또","lottery"],
+    [696,"로봇","robot"],[697,"로비","lobby"],[698,"룸메이트","roommate"],[699,"리듬","rhythm"],[700,"리모컨","remote control"],
+    [701,"마감일","deadline, due date"],[702,"마네킹","mannequin"],[703,"마당","yard, garden"],[704,"마디","joint, word, section"],[705,"마라톤","marathon"],
+    [706,"마련하다","to prepare, to arrange"],[707,"마루","wooden floor, living room"],[708,"마무리","finishing, conclusion"],[709,"마술","magic"],[710,"마스크","mask"],
+    [711,"마약","narcotics, drug"],[712,"마을","village, town"],[713,"마음껏","to one's heart's content"],[714,"마음대로","as one wishes"],[715,"마음먹다","to make up one's mind"],
+    [716,"마음씨","nature, disposition"],[717,"마주보다","to face each other"],[718,"마주치다","to run into, to meet by chance"],[719,"마중","going out to meet someone"],[720,"마찬가지","the same, likewise"],
+    [721,"마찰","friction, conflict"],[722,"마침","just in time"],[723,"마침내","finally, at last"],[724,"막다","to block, to prevent"],[725,"막바지","final stage, end"],
+    [726,"막상","actually, when it comes to"],[727,"막차","last train, last bus"],[728,"막히다","to be blocked, congested"],[729,"만나다","to meet"],[730,"만남","meeting, encounter"],
+    [731,"만두","dumpling"],[732,"만들다","to make, to create"],[733,"만족","satisfaction"],[734,"만족스럽다","to be satisfactory"],[735,"만족하다","to be satisfied"],
+    [736,"만지다","to touch"],[737,"만화책","comic book"],[738,"많아지다","to increase in number"],[739,"말기","end, final stage"],[740,"말다","to stop doing, to roll up"],
+    [741,"말다툼","argument, quarrel"],[742,"말리다","to dry, to stop someone"],[743,"말버릇","way of speaking, verbal habit"],[744,"말소","cancellation, erasure"],[745,"말솜씨","eloquence, speaking skill"],
+    [746,"말씀","words, speech (honorific)"],[747,"말없이","silently, without a word"],[748,"말투","tone of voice, way of speaking"],[749,"맑다","to be clear, clean"],[750,"맛보다","to taste, to experience"],
+    [751,"망원경","telescope, binoculars"],[752,"망치","hammer"],[753,"망치다","to ruin, to spoil"],[754,"망하다","to fail, to go bankrupt"],[755,"맞다","to be right, to fit, to welcome"],
+    [756,"맞벌이","dual-income (couple)"],[757,"맞서다","to confront, to oppose"],[758,"맞이하다","to welcome, to greet"],[759,"맞추다","to adjust, to match, to guess right"],[760,"맞히다","to hit the mark, to guess right"],
+    [761,"맡기다","to entrust, to leave with"],[762,"맡다","to take charge of, to smell"],[763,"매달","every month"],[764,"매달리다","to hang on, to cling to"],[765,"매력","charm, attractiveness"],
+    [766,"매력적","being attractive, charming"],[767,"매번","every time"],[768,"매운탕","spicy fish stew"],[769,"매장","store, shop"],[770,"매점","snack bar, kiosk"],
+    [771,"매주","every week"],[772,"매진","sold out"],[773,"매출","sales, revenue"],[774,"매표소","ticket office"],[775,"맨발","barefoot"],
+    [776,"맨손","bare hands"],[777,"맺다","to form, to bear (fruit), to conclude"],[778,"머리카락","hair"],[779,"머리통","head"],[780,"머무르다","to stay, to remain"],
+    [781,"머물다","to stay"],[782,"먹성","appetite"],[783,"먹이","food, prey, feed"],[784,"먹이다","to feed"],[785,"먼저","first, beforehand"],
+    [786,"먼지","dust"],[787,"멀어지다","to grow distant"],[788,"멈추다","to stop, to halt"],[789,"멋대로","as one pleases, selfishly"],[790,"멋있다","to be stylish, cool"],
+    [791,"멍","bruise"],[792,"멍하니","blankly, absentmindedly"],[793,"메모","memo, note"],[794,"메모지","memo pad, sticky note"],[795,"메시지","message"],
+    [796,"메우다","to fill in"],[797,"멜로디","melody"],[798,"며느리","daughter-in-law"],[799,"면도","shaving"],[800,"면도기","razor, shaver"],
+    [801,"모음","vowel"],[802,"모자라다","to be insufficient"],[803,"모집","recruitment"],[804,"모험심","adventurous spirit"],[805,"모형","model, figure"],
+    [806,"목마르다","to be thirsty"],[807,"목사","pastor"],[808,"목숨","life"],[809,"목욕탕","public bathhouse"],[810,"목적지","destination"],
+    [811,"목표","target, goal"],[812,"몰라보다","to fail to recognize, to be unaware of"],[813,"몰래","secretly"],[814,"몰려들다","to flock, to gather"],[815,"몰리다","to get crowded, cornered"],
+    [816,"몸무게","body weight"],[817,"몸짓","gesture"],[818,"몹시","very, terribly"],[819,"못생기다","to be ugly"],[820,"무게","weight"],
+    [821,"무관심","indifference"],[822,"무너지다","to collapse, to be pulled down"],[823,"무늬","pattern"],[824,"무대","(performance) stage"],[825,"무더위","extreme summer heat"],
+    [826,"무덤","tomb, grave"],[827,"무덥다","to be hot and humid"],[828,"무렵","around (the time)"],[829,"무사히","safely"],[830,"무서워하다","to be scared of"],
+    [831,"무선","wireless"],[832,"무소식","no news"],[833,"무시","disregard, neglect"],[834,"무인","unmanned"],[835,"무조건","unconditionally, absolutely"],
+    [836,"무지개","rainbow"],[837,"무통장 입금","bank deposit without a passbook"],[838,"묵다","to stay (at a hotel)"],[839,"묶다","to bundle, to tie"],[840,"문구","stationery"],
+    [841,"문명","civilization"],[842,"문법","grammar"],[843,"문병","visiting a sick person"],[844,"문서","documents"],[845,"문의","inquiry"],
+    [846,"문자","text message (SMS), letters"],[847,"문제점","problem, issue"],[848,"문학","literature"],[849,"문화생활","cultural life"],[850,"문화유산","cultural heritage"],
+    [851,"문화적","being cultural"],[852,"묻히다","to be buried, to get stained"],[853,"물가","prices, cost of living"],[854,"물고기","fish"],[855,"물냉면","cold buckwheat noodles in broth"],
+    [856,"물다","to bite"],[857,"물러서다","to step back, to withdraw"],[858,"물려주다","to pass on, to bequeath"],[859,"물리다","to be bitten, stung"],[860,"물방울","water drop"],
+    [861,"물약","liquid medicine"],[862,"물음","question"],[863,"물질","matter, material, substance"],[864,"물품","product, goods"],[865,"뮤지컬","musical"],
+    [866,"미끄러지다","to slip, to slide"],[867,"미끄럽다","to be slippery"],[868,"미루다","to postpone, to procrastinate"],[869,"미소","smile"],[870,"미역","seaweed"],
+    [871,"미역국","seaweed soup"],[872,"미용사","hairdresser, beautician"],[873,"미인","beautiful person"],[874,"미치다","to go mad, to reach/influence"],[875,"미팅","blind date, meeting"],
+    [876,"미혼","unmarried, single"],[877,"민박","homestay, local inn"],[878,"민속","folklore, folk customs"],[879,"민속놀이","traditional folk game"],[880,"민요","folk song"],
+    [881,"민족","ethnic group, nation"],[882,"믿다","to believe in, to trust"],[883,"믿음","trust, faith"],[884,"믿음직스럽다","to be reliable"],[885,"믿음직하다","to be trustworthy"],
+    [886,"밀다","to push"],[887,"밀려오다","to rush in, to surge"],[888,"밀리미터","millimeter"],[889,"밉다","to dislike, to be hateful"],[890,"및","and, as well as"],
+    [891,"밑줄","underline"],[892,"바가지","gourd dipper, overcharging"],[893,"바구니","basket"],[894,"바깥","outside, outdoor"],[895,"바느질","sewing, needlework"],
+    [896,"바늘","needle"],[897,"바닥","bottom, floor"],[898,"바닥나다","to run out, to be exhausted"],[899,"바닷물","seawater"],[900,"바둑","game of Go (Baduk)"],
+    [901,"바라보다","to look at, to gaze"],[902,"바보","fool, idiot"],[903,"바위","rock, boulder"],[904,"바이러스","virus"],[905,"바퀴","wheel, counter for turns"],
+    [906,"바탕","background, foundation"],[907,"박사","doctoral degree, Ph.D."],[908,"박스","box"],[909,"반가워하다","to be glad, to welcome"],[910,"반납","return (of borrowed item)"],
+    [911,"반납일","return due date"],[912,"반대","opposition, opposite"],[913,"반대말","antonym, opposite word"],[914,"반대쪽","opposite side"],[915,"반드시","without fail, certainly"],
+    [916,"반말","informal/casual speech"],[917,"반복","repetition"],[918,"반성","self-reflection, introspection"],[919,"반응","reaction, response"],[920,"반짝반짝","sparkling, twinkling"],
+    [921,"반짝이다","to shine, to glitter"],[922,"반품","return of goods, refund"],[923,"반하다","to fall in love with, be charmed"],[924,"받아들이다","to accept"],[925,"발걸음","footsteps, pace"],
+    [926,"발견","discovery"],[927,"발급","issuance"],[928,"발달","development, advancement"],[929,"발레","ballet"],[930,"발명","invention"],
+    [931,"발목","ankle"],[932,"발생","occurrence, outbreak"],[933,"발자국","footprint"],[934,"발표자","presenter"],[935,"발표회","presentation, recital"],
+    [936,"밝히다","to reveal, to light up"],[937,"밟다","to step on"],[938,"밤새","all night"],[939,"밤새우다","to stay up all night"],[940,"밥그릇","rice bowl"],
+    [941,"밥맛","appetite, taste of food"],[942,"밥상","dining table"],[943,"방금","just now"],[944,"방문","visit"],[945,"방송사","broadcasting station"],
+    [946,"방식","method, way"],[947,"방청객","studio audience"],[948,"방해","interference, disturbance"],[949,"방향","direction"],[950,"밭","farm field"],
+    [951,"배경","background"],[952,"배꼽","belly button, navel"],[953,"배낭","backpack"],[954,"배낭여행","backpacking trip"],[955,"배려","consideration, care"],
+    [956,"배우자","spouse, partner"],[957,"배추","napa cabbage"],[958,"배터리","battery"],[959,"뱀","snake"],[960,"뱉다","to spit out"],
+    [961,"버릇","habit"],[962,"버리다","to throw away, to abandon"],[963,"버섯","mushroom"],[964,"버티다","to endure, to hold out"],[965,"번개","lightning"],
+    [966,"번역","translation"],[967,"번역가","translator"],[968,"번지","street address number"],[969,"번째","ordinal counter (-th)"],[970,"번화하다","to be bustling, busy"],
+    [971,"벌","punishment, bee"],[972,"벌금","fine, penalty"],[973,"벌다","to earn (money)"],[974,"벌레","bug, insect"],[975,"벌리다","to open wide, to spread"],
+    [976,"벌써","already"],[977,"벌어지다","to happen, to widen"],[978,"벌이다","to start, to set up"],[979,"범위","scope, range"],[980,"범인","criminal, culprit"],
+    [981,"범죄","crime"],[982,"법","law, method"],[983,"법률","law, statute"],[984,"법원","court of law"],[985,"법칙","law, rule"],
+    [986,"벗어나다","to escape, to get out of"],[987,"벗기다","to peel, to undress"],[988,"베개","pillow"],[989,"베다","to cut, to rest one's head on"],[990,"베란다","veranda, balcony"],
+    [991,"벨트","belt"],[992,"벽지","wallpaper"],[993,"변경","change, modification"],[994,"변명","excuse"],[995,"변비","constipation"],
+    [996,"변신","transformation"],[997,"변하다","to change"],[998,"변호사","lawyer, attorney"],[999,"변화","change, transformation"],[1000,"별명","nickname"],
+    [1001,"별일","special matter, trouble"],[1002,"병들다","to fall ill, to get sick"],[1003,"병실","hospital room"],[1004,"병아리","chick"],[1005,"병치레","suffering from illness"],
+    [1006,"보관","storage, safekeeping"],[1007,"보관소","storage room, locker"],[1008,"보고","report"],[1009,"보고서","written report"],[1010,"보내오다","to send (toward speaker)"],
+    [1011,"보너스","bonus"],[1012,"보다","to see, to try, than"],[1013,"보도","news report, sidewalk"],[1014,"보람","worth, sense of fulfillment"],[1015,"보름","fifteen days, half a month"],
+    [1016,"보름달","full moon"],[1017,"보리","barley"],[1018,"보살피다","to take care of, look after"],[1019,"보상","compensation"],[1020,"보석","jewelry, gem"],
+    [1021,"보수","maintenance, conservatism, pay"],[1022,"보수적","being conservative"],[1023,"보습","moisturizing"],[1024,"보안","security"],[1025,"보완","supplementation, improvement"],
+    [1026,"보이다","to be seen, to show"],[1027,"보일러","boiler, heating system"],[1028,"보장","guarantee, assurance"],[1029,"보존","preservation, conservation"],[1030,"보조","assistance, supplement"],
+    [1031,"보통","usually, ordinary"],[1032,"보편적","being universal"],[1033,"보험","insurance"],[1034,"보험료","insurance premium"],[1035,"보호","protection"],
+    [1036,"보호자","guardian"],[1037,"복","luck, blessing"],[1038,"복구","restoration, recovery"],[1039,"복권","lottery ticket"],[1040,"복도","corridor, hallway"],
+    [1041,"복사","copy, photocopy"],[1042,"복사기","photocopier"],[1043,"복습","review (of studies)"],[1044,"복장","attire, dress code"],[1045,"복지","welfare"],
+    [1046,"복통","stomachache"],[1047,"복합","complex, composite"],[1048,"본격적","full-scale, earnest"],[1049,"본래","originally"],[1050,"본명","real name"],
+    [1051,"본부","headquarters"],[1052,"본사","head office, main office"],[1053,"본성","human nature, original nature"],[1054,"본인","the person in question, oneself"],[1055,"본점","main store, head office"],
+    [1056,"볼","cheek, ball"],[1057,"볼거리","things to see, attractions"],[1058,"볼일","errand, business to attend to"],[1059,"봄날","spring day"],[1060,"봄비","spring rain"],
+    [1061,"봄철","spring season"],[1062,"봉사","volunteer service"],[1063,"봉투","envelope, plastic bag"],[1064,"부","department, wealth, part"],[1065,"부담","burden, pressure"],
+    [1066,"부담스럽다","to feel burdensome"],[1067,"부대","military unit"],[1068,"부딪치다","to collide, to bump into"],[1069,"부딪히다","to be bumped into, to face"],[1070,"부동산","real estate"],
+    [1071,"부드럽다","to be soft, gentle"],[1072,"부러워하다","to envy"],[1073,"부러지다","to be broken, snapped"],[1074,"부럽다","to be envious"],[1075,"부르다","to call, to sing, to be full"],
+    [1076,"부리다","to show, to make use of"],[1077,"부모님","parents"],[1078,"부문","sector, category, field"],[1079,"부부","married couple"],[1080,"부분","part, portion"],
+    [1081,"부분적","being partial"],[1082,"부상","injury, wound"],[1083,"부서","department, division"],[1084,"부서지다","to shatter, to break down"],[1085,"부수다","to break, to smash"],
+    [1086,"부엌","kitchen"],[1087,"부인","wife, denial"],[1088,"부자","rich person"],[1089,"부작용","side effect"],[1090,"부장","department head"],
+    [1091,"부정","injustice, denial"],[1092,"부정적","being negative"],[1093,"부족","shortage, lack"],[1094,"부족하다","to be insufficient, lacking"],[1095,"부지런하다","to be diligent, hardworking"],
+    [1096,"부지런히","diligently"],[1097,"부채","fan, debt"],[1098,"부치다","to send (mail), to fry (pancake)"],[1099,"부친","father (formal)"],[1100,"부품","parts, components"],
+    [1101,"부하","subordinate"],[1102,"북부","northern part"],[1103,"분","person (honorific), minute"],[114,"분노","anger, rage"],[1105,"분량","amount, volume"],
+    [1106,"분류","classification"],[1107,"분리","separation"],[1108,"분명","clearly, certainly"],[1109,"분명하다","to be clear, obvious"],[1110,"분명히","clearly, definitely"],
+    [1111,"분석","analysis"],[1112,"분수","fountain, one's place"],[1113,"분실","loss (of item)"],[1114,"분실물","lost article"],[1115,"분야","field, sector"],
+    [1116,"분위기","atmosphere, mood"],[1117,"분쟁","dispute, conflict"],[1118,"분필","chalk"],[1119,"분홍색","pink color"],[1120,"불","fire, light"],
+    [1121,"불가능","impossibility"],[1122,"불가능하다","to be impossible"],[1123,"불가피하다","to be inevitable"],[1124,"불경기","economic recession"],[1125,"불교","Buddhism"],
+    [1126,"불구하다","despite (~에도 불구하고)"],[1127,"불꽃","flame, fireworks"],[1128,"불꽃놀이","fireworks festival"],[1129,"불만","dissatisfaction, complaint"],[1130,"불만족","dissatisfaction"],
+    [1131,"불면증","insomnia"],[1132,"불법","illegality"],[1133,"불빛","light, glow"],[1134,"불상","Buddhist statue"],[1135,"불안","anxiety, uneasiness"],
+    [1136,"불안감","sense of anxiety"],[1137,"불안정","instability"],[1138,"불안하다","to be anxious, uneasy"],[1139,"불이익","disadvantage"],[1140,"불충분하다","to be insufficient"],
+    [1141,"불친절하다","to be unkind"],[1142,"불쾌하다","to be unpleasant, displeased"],[1143,"불평","complaint, grumble"],[1144,"불평등","inequality"],[1145,"불편","inconvenience"],
+    [1146,"불편하다","to be inconvenient, uncomfortable"],[1147,"불필요하다","to be unnecessary"],[1148,"불행","unhappiness, misfortune"],[1149,"불행하다","to be unhappy, unfortunate"],[1150,"불확실하다","to be uncertain"],
+    [1151,"붉다","to be red, crimson"],[1152,"붓다","to pour, to swell"],[1153,"붙다","to stick to, to pass (an exam)"],[1154,"붙들다","to hold on to, to catch"],[1155,"붙이다","to attach, to stick"],
+    [1156,"비","rain, cost, ratio"],[1157,"비교","comparison"],[1158,"비교적","comparatively, relatively"],[1159,"비극","tragedy"],[1160,"비기다","to tie, to draw (in a game)"],
+    [1161,"비난","criticism, blame"],[1162,"비닐","vinyl, plastic"],[1163,"비닐봉지","plastic bag"],[1164,"비다","to be empty, vacant"],[1165,"비디오","video"],
+    [1166,"비만","obesity"],[1167,"비명","scream, shriek"],[1168,"비밀","secret"],[1169,"비밀번호","password, PIN"],[1170,"비바람","rain and wind, storm"],
+    [1171,"비방","slander, secret method"],[1172,"비법","secret recipe, special method"],[1173,"비비다","to mix, to rub"],[1174,"비상","emergency"],[1175,"비상구","emergency exit"],
+    [1176,"비상금","emergency fund"],[1177,"비서","secretary"],[1178,"비소","arsenic, wry smile"],[1179,"비슷하다","to be similar"],[1180,"비옷","raincoat"],
+    [1181,"비용","cost, expense"],[1182,"비우다","to empty"],[1183,"비율","ratio, proportion"],[1184,"비자","visa"],[1185,"비중","importance, relative weight"],
+    [1186,"비추다","to shine on, to reflect"],[1187,"비치다","to shine, to be reflected"],[1188,"비키다","to step aside"],[1189,"비타민","vitamin"],[1190,"비판","criticism, critique"],
+    [1191,"비판적","being critical"],[1192,"비평","review, criticism"],[1193,"비하다","to compare to"],[1194,"비행","aviation, misconduct"],[1195,"비행장","airfield, airport"],
+    [1196,"빌딩","building"],[1197,"빗","comb"],[1198,"빗길","rainy road"],[1199,"빗물","rainwater"],[1200,"빗방울","raindrop"],
+    [1201,"빗소리가","sound of rain"],[1202,"빗줄기","streaks of rain"],[1203,"빚","debt"],[1204,"빛나다","to shine, to sparkle"],[1205,"빠뜨리다","to drop into, to omit"],
+    [1206,"빠르다","to be fast"],[1207,"빠져나가다","to escape, to slip out"],[1208,"빠져나오다","to get out of"],[1209,"빠지다","to fall into, to be left out, to be absorbed in"],[1210,"빨다","to wash (laundry), to suck"],
+    [1211,"빨래","laundry"],[1212,"빨랫감","laundry items"],[1213,"빨리","quickly, fast"],[1214,"빵집","bakery"],[1215,"빼놓다","to leave out, to exclude"],
+    [1216,"빼다","to subtract, to remove, to pull out"],[1217,"빼앗기다","to be taken away, deprived of"],[1218,"빼앗다","to take away, to snatch"],[1219,"뺨","cheek"],[1220,"뻐꾸기","cuckoo bird"],
+    [1221,"뻔하다","to be obvious, almost did"],[1222,"뻗다","to stretch out, to extend"],[1223,"뼈","bone"],[1224,"뽑다","to pull out, to select, to recruit"],[1225,"뽑히다","to be selected, elected"],
+    [1226,"뿌리","root"],[1227,"뿌리다","to sprinkle, to scatter"],[1228,"뿐","only, merely"],[1229,"사건","event, incident, case"],[1230,"사계절","four seasons"],
+    [1231,"사고","accident, thinking"],[1232,"사고방식","way of thinking, mindset"],[1233,"사과","apple, apology"],[1234,"사교적","being sociable"],[1235,"사귀다","to make friends, to date"],
+    [1236,"사기","fraud, morale"],[1237,"사내","inside the company, man"],[1238,"사냥","hunting"],[1239,"사다","to buy"],[1240,"사라지다","to disappear"],
+    [1241,"사람","person"],[1242,"사랑스럽다","to be lovely"],[1243,"사례","case, example, reward"],[1244,"사로잡다","to captivate, to capture"],[1245,"사립","private (institution)"],
+    [1246,"사막","desert"],[1247,"사망","death, passing"],[1248,"사무","office work"],[1249,"사무소","office"],[1250,"사무실","office room"],
+    [1251,"사무직","white-collar / office job"],[1252,"사물","object, thing"],[1253,"사방","every direction, all around"],[1254,"사소하다","to be trivial, minor"],[1255,"사슴","deer"],
+    [1256,"사실","fact, truth"],[1257,"사실상","virtually, in fact"],[1258,"사업","business, project"],[1259,"사업가","businessman, entrepreneur"],[1260,"사업장","place of business, workplace"],
+    [1261,"사용","use, usage"],[1262,"사용법","instructions, how to use"],[1263,"사용자","user"],[1264,"사유","reason, private ownership"],[1265,"사이","space between, relationship"],
+    [1266,"사이좋다","to be on good terms"],[1267,"사전","dictionary, beforehand"],[1268,"사정","circumstances, situation"],[1269,"사진관","photo studio"],[1270,"사진기","camera"],
+    [1271,"사촌","cousin"],[1272,"사춘기","puberty, adolescence"],[1273,"사태","situation, state of affairs"],[1274,"사투리","dialect"],[1275,"사표","letter of resignation"],
+    [1276,"사회","society"],[1277,"사회생활","social life"],[1278,"사회자","host, emcee (MC)"],[1279,"사회적","being social"],[1280,"사회학","sociology"],
+    [1281,"세탁물","laundry"],[1282,"셔츠","shirt"],[1283,"셔틀버스","shuttle bus"],[1284,"소감","thoughts, feelings, impressions"],[1285,"소개팅","blind date"],
+    [1286,"소규모","small scale"],[1287,"소극장","small theater"],[1288,"소극적","being passive"],[1289,"소나기","(sudden) rain shower"],[1290,"소년","young boy"],
+    [1291,"소득","income"],[1292,"소망","hope, wish"],[1293,"소매","sleeve, retail"],[1294,"소매치기","pickpocket, pickpocketing"],[1295,"소문","rumors, reputation"],
+    [1296,"소방관","firefighter"],[1297,"소방서","fire station"],[1298,"소방차","fire truck"],[1299,"소비","consumption"],[1300,"소비자","consumer"],
+    [1301,"소설책","novel"],[1302,"소수","minority, small number"],[1303,"소스","sauce"],[1304,"소심하다","to be timid, cowardly"],[1305,"소용","use, avail"],
+    [1306,"소용없다","to be useless"],[1307,"소원","wish"],[1308,"소음","noise"],[1309,"소주","soju, Korean liquor"],[1310,"소중하다","to be precious, important"],
+    [1311,"소중히","preciously, carefully"],[1312,"소화","digestion"],[1313,"속다","to be tricked, deceived"],[1314,"속담","proverb"],[1315,"속도","speed"],
+    [1316,"속도위반","speeding violation"],[1317,"속력","speed"],[1318,"속상하다","to be upset, distressed, sad"],[1319,"속옷","underwear"],[1320,"속이다","to deceive, to trick"],
+    [1321,"손바닥","palm of the hand"],[1322,"손발","hands and feet"],[1323,"손쉽다","to be easy, simple"],[1324,"손자","grandson"],[1325,"손잡이","handle, knob"],
+    [1326,"손질","trimming, care, preparation"],[1327,"솔직하다","to be honest, frank"],[1328,"솔직히","honestly, frankly"],[1329,"솜씨","skill, dexterity"],[1330,"송금","remittance, money transfer"],
+    [1331,"쇠","iron, metal"],[1332,"쇠고기","beef"],[1333,"쇼","show"],[1334,"쇼핑몰","shopping mall"],[1335,"쇼핑백","shopping bag"],
+    [1336,"쇼핑센터","shopping center"],[1337,"수거","collection, pickup"],[1338,"수고","hard work, trouble"],[1339,"수단","means, method"],[1340,"수도꼭지","water faucet, tap"],
+    [1341,"수량","quantity, amount"],[1342,"수료식","completion ceremony"],[1343,"수리","repair"],[1344,"수리비","repair cost"],[1345,"수면","sleep, water surface"],
+    [1346,"수면제","sleeping pills"],[1347,"수명","lifespan"],[1348,"수산물","marine products, seafood"],[1349,"수상","prime minister, winning a prize"],[1350,"수선","repair, alteration (clothes)"],
+    [1351,"수선하다","to repair, alter (clothes)"],[1352,"수수료","commission, service fee"],[1353,"수입","import, income"],[1354,"수정","revision, crystal"],[1355,"수준","level, standard"],
+    [1356,"수집","collection"],[1357,"수출","export"],[1358,"수표","bank check"],[1359,"수학여행","school field trip"],[1360,"숙녀복","women's clothing"],
+    [1361,"숙박","lodging, accommodation"],[1362,"숙박비","accommodation fee"],[1363,"숙소","lodging, accommodation"],[1364,"숙이다","to bow, to lower"],[1365,"순간","moment, instant"],
+    [1366,"순두부찌개","soft tofu stew"],[1367,"술자리","drinking gathering"],[1368,"술잔","liquor glass"],[1369,"술집","bar, pub"],[1370,"숨기다","to hide, to conceal"],
+    [1371,"숨다","to hide oneself"],[1372,"숫자","number, figure"],[1373,"숲","forest, woods"],[1374,"스님","Buddhist monk"],[1375,"스스로","by oneself, on one's own"],
+    [1376,"스캐너","scanner"],[1377,"스타일","style"],[1378,"스티커","sticker"],[1379,"스프","soup"],[1380,"스피커","speaker"],
+    [1381,"슬리퍼","slippers"],[1382,"슬픔","sorrow, sadness"],[1383,"습기","moisture"],[1384,"습도","humidity"],[1385,"습관","habit"],
+    [1386,"승객","passenger"],[1387,"승무원","flight attendant, crew"],[1388,"승용차","passenger car"],[1389,"승진","promotion (at work)"],[1390,"승차","boarding (a vehicle)"],
+    [1391,"승차권","boarding ticket"],[1392,"시각","time, viewpoint"],[1393,"시간대","time zone, time slot"],[1394,"시간표","timetable, schedule"],[1395,"시골","countryside"],
+    [1396,"시기","time, period, jealousy"],[1397,"시내버스","city bus"],[1398,"시대","era, age, period"],[1399,"시도","attempt, try"],[1400,"시선","gaze, line of vision"],
+    [1401,"시인","poet"],[1402,"시집","poetry anthology, husband's family"],[1403,"시집가다","to get married (for a woman)"],[1404,"시청각실","audiovisual room"],[1405,"시청자","TV viewer"],
+    [1406,"시합","match, competition"],[1407,"시험공부","studying for an exam"],[1408,"식","ceremony, style, formula"],[1409,"식구","family members"],[1410,"식료품","groceries"],
+    [1411,"식물","plant"],[1412,"식물원","botanical garden"],[1413,"식비","food expenses"],[1414,"식생활","dietary life, eating habits"],[1415,"식습관","eating habits"],
+    [1416,"식욕","appetite"],[1417,"식용유","cooking oil"],[1418,"식초","vinegar"],[1419,"식품","food, foodstuff"],[1420,"식후","after a meal"],
+    [1421,"신고","report, declaration"],[1422,"신기다","to put shoes on someone"],[1423,"신기술","new technology"],[1424,"신기하다","to be marvelous, amazing"],[1425,"신문사","newspaper company"],
+    [1426,"신문지","newsprint, newspaper sheet"],[1427,"신부","bride, Catholic priest"],[1428,"신분","social status, identity"],[1429,"신분증","identification card (ID)"],[1430,"신상품","new product"],
+    [1431,"신선하다","to be fresh"],[1432,"신설","newly established"],[1433,"신세","indebtedness, one's lot"],[1434,"신속하다","to be prompt, swift"],[1435,"신앙","religious faith"],
+    [1436,"신용","credit, trust"],[1437,"신용카드","credit card"],[1438,"신입생","freshman, new student"],[1439,"신입사원","new employee"],[1440,"신장","height, kidney"],
+    [1441,"신제품","new product"],[1442,"신중하다","to be cautious, prudent"],[1443,"신청","application, request"],[1444,"신청서","application form"],[1445,"신체","human body"],
+    [1446,"신체적","being physical"],[1447,"신호","signal"],[1448,"신호등","traffic light"],[1449,"신혼","newlywed"],[1450,"신혼부부","newlywed couple"],
+    [1451,"신혼여행","honeymoon"],[1452,"실감","real feeling, realization"],[1453,"실내","indoors, interior"],[1454,"실력","skill, ability, competence"],[1455,"실례","excuse, discourtesy, example"],
+    [1456,"실망","disappointment"],[1457,"실물","real thing, actual object"],[1458,"실수","mistake, blunder"],[1459,"실습","practical training, practice"],[1460,"실시","implementation, enforcement"],
+    [1461,"실시간","real-time"],[1462,"실업","unemployment"],[1463,"실업자","unemployed person"],[1464,"실외","outdoors"],[1465,"실용적","being practical"],
+    [1466,"실은","actually, in fact"],[1467,"실장","head of a department/office"],[1468,"실제","reality, actual state"],[1469,"실제로","actually, in reality"],[1470,"실종","disappearance, missing"],
+    [1471,"실천","practice, putting into action"],[1472,"실체","substance, true nature"],[1473,"실태","actual condition, reality"],[1474,"실패","failure"],[1475,"실험","experiment"],
+    [1476,"실험실","laboratory"],[1477,"실현","realization, fulfillment"],[1478,"싫증","boredom, tiredness of something"],[1479,"심각하다","to be serious, severe"],[1480,"심리","psychology, mentality"],
+    [1481,"심리적","being psychological"],[1482,"심리학","psychology (academic)"],[1483,"심부름","errand"],[1484,"심사","judging, screening, inspection"],[1485,"심장","heart"],
+    [1486,"심정","feelings, heart"],[1487,"심지어","even, to the extent of"],[1488,"심하다","to be severe, extreme"],[1489,"십중팔구","nine times out of ten, almost certainly"],[1490,"싱겁다","to be bland, not salty enough"],
+    [1491,"싸구려","cheap, inferior goods"],[1492,"싸다","to wrap, to pack, to be cheap"],[1493,"싸움","fight, quarrel"],[1494,"싹","sprout, bud"],[1495,"쌍","pair, couple"],
+    [1496,"쌍둥이","twins"],[1497,"쌓다","to pile up, to build"],[1498,"쌓이다","to be piled up, accumulated"],[1499,"썩","very, right away"],[1500,"썩다","to rot, to spoil"],
+    [1501,"썰다","to slice, to chop"],[1502,"썰매","sled"],[1503,"쏘다","to shoot, to sting"],[1504,"쏟다","to pour, to spill"],[1505,"쏟아지다","to pour down, to gush out"],
+    [1506,"쓰다듬다","to stroke, to pat"],[1507,"쓰러지다","to collapse, to faint"],[1508,"쓰레기통","trash can"],[1509,"쓰이다","to be used, to be written"],[1510,"쓴맛","bitter taste"],
+    [1511,"쓸다","to sweep"],[1512,"쓸데없다","to be useless, unnecessary"],[1513,"쓸데없이","needlessly, uselessly"],[1514,"쓸쓸하다","to be lonely, solitary"],[1515,"씌우다","to put on (a hat/cover)"],
+    [1516,"씨","seed, Mr./Ms."],[1517,"씨름","Ssireum (traditional Korean wrestling)"],[1518,"씨앗","seed"],[1519,"씩씩하다","to be brave, energetic"],[1520,"씹다","to chew"],
+    [1521,"씻기다","to wash someone, to be washed away"],[1522,"아가씨","young lady"],[1523,"아기","baby"],[1524,"아까","a little while ago"],[1525,"아깝다","to be a waste, regrettable"],
+    [1526,"아끼다","to save, to cherish"],[1527,"아나운서","announcer, news anchor"],[1528,"아내","wife"],[1529,"아드님","son (honorific)"],[1530,"아래층","downstairs, lower floor"],
+    [1531,"아랫사람","junior, subordinate"],[1532,"아마도","probably, perhaps"],[1533,"아무개","so-and-so"],[1534,"아무래도","no matter what, it seems"],[1535,"아무런","any sort of (with negative)"],
+    [1536,"아무튼","anyway, in any case"],[1537,"아쉬움","regret, sense of lacking"],[1538,"아쉽다","to feel sad/regretful at parting or lacking"],[1539,"아스팔트","asphalt"],[1540,"아시아","Asia"],
+    [1541,"아예","from the very start, altogether"],[1542,"아우","younger sibling"],[1543,"아울러","in addition, together with"],[1544,"아이디어","idea"],[1545,"아침밥","breakfast"],
+    [1546,"아파트","apartment"],[1547,"아픔","pain, sorrow"],[1548,"악기","musical instrument"],[1549,"악몽","nightmare"],[1550,"악수","handshake"],
+    [1551,"악화","deterioration, worsening"],[1552,"안개","fog, mist"],[1553,"안경점","optician's shop"],[1554,"안과","ophthalmology, eye clinic"],[1555,"안내문","information notice, guide"],
+    [1556,"안내소","information desk"],[1557,"안내원","guide, attendant"],[1558,"안되다","to feel sorry for, must not"],[1559,"안방","main bedroom"],[1560,"안부","regards, how someone is doing"],
+    [1561,"안심","relief, peace of mind"],[1562,"안심하다","to feel relieved"],[1563,"안약","eye drops"],[1564,"안정","stability"],[1565,"안정감","sense of stability"],
+    [1566,"안정되다","to become stable"],[1567,"안주","side dish for alcohol"],[1568,"안쪽","inside, inner side"],[1569,"안타깝다","to be regrettable, pitiful"],[1570,"않다","to not do, to not be"],
+    [1571,"알","egg, grain, pill"],[1572,"알려지다","to become known"],[1573,"알루미늄","aluminum"],[1574,"알리다","to inform, to notify"],[1575,"알맞다","to be suitable, proper"],
+    [1576,"알아듣다","to understand (what is heard)"],[1577,"알아보다","to look into, to recognize"],[1578,"알아차리다","to notice, to realize"],[1579,"앓다","to suffer from (an illness)"],[1580,"암","cancer"],
+    [1581,"암기","memorization"],[1582,"압력","pressure"],[1583,"앞길","way ahead, future"],[1584,"앞날","future, days ahead"],[1585,"앞두다","to have ahead"],
+    [1586,"앞문","front door"],[1587,"앞바다","offshore, sea in front"],[1588,"앞선","preceding, advanced"],[1589,"앞서다","to go ahead, to precede"],[1590,"앞장서다","to take the lead"],
+    [1591,"애","child, trouble/worry"],[1592,"애교","charm, winsomeness"],[1593,"애국심","patriotism"],[1594,"애쓰다","to make an effort, to strive"],[1595,"애완동물","pet"],
+    [1596,"애인","lover, sweetheart"],[1597,"애정","affection, love"],[1598,"액수","amount of money, sum"],[1599,"액자","picture frame"],[1600,"앨범","album"],
+    [1601,"엉망","wreck, mess, ruin"],[1602,"엊그제","a few days ago"],[1603,"에너지","energy"],[1604,"에이즈","AIDS"],[1605,"엔진","engine"],
+    [1606,"엠티","MT (membership training outing)"],[1607,"여가","leisure"],[1608,"여고생","high school girl"],[1609,"여관","inn, motel"],[1610,"여드름","acne, pimple"],
+    [1611,"여럿","many (people/things)"],[1612,"여름날","summer day"],[1613,"여성","female, woman"],[1614,"여성복","women's clothing"],[1615,"여유","spare time/room, composure"],
+    [1616,"여전히","just as before, still"],[1617,"여쭈다","to ask politely"],[1618,"여행비","travel expenses"],[1619,"여행자","traveler"],[1620,"여행지","travel destination"],
+    [1621,"역사적","being historical"],[1622,"역시","as expected, after all"],[1623,"역할","role, part"],[1624,"연결","connection"],[1625,"연구","research"],
+    [1626,"연구소","research institute"],[1627,"연구실","research laboratory, office"],[1628,"연극","theater, play"],[1629,"연기","delay, smoke, acting"],[1630,"연도","year"],
+    [1631,"연락","contact, communication"],[1632,"연말","end of the year"],[1633,"연말연시","year-end and New Year holidays"],[1634,"연상","older person, association"],[1635,"연속","continuity, in a row"],
+    [1636,"연속극","serial drama, soap opera"],[1637,"연수","training"],[1638,"연애","romance, dating"],[1639,"연애결혼","love marriage"],[1640,"연인","couple, lover"],
+    [1641,"연장","extension, tools"],[1642,"연주","musical performance"],[1643,"연주회","concert, recital"],[1644,"연하","younger person"],[1645,"연하다","to be soft, mild, light"],
+    [1646,"연회비","annual membership fee"],[1647,"열대야","tropical night (sleepless heat)"],[1648,"열람실","reading room"],[1649,"열흘","ten days"],[1650,"염색","dyeing (hair/fabric)"],
+    [1651,"엿","traditional Korean malt candy"],[1652,"영수증","receipt"],[1653,"영양","nutrition"],[1654,"영양가","nutritional value"],[1655,"영양분","nutrients"],
+    [1656,"영양소","nutrients"],[1657,"영양제","nutritional supplement"],[1658,"영업","business, sales"],[1659,"영업부","sales department"],[1660,"영역","area, domain, territory"],
+    [1661,"영원히","eternally, forever"],[1662,"영향","influence, impact"],[1663,"영화감독","film director"],[1664,"영화제","film festival"],[1665,"옆집","house next door, neighbor"],
+    [1666,"예금","bank deposit, savings"],[1667,"예매","advance ticket booking"],[1668,"예방","prevention"],[1669,"예보","forecast"],[1670,"예상","expectation, prediction"],
+    [1671,"예술","art"],[1672,"예습","previewing lessons, preparation"],[1673,"예식장","wedding hall"],[1674,"예의","manners, courtesy"],[1675,"예전","past, old days"],
+    [1676,"예절","etiquette, manners"],[1677,"예정","schedule, plan"],[1678,"예측","prediction, forecast"],[1679,"옛","old, ancient, former"],[1680,"옛말","old saying, old story"],
+    [1681,"오가다","to come and go"],[1682,"오늘날","today, nowadays"],[1683,"오락","entertainment"],[1684,"오래되다","to be old"],[1685,"오랜","long (time)"],
+    [1686,"오르내리다","to go up and down"],[1687,"오른손","right hand"],[1688,"오리엔테이션","orientation"],[1689,"오염","pollution, contamination"],[1690,"오토바이","motorcycle"],
+    [1691,"오페라","opera"],[1692,"오피스텔","officetel (studio office/apartment)"],[1693,"오해","misunderstanding"],[1694,"오히려","rather, on the contrary"],[1695,"온","all, entire"],
+    [1696,"온갖","all kinds of"],[1697,"온도","temperature"],[1698,"온돌","Ondol (traditional floor heating)"],[1699,"온돌방","room with Ondol heating"],[1700,"온라인","online"],
+    [1701,"온몸","whole body"],[1702,"온천","hot spring"],[1703,"온천욕","hot spring bath"],[1704,"온통","all over, entirely"],[1705,"올리다","to raise, to post"],
+    [1706,"올림픽","Olympics"],[1707,"올바르다","to be upright, proper"],[1708,"옳다","to be right, correct"],[1709,"옷차림","attire, way of dressing"],[1710,"와인","wine"],
+    [1711,"완성","completion"],[1712,"완전히","completely"],[1713,"왕","king"],[1714,"왕복","round trip"],[1715,"왕비","queen"],
+    [1716,"왠지","for some reason"],[1717,"외가","mother's side of the family"],[1718,"외과","surgery department"],[1719,"외교관","diplomat"],[1720,"외동딸","only daughter"],
+    [1721,"외동아들","only son"],[1722,"외래어","loanword, borrowed word"],[1723,"외로움","loneliness"],[1724,"외모","appearance, looks"],[1725,"외식","dining out"],
+    [1726,"외아들","only son"],[1727,"외우다","to memorize"],[1728,"외치다","to shout, to scream"],[1729,"요가","yoga"],[1730,"요구","demand, request"],
+    [1731,"요구르트","yogurt"],[1732,"요리법","recipe"],[1733,"요리사","chef, cook"],[1734,"요새","recently, these days"],[1735,"요약","summary"],
+    [1736,"요청","request"],[1737,"욕","swearing, abusive language"],[1738,"욕실","bathroom"],[1739,"욕심","greed, ambition"],[1740,"욕심쟁이","greedy person"],
+    [1741,"용","dragon"],[1742,"용기","courage, container"],[1743,"용돈","pocket money, allowance"],[1744,"용서","forgiveness"],[1745,"우등상","honor prize"],
+    [1746,"우리말","Korean language (our language)"],[1747,"우물","water well"],[1748,"우수성","excellence"],[1749,"우승","victory, championship"],[1750,"우아하다","to be elegant, graceful"],
+    [1751,"우연","chance, coincidence"],[1752,"우연히","by chance, coincidentally"],[1753,"우울증","depression"],[1754,"우울하다","to be depressed, gloomy"],[1755,"우정","friendship"],
+    [1756,"우주","universe, space"],[1757,"우주여행","space travel"],[1758,"우편","postal service, mail"],[1759,"우편물","mail, postal matter"],[1760,"우편배달","mail delivery"],
+    [1761,"운","luck, fortune"],[1762,"운명","fate, destiny"],[1763,"운전기사","driver"],[1764,"운전면허","driver's license"],[1765,"운전자","driver"],
+    [1766,"울보","crybaby"],[1767,"울음","crying, weeping"],[1768,"웃어른","elders, seniors"],[1769,"웃음","laughter, smile"],[1770,"워낙","so, by nature, very"],
+    [1771,"원고","manuscript, draft"],[1772,"원래","originally"],[1773,"원룸","studio apartment"],[1774,"원리","principle"],[1775,"원서","application form, original book"],
+    [1776,"원숭이","monkey"],[1777,"원인","cause, reason"],[1778,"월말","end of the month"],[1779,"웨딩드레스","wedding dress"],[1780,"위대하다","to be great"],
+    [1781,"위로","consolation, comfort"],[1782,"위반","violation"],[1783,"윗사람","senior, superior"],[1784,"유난히","particularly, unusually"],[1785,"유니폼","uniform"],
+    [1786,"유람선","cruise ship, excursion ship"],[1787,"유료","paid, fee-based"],[1788,"유리창","windowpane"],[1789,"유머","humor"],[1790,"유명","fame, being famous"],
+    [1791,"유적지","historic site"],[1792,"유창하다","to be fluent"],[1793,"유치원","kindergarten"],[1794,"유쾌하다","to be cheerful, pleasant"],[1795,"유행어","buzzword, catchphrase"],
+    [1796,"육식","meat diet, carnivorous"],[1797,"육아","childcare"],[1798,"윷놀이","Yunnori (traditional board game)"],[1799,"은","silver"],[1800,"은혜","grace, favor, kindness"],
+    [1801,"음력","lunar calendar"],[1802,"음료","beverage, drink"],[1803,"음성","voice"],[1804,"음식물","food and drink"],[1805,"음식점","restaurant"],
+    [1806,"음악회","musical concert"],[1807,"음주","drinking alcohol"],[1808,"응급실","emergency room"],[1809,"응답","response, answer"],[1810,"응답자","respondent"],
+    [1811,"응시자","test taker, examinee"],[1812,"응원","cheering, support"],[1813,"의견","opinion"],[1814,"의논","consultation, discussion"],[1815,"의류","clothing, apparel"],
+    [1816,"의무","duty, obligation"],[1817,"의문","question, doubt"],[1818,"의사소통","communication"],[1819,"의상","costume, outfit"],[1820,"의식주","food, clothing, and shelter"],
+    [1821,"의심","doubt, suspicion"],[1822,"의외로","unexpectedly"],[1823,"의욕","motivation, drive"],[1824,"의의","significance, meaning"],[1825,"의지","will, volition"],
+    [1826,"의하다","to be based on, due to"],[1827,"의학","medicine (medical science)"],[1828,"의학적","being medical"],[1829,"이것저것","this and that"],[1830,"이국적","being exotic"],
+    [1831,"이기다","to win"],[1832,"이기적","being selfish"],[1833,"이끌다","to lead, to guide"],[1834,"이내","within, soon"],[1835,"이다","to be (copula)"],
+    [1836,"이동","movement, transit"],[1837,"이따","later (today)"],[1838,"이때","at this time"],[1839,"이러하다","to be like this, such"],[1840,"이런저런","this and that, various"],
+    [1841,"이루다","to accomplish, to achieve"],[1842,"이루어지다","to be achieved, composed of"],[1843,"이름나다","to become famous"],[1844,"이름표","name tag"],[1845,"이리","this way"],
+    [1846,"이리저리","here and there"],[1847,"이마","forehead"],[1848,"이만","this much, stopping here"],[1849,"이만큼","this much"],[1850,"이미","already"],
+    [1851,"이미지","image"],[1852,"이민","immigration, emigration"],[1853,"이별","farewell, parting"],[1854,"이불","blanket, quilt"],[1855,"이비인후과","ENT clinic (ear, nose, throat)"],
+    [1856,"이삿짐","moving luggage"],[1857,"이상형","ideal type of partner"],[1858,"이성","reason, opposite sex"],[1859,"이어지다","to be connected, to continue"],[1860,"이어폰","earphones"],
+    [1861,"이외","except for, besides"],[1862,"이용료","usage fee"],[1863,"이용자","user"],[1864,"이웃","neighborhood, neighbor"],[1865,"이웃집","neighbor's house"],
+    [1866,"이익","profit, benefit"],[1867,"이자","interest (financial)"],[1868,"이전","before, previous, relocation"],[1869,"이제야","only now, finally"],[1870,"이하","less than, below"],
+    [1871,"이해력","comprehension"],[1872,"이해심","understanding, sympathy"],[1873,"이혼","divorce"],[1874,"이후","afterward, since then"],[1875,"익숙하다","to be familiar, accustomed to"],
+    [1876,"익히다","to cook/ripen, to master"],[1877,"인간","human being"],[1878,"인간관계","interpersonal relationships"],[1879,"인간성","human nature, character"],[1880,"인간적","being humane"],
+    [1881,"인류","humankind, human race"],[1882,"인사말","greeting words"],[1883,"인상적","being impressive"],[1884,"인생","human life"],[1885,"인쇄","printing"],
+    [1886,"인쇄물","printed matter"],[1887,"인스턴트","instant food"],[1888,"인원","number of people, staff"],[1889,"인정받다","to be recognized, appreciated"],[1890,"인출기","ATM (cash dispenser)"],
+    [1891,"인턴사원","intern"],[1892,"인하다","to be caused by, due to"],[1893,"일기장","diary, journal"],[1894,"일단","first of all, for now"],[1895,"일등","first place"],
+    [1896,"일반","general, ordinary"],[1897,"일반인","ordinary person, general public"],[1898,"일반적","being general, common"],[1899,"일부","part, portion"],[1900,"일부러","on purpose, intentionally"],
+    [1901,"일상","daily life"],[1902,"일상적","being everyday, routine"],[1903,"일생","lifetime"],[1904,"일시","temporary, date and time"],[1905,"일시불","lump-sum payment"],
+    [1906,"일으키다","to raise, to cause"],[1907,"일자리","job, employment"],[1908,"일정","schedule"],[1909,"일정하다","to be regular, constant"],[1910,"일출","sunrise"],
+    [1911,"일회용품","disposable products"],[1912,"읽히다","to be read"],[1913,"임산부","pregnant woman"],[1914,"임시","temporary"],[1915,"임신","pregnancy"],
+    [1916,"입금","deposit, payment"],[1917,"입맛","appetite, taste"],[1918,"입술","lips"],[1919,"입시","entrance examination"],[1920,"입장","position, admission"],
+    [1921,"입장권","admission ticket"],[1922,"입장료","admission fee"],[1923,"입학시험","entrance examination"],[1924,"입히다","to dress someone"],[1925,"잇다","to connect, to continue"],
+    [1926,"잎","leaf"],[1927,"자격","qualification"],[1928,"자격증","license, certificate"],[1929,"자극적","being stimulating, provocative"],[1930,"자꾸","repeatedly, frequently"],
+    [1931,"자녀","children (sons and daughters)"],[1932,"자동","automatic"],[1933,"자라다","to grow up"],[1934,"자랑","boast, pride"],[1935,"자료실","reference room, archive"],
+    [1936,"자막","subtitles, captions"],[1937,"자매","sisters"],[1938,"자살","suicide"],[1939,"자세하다","to be detailed"],[1940,"자세히","in detail"],
+    [1941,"자식","one's children"],[1942,"자신감","self-confidence"],[1943,"자연적","being natural"],[1944,"자외선","ultraviolet (UV) rays"],[1945,"자원","resources, volunteering"],
+    [1946,"자음","consonant"],[1947,"자존심","self-esteem, pride"],[1948,"자취","living alone (self-boarding), trace"],[1949,"자판기","vending machine"],[1950,"작가","writer, artist"],
+    [1951,"작곡","musical composition"],[1952,"작문","essay writing, composition"],[1953,"작사","lyric writing"],[1954,"작아지다","to become smaller"],[1955,"작업","work, operation"],
+    [1956,"작품","work of art, piece"],[1957,"잔돈","small change"],[1958,"잔디","grass, lawn"],[1959,"잔디밭","lawn"],[1960,"잔뜩","fully, a lot"],
+    [1961,"잔소리","nagging"],[1962,"잔액","remaining balance"],[1963,"잠그다","to lock, to turn off (tap)"],[1964,"잠기다","to be locked, submerged"],[1965,"잠들다","to fall asleep"],
+    [1966,"잠옷","pajamas"],[1967,"잠자리","dragonfly, bed/sleeping place"],[1968,"잡수다","to eat (honorific)"],[1969,"잡아먹다","to prey on, devour"],[1970,"잡채","Japchae (stir-fried glass noodles)"],
+    [1971,"잡히다","to be caught"],[1972,"장가","marriage (for a man)"],[1973,"장가가다","to get married (for a man)"],[1974,"장기적","being long-term"],[1975,"장난","prank, mischief"],
+    [1976,"장난감","toy"],[1977,"장난꾸러기","mischievous child"],[1978,"장남","eldest son"],[1979,"장녀","eldest daughter"],[1980,"장단점","pros and cons"],
+    [1981,"장래","future"],[1982,"장례식","funeral"],[1983,"장례식장","funeral hall"],[1984,"장바구니","shopping basket/cart"],[1985,"장사","commerce, business"],
+    [1986,"장애","disability, obstacle"],[1987,"장애인","person with a disability"],[1988,"장학","scholarship support"],[1989,"장학금","scholarship money"],[1990,"재발급","reissuance"],
+    [1991,"재산","property, wealth"],[1992,"재작년","two years ago"],[1993,"재주","talent, skill"],[1994,"재즈","jazz"],[1995,"재테크","financial management/investing"],
+    [1996,"재학","being enrolled in school"],[1997,"재해","disaster, calamity"],[1998,"재혼","remarriage"],[1999,"재활용","recycling"],[2000,"재활용품","recyclable goods"],
+    [2001,"쟤","that person (contracted)"],[2002,"저금","savings"],[2003,"저금통","piggy bank"],[2004,"저렴하다","to be inexpensive, cheap"],[2005,"저울","scale (for weighing)"],
+    [2006,"저장","storage, saving"],[2007,"저절로","by itself, naturally"],[2008,"저축","savings"],[2009,"적극적","being proactive, enthusiastic"],[2010,"적금","installment savings"],
+    [2011,"적당하다","to be moderate, appropriate"],[2012,"적당히","moderately, appropriately"],[2013,"적성","aptitude"],[2014,"적어도","at least"],[2015,"적어지다","to decrease, become fewer"],
+    [2016,"적응","adaptation"],[2017,"적절하다","to be suitable, proper"],[2018,"전구","light bulb"],[2019,"전국","nationwide"],[2020,"전국적","being nationwide"],
+    [2021,"전기","electricity, biography"],[2022,"전날","the day before"],[2023,"전달","delivery, transmission"],[2024,"전동차","electric train, subway car"],[2025,"전등","electric light, lamp"],
+    [2026,"전망","prospect, view, outlook"],[2027,"전문가","expert, specialist"],[2028,"전문적","being professional"],[2029,"전문점","specialty store"],[2030,"전반전","first half (of a game)"],
+    [2031,"전부","all, entirety"],[2032,"전산실","computer room"],[2033,"전세","Jeonse (lump-sum housing lease)"],[2034,"전셋집","Jeonse leased house"],[2035,"전시","exhibition, display"],
+    [2036,"전시회","exhibition"],[2037,"전원","power supply, all members"],[2038,"전자","electronics, electron"],[2039,"전자레인지","microwave oven"],[2040,"전쟁","war"],
+    [2041,"전철","subway, electric railway"],[2042,"전체","whole, entirety"],[2043,"전체적","being overall"],[2044,"전통","tradition"],[2045,"전통문화","traditional culture"],
+    [2046,"전통적","being traditional"],[2047,"전화벨","phone ring"],[2048,"절대로","never, absolutely"],[2049,"절반","half"],[2050,"절약","saving, frugality"],
+    [2051,"젊은이","young person, youth"],[2052,"젊음","youth"],[2053,"점잖다","to be gentle, dignified"],[2054,"점점","gradually, more and more"],[2055,"점차","gradually"],
+    [2056,"접다","to fold, to give up"],[2057,"접수","application receipt, acceptance"],[2058,"접하다","to encounter, to learn of"],[2059,"정","warm affection, attachment"],[2060,"정기적","being regular, periodic"],
+    [2061,"정답","correct answer"],[2062,"정말로","really, truly"],[2063,"정보화","informatization"],[2064,"정부","government"],[2065,"정상","summit, normal state"],
+    [2066,"정상적","being normal"],[2067,"정성","sincerity, devotion"],[2068,"정성껏","wholeheartedly"],[2069,"정신","mind, spirit, consciousness"],[2070,"정신없다","to be hectic, busy"],
+    [2071,"정신없이","frantically, hectically"],[2072,"정신적","being mental, spiritual"],[2073,"정의","justice, definition"],[2074,"정장","formal suit"],[2075,"정전","power outage, blackout"],
+    [2076,"정지","stop, suspension"],[2077,"정직하다","to be honest"],[2078,"정차","stopping (of a vehicle)"],[2079,"정체","identity, traffic congestion"],[2080,"정치","politics"],
+    [2081,"정치가","politician"],[2082,"정치인","politician"],[2083,"정치학","political science"],[2084,"정확하다","to be accurate, exact"],[2085,"정확히","accurately"],
+    [2086,"젖다","to get wet"],[2087,"제공","provision, offer"],[2088,"제대로","properly"],[2089,"제도","system, institution"],[2090,"제때","on time"],
+    [2091,"제발","please"],[2092,"제비","swallow (bird)"],[2093,"제사","ancestral memorial rite"],[2094,"제시간","appointed time, on time"],[2095,"제안","proposal, suggestion"],
+    [2096,"제자","pupil, disciple"],[2097,"제자리","original place"],[2098,"제작","production, manufacture"],[2099,"제출","submission"],[2100,"제품","product, manufactured goods"],
+    [2101,"제한","limit, restriction"],[2102,"조개","clam, shellfish"],[2103,"조건","condition, requirement"],[2104,"조교","teaching assistant"],[2105,"조깅","jogging"],
+    [2106,"조르다","to pester, to tighten"],[2107,"조리","cooking"],[2108,"조리법","cooking recipe"],[2109,"조림","braised dish"],[2110,"조만간","sooner or later"],
+    [2111,"조명","lighting"],[2112,"조미료","seasoning, condiment"],[2113,"조상","ancestor"],[2114,"조심","caution, care"],[2115,"조절","adjustment, regulation"],
+    [2116,"족발","braised pig's trotters"],[2117,"존경","respect"],[2118,"졸다","to doze off"],[2119,"졸리다","to feel sleepy"],[2120,"졸업식","graduation ceremony"],
+    [2121,"졸음","sleepiness, drowsiness"],[2122,"좀처럼","rarely, not easily"],[2123,"좁히다","to narrow"],[2124,"종교","religion"],[2125,"종이컵","paper cup"],
+    [2126,"종종","from time to time, occasionally"],[2127,"종합","synthesis, comprehensive"],[2128,"좌석","seat"],[2129,"좌우","left and right"],[2130,"좌회전","left turn"],
+    [2131,"주거","housing, residence"],[2132,"주고받다","to exchange, give and take"],[2133,"주년","anniversary (-th year)"],[2134,"주름","wrinkle"],[2135,"주먹","fist"],
+    [2136,"주문서","order form"],[2137,"주민","resident, inhabitant"],[2138,"주방","kitchen"],[2139,"주식회사","joint-stock corporation"],[2140,"주어지다","to be given"],
+    [2141,"주유소","gas station"],[2142,"주의","caution, attention"],[2143,"주인공","main character, protagonist"],[2144,"주장","assertion, team captain"],[2145,"주제","subject, theme"],
+    [2146,"주택","housing, house"],[2147,"주택가","residential neighborhood"],[2148,"죽음","death"],[2149,"죽이다","to kill"],[2150,"준비물","supplies, things to prepare"],
+    [2151,"줄거리","plot, summary"],[2152,"줄무늬","stripes, striped pattern"],[2153,"줄어들다","to decrease, shrink"],[2154,"줄이다","to reduce, cut down"],[2155,"줍다","to pick up"],
+    [2156,"중간","middle, midway"],[2157,"중개소","brokerage agency"],[2158,"중고","secondhand, used"],[2159,"중고차","used car"],[2160,"중고품","secondhand goods"],
+    [2161,"중급","intermediate level"],[2162,"중단","suspension, halt"],[2163,"중부","central region"],[2164,"중소기업","small and medium enterprise (SME)"],[2165,"중심지","center, hub"],
+    [2166,"중앙","center, middle"],[2167,"중요성","importance"],[2168,"쥐","mouse, rat"],[2169,"즉","namely, that is to say"],[2170,"즐거움","joy, pleasure"],
+    [2171,"증가","increase, growth"],[2172,"증명서","certificate"],[2173,"증상","symptom"],[2174,"지겹다","to be tedious, fed up"],[2175,"지구","the Earth, district"],
+    [2176,"지나가다","to pass by"],[2177,"지나치다","to be excessive, to pass by"],[2178,"지난해","last year"],[2179,"지루하다","to be boring"],[2180,"지붕","roof"],
+    [2181,"지식","knowledge"],[2182,"지역","region, area"],[2183,"지옥","hell"],[2184,"지우다","to erase"],[2185,"지원","support, application"],
+    [2186,"지원자","applicant, supporter"],[2187,"지위","status, position"],[2188,"지저분하다","to be messy, dirty"],[2189,"지점","branch office, point"],[2190,"지진","earthquake"],
+    [2191,"지출","expenditure, spending"],[2192,"지치다","to get exhausted, tired"],[2193,"지켜보다","to watch over, observe"],[2194,"지퍼","zipper"],[2195,"지휘자","conductor"],
+    [2196,"직선","straight line"],[2197,"직장인","office worker"],[2198,"직접적","being direct"],[2199,"직진","going straight"],[2200,"직후","immediately after"],
+    [2201,"진실","truth"],[2202,"진심","sincerity, whole heart"],[2203,"진짜","real, genuinely"],[2204,"진찰","medical examination"],[2205,"진통제","painkiller"],
+    [2206,"진하다","to be thick, dark, strong"],[2207,"진학","entering higher education"],[2208,"진행","progress, proceeding"],[2209,"진행자","host, presenter"],[2210,"질병","disease, illness"],
+    [2211,"질서","public order"],[2212,"질투","jealousy"],[2213,"질환","medical disorder, disease"],[2214,"짐승","beast, animal"],[2215,"집값","housing price"],
+    [2216,"집다","to pick up"],[2217,"집들이","housewarming party"],[2218,"집세","rent"],[2219,"집안","family, household"],[2220,"집안일","housework, chores"],
+    [2221,"집주인","landlord, homeowner"],[2222,"집중","concentration"],[2223,"집중력","power of concentration"],[2224,"짙다","to be thick, deep, dark"],[2225,"짜증","annoyance, frustration"],
+    [2226,"짝","partner, pair"],[2227,"짝사랑","one-sided love, crush"],[2228,"짝수","even number"],[2229,"쫓기다","to be chased"],[2230,"쫓다","to chase, pursue"],
+    [2231,"쫓아내다","to drive out, kick out"],[2232,"쫓아다니다","to follow around"],[2233,"쭉","straight, all the time"],[2234,"찌다","to gain weight, to steam"],[2235,"찜질","poultice, sauna bath"],
+    [2236,"찜통더위","sweltering heat"],[2237,"찢다","to tear, rip"],[2238,"찢어지다","to be torn, ripped"],[2239,"차라리","rather, preferably"],[2240,"차례","order, turn, ancestral rite"],
+    [2241,"차분하다","to be calm, composed"],[2242,"차이","difference"],[2243,"차이점","point of difference"],[2244,"착각","illusion, misunderstanding"],[2245,"찬물","cold water"],
+    [2246,"찬성","approval, agreement"],[2247,"참가","participation"],[2248,"참고","reference"],[2249,"참기름","sesame oil"],[2250,"참다","to endure, bear"],
+    [2251,"참석","attendance"],[2252,"참여","participation"],[2253,"참치","tuna"],[2254,"찻집","teahouse, cafe"],[2255,"창","window"],
+    [2256,"창피","shame, embarrassment"],[2257,"찾아내다","to find out, discover"],[2258,"찾아다니다","to search around for"],[2259,"찾아보다","to look for, visit"],[2260,"채널","channel"],
+    [2261,"채식","vegetarian diet"],[2262,"채식주의자","vegetarian"],[2263,"채용","recruitment, hiring"],[2264,"채우다","to fill, to fasten"],[2265,"채팅","online chat"],
+    [2266,"책임지다","to take responsibility"],[2267,"챙기다","to pack, to take care of"],[2268,"처녀","unmarried woman, maiden"],[2269,"처리","processing, handling"],[2270,"처방","medical prescription"],
+    [2271,"처방전","prescription slip"],[2272,"천국","heaven, paradise"],[2273,"천사","angel"],[2274,"천장","ceiling"],[2275,"천재","genius, natural disaster"],
+    [2276,"철학","philosophy"],[2277,"첫날","first day"],[2278,"첫눈","first snow, first sight"],[2279,"첫사랑","first love"],[2280,"첫인상","first impression"],
+    [2281,"청구서","bill, invoice"],[2282,"청년","young adult, youth"],[2283,"청소년","adolescent, teenager"],[2284,"청첩장","wedding invitation"],[2285,"청혼","marriage proposal"],
+    [2286,"체격","physique, build"],[2287,"체온","body temperature"],[2288,"체육","physical education"],[2289,"체육관","gymnasium"],[2290,"체조","gymnastics"],
+    [2291,"체중","body weight"],[2292,"체험","hands-on experience"],[2293,"쳐다보다","to stare at, look up at"],[2294,"초급","beginner level"],[2295,"초기","early stage, beginning"],
+    [2296,"초대장","invitation card"],[2297,"초보자","beginner, novice"],[2298,"초청장","formal invitation"],[2299,"총","gun, total"],[2300,"총무과","general affairs department"],
+    [2301,"촬영장","filming studio, set"],[2302,"촬영지","filming location"],[2303,"최근","recently, the latest"],[2304,"최대","maximum, largest"],[2305,"최선","one's best"],
+    [2306,"최신","latest, newest"],[2307,"최저","minimum, lowest"],[2308,"최종","final, ultimate"],[2309,"최초","the very first"],[2310,"최후","the last, final moment"],
+    [2311,"추가","addition"],[2312,"추위","cold weather"],[2313,"추천","recommendation"],[2314,"추천서","letter of recommendation"],[2315,"추첨","lottery, drawing lots"],
+    [2316,"추측","guess, conjecture"],[2317,"출국","departure from a country"],[2318,"출근길","way to work"],[2319,"출력","printout, output"],[2320,"출산","childbirth"],
+    [2321,"출산율","birth rate"],[2322,"출생","birth"],[2323,"출석","attendance"],[2324,"출신","origin, graduate of"],[2325,"출입","entry and exit, access"],
+    [2326,"출입국","immigration (entry and exit)"],[2327,"출퇴근","commuting to and from work"],[2328,"출판사","publishing company"],[2329,"충격","shock, impact"],[2330,"충고","advice"],
+    [2331,"충돌","collision, conflict"],[2332,"충분하다","to be enough, sufficient"],[2333,"충분히","sufficiently, fully"],[2334,"취업","getting a job, employment"],[2335,"취업난","job shortage, unemployment crisis"],
+    [2336,"취침","going to bed, sleeping"],[2337,"취하다","to get drunk, to adopt"],[2338,"측","side, party"],[2339,"치료제","medical treatment, cure"],[2340,"치수","size, measurement"],
+    [2341,"치우다","to clean up, tidy"],[2342,"치즈","cheese"],[2343,"친어머니","biological mother"],[2344,"친환경","being eco-friendly"],[2345,"침","saliva, acupuncture needle"],
+    [2346,"침실","bedroom"],[2347,"칭찬","compliment, praise"],[2348,"카네이션","carnation"],[2349,"카세트","cassette player"],[2350,"카센터","auto repair shop"],
+    [2351,"카페인","caffeine"],[2352,"카펫","carpet"],[2353,"칸","compartment, blank space"],[2354,"칼국수","knife-cut noodle soup"],[2355,"캄캄하다","to be pitch-dark"],
+    [2356,"캠퍼스","campus"],[2357,"캠프","camp, camping"],[2358,"커다랗다","to be huge, very big"],[2359,"커지다","to grow bigger, expand"],[2360,"커튼","curtain"],
+    [2361,"커플","couple"],[2362,"컴퓨터실","computer lab"],[2363,"켜지다","to turn on, light up"],[2364,"코끼리","elephant"],[2365,"코너","corner, section"],
+    [2366,"코미디","comedy"],[2367,"코미디언","comedian"],[2368,"콘서트","concert"],[2369,"콘센트","electrical outlet, socket"],[2370,"콩나물","bean sprouts"],
+    [2371,"퀴즈","quiz"],[2372,"큰길","main road"],[2373,"큰돈","large sum of money"],[2374,"큰소리","loud voice, boasting"],[2375,"큰일","big trouble, important matter"],
+    [2376,"클래식","classical music"],[2377,"클릭","click"],[2378,"키우다","to raise, grow, nurture"],[2379,"타입","type"],[2380,"탈","mask, trouble/stomachache"],
+    [2381,"탈의실","fitting room, locker room"],[2382,"탈춤","traditional Korean mask dance"],[2383,"탑승구","boarding gate"],[2384,"탕","hot bath, soup/stew"],[2385,"태도","attitude"],
+    [2386,"태양","the sun"],[2387,"태양열","solar thermal energy"],[2388,"태우다","to burn, to give a ride"],[2389,"택배","parcel delivery"],[2390,"택배비","delivery fee"],
+    [2391,"터지다","to burst, pop, break out"],[2392,"털다","to dust off, shake off"],[2393,"테이프","tape"],[2394,"텐트","tent"],[2395,"토끼","rabbit"],
+    [2396,"토론","debate, discussion"],[2397,"토하다","to vomit"],[2398,"통계","statistics"],[2399,"통신","telecommunications, correspondence"],[2400,"통역","interpretation"],
+    [2401,"통장","bankbook, passbook"],[2402,"통조림","canned food"],[2403,"통증","pain, ache"],[2404,"통하다","to flow, to communicate, through"],[2405,"통합","integration, unification"],
+    [2406,"통화","phone call, currency"],[2407,"퇴근","leaving work"],[2408,"퇴근길","way home from work"],[2409,"퇴원","leaving the hospital"],[2410,"퇴직","retirement, resignation"],
+    [2411,"퇴직금","severance pay, retirement pay"],[2412,"투명하다","to be transparent, clear"],[2413,"투표","voting, ballot"],[2414,"투자","investment"],[2415,"투자자","investor"],
+    [2416,"툭","with a thud, casually"],[2417,"튀기다","to deep-fry, to splash"],[2418,"튀김","deep-fried food, tempura"],[2419,"튀어나오다","to pop out, protrude"],[2420,"트럭","truck"],
+    [2421,"트이다","to open up, be cleared"],[2422,"특기","specialty, special skill"],[2423,"특성","characteristic, property"],[2424,"특수","special, particular"],[2425,"특수성","specificity, uniqueness"],
+    [2426,"특유","characteristic of, peculiar to"],[2427,"특징","distinctive feature"],[2428,"특집","special feature/edition"],[2429,"특산물","local specialty product"],[2430,"틀","frame, mold"],
+    [2431,"틀림없다","to be certain, unmistakable"],[2432,"틀림없이","certainly, without doubt"],[2433,"틈","crack, gap, spare time"],[2434,"틈틈이","in one's spare moments"],[2435,"티셔츠","T-shirt"],
+    [2436,"파","green onion, faction"],[2437,"파괴","destruction"],[2438,"파도","ocean wave"],[2439,"파란색","blue color"],[2440,"파마","perm (hair)"],
+    [2441,"파악","grasping, understanding"],[2442,"파업","labor strike"],[2443,"파출소","police substation"],[2444,"판","board, edition, situation"],[2445,"판단","judgment, decision"],
+    [2446,"판매","sales, selling"],[2447,"판매량","sales volume"],[2448,"판매원","salesperson"],[2449,"판사","judge"],[2450,"팔다","to sell"],
+    [2451,"팔리다","to be sold"],[2452,"팔목","wrist"],[2453,"팔찌","bracelet"],[2454,"패션","fashion"],[2455,"패스트푸드","fast food"],
+    [2456,"팩스","fax"],[2457,"팽이","spinning top"],[2458,"퍼센트","percent"],[2459,"퍼지다","to spread"],[2460,"펴다","to unfold, spread, straighten"],
+    [2461,"펴내다","to publish"],[2462,"편","side, party, flight/train"],[2463,"편견","prejudice, bias"],[2464,"편도","one-way trip"],[2465,"편리","convenience"],
+    [2466,"편리하다","to be convenient"],[2467,"편안히","comfortably, peacefully"],[2468,"편의","convenience"],[2469,"편의점","convenience store"],[2470,"편지봉투","letter envelope"],
+    [2471,"편집","editing"],[2472,"편하다","to be comfortable, easy"],[2473,"평가","evaluation, assessment"],[2474,"평균","average"],[2475,"평등","equality"],
+    [2476,"평범하다","to be ordinary, common"],[2477,"평생","lifetime, all one's life"],[2478,"평소","usual, ordinary times"],[2479,"평화","peace"],[2480,"평화롭다","to be peaceful"],
+    [2481,"필수품","necessities"],[2482,"필요성","necessity"],[2483,"핑계","excuse"],[2484,"하도","too, excessively"],[2485,"하루빨리","as soon as possible"],
+    [2486,"하루하루","day by day"],[2487,"하룻밤","one night"],[2488,"하마터면","almost, nearly"],[2489,"하품","yawn"],[2490,"학과","academic department"],
+    [2491,"학력","educational background"],[2492,"학문","academic study, learning"],[2493,"학비","tuition fee"],[2494,"학습","learning, study"],[2495,"학자","scholar"],
+    [2496,"학점","academic credit, grade"],[2497,"한가하다","to be leisurely, free"],[2498,"한국학","Korean studies"],[2499,"한글날","Hangul Proclamation Day"],[2500,"한꺼번에","all at once, together"],
+    [2501,"한낮","midday"],[2502,"한눈","at a glance"],[2503,"한동안","for a while"],[2504,"한두","one or two"],[2505,"한마디","a word, brief remark"],
+    [2506,"한순간","in an instant, for a moment"],[2507,"한숨","sigh"],[2508,"한약","traditional herbal medicine"],[2509,"한옥","Hanok (traditional Korean house)"],[2510,"한우","Korean native beef"],
+    [2511,"한의사","doctor of Korean medicine"],[2512,"한정식","Korean full-course meal"],[2513,"한지","traditional Korean paper"],[2514,"한참","for a long while"],[2515,"한창","at its peak, in full swing"],
+    [2516,"한편","meanwhile, on the other hand"],[2517,"할부","installment payment"],[2518,"할인점","discount store"],[2519,"함부로","carelessly, thoughtlessly"],[2520,"합격자","successful applicant"],
+    [2521,"합치다","to combine, unite"],[2522,"합하다","to add together, join"],[2523,"항공","aviation, flight"],[2524,"항공권","airline ticket"],[2525,"항공기","aircraft"],
+    [2526,"항공료","airfare"],[2527,"항공사","airline company"],[2528,"항공편","flight service"],[2529,"해결","solution, resolution"],[2530,"해결책","solution, measure"],
+    [2531,"해고","layoff, dismissal"],[2532,"해내다","to accomplish, pull off"],[2533,"해돋이","sunrise"],[2534,"해롭다","to be harmful"],[2535,"해마다","every year, annually"],
+    [2536,"해물","seafood"],[2537,"해보다","to try doing"],[2538,"해산물","seafood, marine products"],[2539,"해소","relief, resolution"],[2540,"해소법","way of relieving/resolving"],
+    [2541,"해수욕","sea bathing"],[2542,"해수욕장","swimming beach"],[2543,"해열제","fever reducer, antipyretic"],[2544,"핸드백","handbag"],[2545,"햇곡식","new crop of grain"],
+    [2546,"햇볕","sunshine, heat of the sun"],[2547,"행동","action, behavior"],[2548,"행사장","event venue"],[2549,"행운","good luck, fortune"],[2550,"향","scent, incense"],
+    [2551,"향기","fragrance, aroma"],[2552,"향수","perfume, homesickness"],[2553,"향하다","to head toward"],[2554,"허락","permission"],[2555,"허리띠","belt"],
+    [2556,"험하다","to be rough, rugged"],[2557,"헤매다","to wander, get lost"],[2558,"헤어스타일","hairstyle"],[2559,"헤어지다","to part, break up"],[2560,"헤엄치다","to swim"],
+    [2561,"헬멧","helmet"],[2562,"헬스클럽","fitness club, gym"],[2563,"현관","entrance, foyer"],[2564,"현관문","front door"],[2565,"현대","modern times, present day"],
+    [2566,"현대식","modern style"],[2567,"현대인","modern people"],[2568,"현대적","being modern"],[2569,"현모양처","wise mother and good wife"],[2570,"현실","reality"],
+    [2571,"현실적","being realistic"],[2572,"현장","on-site, scene"],[2573,"형용사","adjective"],[2574,"형태","form, shape"],[2575,"형편","circumstances, financial situation"],
+    [2576,"혜택","benefit, favor"],[2577,"호감","favorable impression, liking"],[2578,"호기심","curiosity"],[2579,"호수","lake"],[2580,"호칭","title, form of address"],
+    [2581,"혹시","by any chance, maybe"],[2582,"혹은","or, alternatively"],[2583,"혼나다","to get scolded, have a hard time"],[2584,"혼내다","to scold"],[2585,"혼잡","congestion, crowding"],
+    [2586,"홀수","odd number"],[2587,"홍보","public relations, promotion"],[2588,"홍보물","promotional material"],[2589,"홍수","flood"],[2590,"화려하다","to be 화려한, fancy, splendid"],
+    [2591,"화면","screen"],[2592,"화물","cargo, freight"],[2593,"화분","flowerpot"],[2594,"화산","volcano"],[2595,"화상","burn injury, video call"],
+    [2596,"화장지","toilet paper, tissue"],[2597,"화재","fire disaster"],[2598,"화창하다","to be bright and clear (weather)"],[2599,"화해","reconciliation"],[2600,"확실하다","to be sure, certain"],
+    [2601,"환경","environment"],[2602,"환기","ventilation"],[2603,"환불","refund"],[2604,"환상적","being fantastic"],[2605,"환송회","farewell party"],
+    [2606,"환영회","welcome party"],[2607,"환율","exchange rate"],[2608,"환전","currency exchange"],[2609,"환절기","change of seasons"],[2610,"활동","activity"],
+    [2611,"활동적","being active"],[2612,"활발하다","to be lively, active"],[2613,"활용","utilization, practical use"],[2614,"활짝","wide open, in full bloom"],[2615,"황당하다","to be absurd, dumbfounded"],
+    [2616,"황사","yellow dust"],[2617,"회","counter for times/rounds, raw fish"],[2618,"회갑","60th birthday"],[2619,"회복","recovery"],[2620,"회비","membership fee"],
+    [2621,"회식","company dinner"],[2622,"회원","member"],[2623,"회의장","conference hall"],[2624,"회장","president, chairperson"],[2625,"횟수","number of times, frequency"],
+    [2626,"효과","effect, effectiveness"],[2627,"효과적","being effective"],[2628,"효녀","devoted daughter"],[2629,"효율적","being efficient"],[2630,"후문","back gate, rumor"],
+    [2631,"후반","latter half"],[2632,"후반전","second half (of a game)"],[2633,"후보","candidate"],[2634,"후식","dessert"],[2635,"후회","regret"],
+    [2636,"훈련","training, drill"],[2637,"훌륭하다","to be excellent, admirable"],[2638,"훔치다","to steal, wipe"],[2639,"훨씬","much, by far"],[2640,"휘발유","gasoline"],
+    [2641,"휴가철","vacation season"],[2642,"휴게실","lounge, break room"],[2643,"휴대","carrying, portability"],[2644,"휴대폰","mobile phone"],[2645,"휴식","rest, break"],
+    [2646,"휴양지","resort, vacation spot"],[2647,"휴학","temporary leave from school"],[2648,"흐르다","to flow"],[2649,"흔들다","to shake, wave"],[2650,"흔들리다","to shake, sway"],
+    [2651,"흔하다","to be common"],[2652,"흔히","commonly, often"],[2653,"흘리다","to spill, shed"],[2654,"흙","soil, dirt"],[2655,"흡연","smoking"],
+    [2656,"흥미","interest"],[2657,"흥분","excitement"],[2658,"희다","to be white"],[2659,"희망","hope"],[2660,"희망자","applicant, person who wishes"],
+    [2661,"희생자","victim"],[2662,"힘껏","with all one's strength"]
+];
+
+// Topic classification rules so all 2,662 words are grouped by meaningful topic
+const TOPIC_RULES = [
+    {
+        topic: "Politics & Law",
+        icon: "ph-bank",
+        keywords: ["president", "government", "state", "nation", "country", "politics", "nationality", "election", "race,nation", "minister", "law", "order, system", "residents of a city", "police", "unification", "army", "whole country", "countermeasure", "freedom", "ideology", "three countries", "collaboration", "conflict", "national assembly", "member", "authority", "enforce"]
+    },
+    {
+        topic: "Economy & Business",
+        icon: "ph-CurrencyCircleDollar",
+        keywords: ["krw", "percent", "money", "buy", "economy", "market", "enterprise", "advertisement", "industry", "work", "manufactured", "business", "labor", "price", "farmer", "bank", "chariman", "sell", "property", "construction", "factory", "agriculture", "competition", "consumer", "scale", "laborer", "management", "customer", "product", "investment", "wages", "work place", "earn", "boss", "duty"]
+    },
+    {
+        topic: "People & Family",
+        icon: "ph-users-three",
+        keywords: ["person", "we, our", "he, that", "mr.", "she", "woman", "child", "you", "human", "mom", "who", "oneself", "everybody", "female", "friend", "father", "boy", "formal you", "student", "mamma", "husband", "son", "baby", "others", "dad", "wife", "family", "age", "sister", "children", "inhabitants", "grandmother", "years old", "marriage", "sir", "adult", "parents", "grandfather", "brother", "male", "youngster", "masses", "owner", "fellow", "girl", "couple", "man and wife", "old person", "teenagers", "senior"]
+    },
+    {
+        topic: "Education & Research",
+        icon: "ph-graduation-cap",
+        keywords: ["question,problem", "school", "education", "teacher", "history", "read", "book", "meaning", "research", "reason", "words, a verse", "university", "investigation", "science", "teaching", "test", "language", "teach", "study", "knowledge", "discover", "announce", "subject, theme", "educate", "evaluation", "confirm", "understanding", "practice", "analysis", "explanation", "specialty", "english", "record", "principal", "entrance examination"]
+    },
+    {
+        topic: "Culture, Media & Art",
+        icon: "ph-film-slate",
+        keywords: ["culture", "sound,noise", "conversation", "art", "story", "work of art", "literature", "movie", "program", "picture", "telephone", "poetry", "voice", "song", "newspaper", "expression", "broadcast", "drama", "writer", "buddhism", "music", "novel", "journalist", "team", "stage", "race or match", "speech", "athlete", "popularity", "game", "poet", "communications", "announcer", "news", "religion", "television", "letter", "tv", "ball", "beauty", "performance", "goal", "image"]
+    },
+    {
+        topic: "Nature, Body & Health",
+        icon: "ph-heart-beat",
+        keywords: ["eyes", "motion", "heart", "body", "face", "water", "take (medicine)", "hand", "life", "die", "environment", "head", "mouth", "sky", "nature", "chest", "nape", "give birth", "flow", "mountain", "flower", "wind", "sea", "fire", "tree", "sleep", "foot", "hurt", "rain", "moon", "hospital", "posture", "health", "tobacco", "born", "patient", "leg", "grow up", "earth", "tear", "light", "ear", "abdomen", "winter", "wash", "centimeter", "arm", "species", "shoulder", "lie down", "death", "suffering", "forest", "garbage", "meat", "smell", "clean,pure", "waist", "revive", "bird", "stature"]
+    },
+    {
+        topic: "Space, Time & Daily Life",
+        icon: "ph-clock-countdown",
+        keywords: ["year", "one day", "house", "inside", "place", "in front", "center", "eat", "time", "store", "period", "next", "world", "above", "day", "hobby", "after", "where", "area, region", "road", "lifestyle", "first", "now", "seat", "outside", "middle", "after that", "locality", "night", "recently", "computer", "minutes", "soon", "today", "room", "morning", "end", "interval", "rice", "wear", "alone", "once", "coffee", "flavor", "food", "nowadays", "continuously", "century", "present", "vehicle", "city", "atmosphere", "bottom", "boat", "door", "during", "town", "moment", "before", "clothes", "past", "season", "hometown", "afternoon", "ancient", "space", "here", "evening", "close", "building", "institution", "foreign", "circumference", "that day", "always", "temporarily", "accident", "this year", "far", "bus", "little while", "everytime", "car", "month", "that place", "former", "international", "position", "empty", "cup", "machine", "floor", "meal", "late", "neighborhood", "spring", "long time", "trip", "may", "schedule", "april", "early days", "latter", "delicious", "how many days", "bitter", "dawn", "western", "speed", "preparation", "september", "june", "march", "apartment"]
+    },
+    {
+        topic: "Mind, Emotion & Attitude",
+        icon: "ph-smiley",
+        keywords: ["think", "not know", "thought", "want,hope", "know", "important", "feel", "hard", "power", "easy", "need", "concern", "mind,spirit", "laugh", "beautiful", "really", "love", "look forward", "facial expression", "touch, feel", "personality", "believe", "like, be fond", "effort", "ability", "understand", "mood", "dream", "experience", "wish", "strong", "surprised", "cry", "on its own", "properly", "truly", "enthusiastically", "enjoy", "interesting", "strange", "attitude", "lose", "responsibility", "extreme", "hate", "intention", "okay", "feelings", "memory", "thank", "busy", "bad", "natural", "forget", "try hard", "excellent", "relax", "pleasant", "disposition", "pretty", "volition", "fearful", "endure", "soft", "seriousness", "win"]
+    },
+    {
+        topic: "Society & Systems",
+        icon: "ph-globe-hemisphere-east",
+        keywords: ["society", "case", "connection", "process", "result", "contents", "event", "world,society", "condition", "actuality", "change", "nucleus", "activity", "present situation", "technique", "structure", "plan", "development", "relation", "form", "information", "part, a role", "action", "domestic", "engine", "method", "influence", "step, phase", "representative", "possibility", "direction", "great meeting", "corps", "materials", "existence", "field", "act, deed", "level", "function", "war", "meeting", "group", "difference", "private", "effect", "universe", "opportunity", "various", "cause", "organization", "common", "help", "opinion", "assertion", "goal", "material", "standard", "on site", "preserve", "feature", "formality", "standpoint", "foundation", "constitution", "administration", "group, a party", "matter", "protection", "plan, scheme", "interested", "demand", "boundary", "use,emply", "support", "damage", "application", "native", "decision", "tendency", "characteristic"]
+    },
+    {
+        topic: "Core Actions & Movement",
+        icon: "ph-person-simple-run",
+        keywords: ["to do", "to try", "to see", "to give", "face, confront", "to go", "speak", "sake of", "to come", "receive", "come out", "to live", "to make", "run, lead", "catch sight", "to have", "pass,elapse", "to be born", "action is over", "to start", "put, place", "appear", "meet", "produce", "show,let see", "to write", "see through", "sit down", "to hold", "seek", "go out", "seize", "to stand", "to rise", "put in", "to call", "light up", "descend", "make, build", "arise", "to use", "ride", "send", "go to and from", "open", "to ask", "remain", "refer to", "divide", "make use", "reach", "accomplish", "to drink", "attack", "advance", "draw to a close", "match", "hung up", "protect", "climb", "stand up", "play", "to face", "change,exchange", "draw a picture", "to learn", "compare", "come forth", "raise", "cross", "carry with", "do well", "to move", "become known", "assert", "gather", "talk", "walk", "watch closely", "untie", "pull", "begin", "cease", "explain", "display", "spend time", "put in a bottle", "assemble", "throw", "start a job", "emphasis", "take charge", "demand", "ascend", "encounter", "make a thing", "commence", "adjust", "stop", "throw away", "affix", "finish", "hang up", "fall into", "place up to", "express", "caused by", "stick", "tell a story", "join", "originate", "transfer", "Be changed", "accept", "get out", "transmit", "exist", "welcome", "determine", "grow longer", "wipe", "avoid", "go through", "go forward", "plan, arrange", "range from", "undergo", "disappear", "run,", "acknowledge", "examine", "come down", "reduce", "change, vary", "want", "lead a life", "spread out", "embrace", "present", "grasp", "pass, elapse", "connected", "bring up", "develop", "inform", "filled with", "extract", "fight", "meet somebody", "decide", "get lost", "go down", "leave behind", "bring or get", "consider as", "put out", "create", "continue", "answer", "mince", "torn", "take off", "prepare", "adopt", "deal with", "seek or want", "include"]
+    }
+];
+
+function classifyWordTopic(id, kr, en) {
+    const lowerEn = en.toLowerCase();
+    for (const rule of TOPIC_RULES) {
+        for (const kw of rule.keywords) {
+            if (lowerEn.includes(kw.toLowerCase())) {
+                return { topic: rule.topic, icon: rule.icon };
+            }
+        }
+    }
+    // Fallback for fundamental grammar, pronouns, numbers, and connectors
+    return { topic: "Core Expressions & Logic", icon: "ph-chat-centered-text" };
+}
+
+// Estimates word difficulty score (lower = easier foundation word, higher = more advanced TOPIK vocabulary)
+function estimateWordDifficulty(id, kr, en) {
+    let score = 0;
+    const len = kr.length;
+    score += len * 18;
+
+    // Advanced Sino-Korean and derivative suffixes
+    if (kr.endsWith("적") || kr.endsWith("성") || kr.endsWith("화") || kr.endsWith("력") || kr.endsWith("율") || kr.endsWith("률")) {
+        score += 45;
+    }
+    if (kr.endsWith("관") || kr.endsWith("학") || kr.endsWith("증") || kr.endsWith("권") || kr.endsWith("비") || kr.endsWith("제")) {
+        score += 25;
+    }
+    if (kr.includes(" ")) {
+        score += 40;
+    }
+    // Longer or multi-meaning English glosses indicate more nuanced intermediate/advanced usage
+    if (en.length > 18) score += 15;
+    if (en.includes(",")) score += 10;
+
+    //Deterministic tie-breaker using id
+    score += (id % 23) * 0.4;
+    return score;
+}
+
+// Hand-crafted context sentences and unique hints for specific TOPIK words
+const CURATED_CONTEXT_BY_KR = {
+    "금": {
+        kr: "선수가 ___ 메달을 받았어요.",
+        en: "The athlete received a ___ (gold) medal.",
+        hint: "Means 'gold' (e.g., 금메달 = gold medal, 금반지 = gold ring)."
+    },
+    "금메달": {
+        kr: "올림픽 양궁 대회에서 한국 선수가 ___을 땄어요.",
+        en: "The Korean athlete won a ___ (gold medal) at the Olympic archery tournament.",
+        hint: "Compound noun: 금 (gold) + 메달 (medal), often paired with 따다 ('to win/earn')."
+    },
+    "은": {
+        kr: "그 선수는 아쉽게 이 등을 해서 ___ 메달을 목에 걸었어요.",
+        en: "That athlete narrowly placed second and hung a ___ (silver) medal around their neck.",
+        hint: "Means 'silver' (은메달 = silver medal, 은수저 = silver spoon & chopsticks)."
+    },
+    "가계부": {
+        kr: "어머니는 생활비를 아끼기 위해 매일 밤 ___를 꼼꼼히 쓰십니다.",
+        en: "My mother writes in her ___ (household account book) meticulously every night to save living expenses.",
+        hint: "Compound noun: 가계 (household finances) + 부 (ledger/book)."
+    },
+    "가구점": {
+        kr: "새집으로 이사하면서 필요한 침대와 식탁을 사러 ___에 갔어요.",
+        en: "Moving into a new house, I went to a ___ (furniture store) to buy a bed and dining table.",
+        hint: "가구 (furniture) + 점 (store/shop)."
+    },
+    "가까이": {
+        kr: "칠판 글씨가 잘 안 보여서 앞자리로 더 ___ 다가갔어요.",
+        en: "Because I couldn't see the writing on the board well, I moved ___ (closer/near) to the front seat.",
+        hint: "Adverb/noun derived from 가깝다 ('to be close/near')."
+    },
+    "가꾸다": {
+        kr: "할아버지는 봄마다 마당의 꽃밭을 아름답게 ___.",
+        en: "Every spring, my grandfather beautifully ___ (cultivates/tends) the flower bed in the yard.",
+        hint: "Used for tending gardens (정원을 가꾸다) or grooming one's appearance (외모를 가꾸다)."
+    },
+    "가난": {
+        kr: "그 작가는 어린 시절의 심한 ___을 이겨 내고 훌륭한 소설가가 되었다.",
+        en: "The writer overcame severe childhood ___ (poverty) and became a great novelist.",
+        hint: "Noun meaning 'poverty' (adjective form: 가난하다 = 'to be poor')."
+    },
+    "가늘다": {
+        kr: "이 바늘은 실을 꿰기가 힘들 만큼 아주 ___.",
+        en: "This needle is so ___ (thin/fine) that it is hard to thread.",
+        hint: "ㄹ-irregular adjective for thinness of long objects (thread, fingers, waist, rain)."
+    },
+    "가능": {
+        kr: "이번 주말 예약이 ___한지 식당에 전화로 문의해 보았어요.",
+        en: "I called the restaurant to ask about the ___ (possibility) of a reservation this weekend.",
+        hint: "Base noun for 가능하다 ('to be possible') and 불가능 ('impossibility')."
+    },
+    "가능성": {
+        kr: "내일 오후에는 비가 올 ___이 높으니 우산을 챙기세요.",
+        en: "The ___ (possibility/likelihood) of rain tomorrow afternoon is high, so bring an umbrella.",
+        hint: "가능 (possible) + -성 (nature/quality) = 'possibility, potential'."
+    },
+    "가능하다": {
+        kr: "도서관에서는 학생증이 있어야만 책을 빌리는 것이 ___.",
+        en: "At the library, borrowing books is ___ (possible) only if you have a student ID.",
+        hint: "Frequently used as -(으)ㄹ 수 있다 or ~이/가 가능하다."
+    },
+    "가득": {
+        kr: "생일 파티 방 안에 예쁜 풍선이 ___ 차 있었어요.",
+        en: "The birthday party room was ___ (full) of pretty balloons.",
+        hint: "Adverb often paired with 차다 or 채우다 ('to be filled / to fill to the brim')."
+    },
+    "걔": {
+        kr: "어제 도서관에서 너랑 같이 공부하던 ___는 이름이 뭐야?",
+        en: "What is the name of ___ (that person/kid) who was studying with you at the library yesterday?",
+        hint: "Colloquial contraction of 그 아이 ('that child / that friend')."
+    },
+    "거미": {
+        kr: "오래된 창고 구석에 커다란 ___가 줄을 치고 있었어요.",
+        en: "A large ___ (spider) was spinning a web in the corner of the old warehouse.",
+        hint: "거미줄 means 'spiderweb'."
+    },
+    "거북이": {
+        kr: "수족관에서 커다란 바닷속 ___가 천천히 헤엄치고 있어요.",
+        en: "A large sea ___ (turtle) is swimming slowly in the aquarium.",
+        hint: "Often contrasted with 토끼 (rabbit) in the fable 토끼와 거북이."
+    },
+    "거스름돈": {
+        kr: "편의점에서 만 원짜리를 내고 천 원의 ___을 받았어요.",
+        en: "I paid a 10,000-won bill at the convenience store and received 1,000 won in ___ (change).",
+        hint: "Native Korean compound noun from 거스르다 + 돈 ('change returned after payment')."
+    },
+    "거품": {
+        kr: "비누로 손을 비볐더니 하얀 ___이 풍성하게 생겼어요.",
+        en: "When I rubbed my hands with soap, rich white ___ (bubbles/foam) formed.",
+        hint: "Refers to soap foam, beverage froth, or economic price bubbles."
+    },
+    "걸레": {
+        kr: "바닥에 쏟은 주스를 젖은 ___로 깨끗이 닦았어요.",
+        en: "I wiped up the spilled juice on the floor cleanly with a wet ___ (rag/mop cloth).",
+        hint: "걸레질하다 means 'to mop / wipe with a rag'."
+    },
+    "검다": {
+        kr: "먹구름이 몰려오더니 하늘이 순식간에 ___ 변했어요.",
+        en: "Dark clouds gathered and the sky turned ___ (black/dark) in an instant.",
+        hint: "Basic color adjective ('to be black/dark')."
+    },
+    "겁": {
+        kr: "제 동생은 ___이 많아서 밤에 혼자 공포 영화를 못 봐요.",
+        en: "My younger sibling has a lot of ___ (fear), so they can't watch horror movies alone at night.",
+        hint: "Key idioms: 겁이 많다 ('timid/easily scared'), 겁이 나다 ('to get scared')."
+    },
+    "겉": {
+        kr: "수박은 ___은 초록색이지만 속은 빨갛고 달콤해요.",
+        en: "A watermelon is green on the ___ (outside), but red and sweet on the inside.",
+        hint: "Opposite of 속 or 안 ('inside')."
+    },
+    "게다가": {
+        kr: "그 식당은 음식이 맛있어요. ___ 가격도 아주 저렴해요.",
+        en: "That restaurant's food is delicious. ___ (Besides/In addition), the price is very cheap.",
+        hint: "Additive conjunction used when adding another positive or negative point."
+    },
+    "겨우": {
+        kr: "열심히 달려서 출발하기 일 분 전에 ___ 기차를 탔어요.",
+        en: "By running hard, I ___ (barely) caught the train one minute before departure.",
+        hint: "Adverb meaning 'barely / narrowly' or 'only / merely'."
+    },
+    "결코": {
+        kr: "약속한 일은 어떤 일이 있어도 ___ 잊지 않겠습니다.",
+        en: "No matter what happens, I will ___ (never) forget what I promised.",
+        hint: "Negative polarity adverb: always followed by a negative ending (결코 ~지 않다)."
+    },
+    "곰": {
+        kr: "동물원에서 커다란 북극___이 물속으로 뛰어드는 모습을 봤어요.",
+        en: "At the zoo, I saw a huge polar ___ (bear) diving into the water.",
+        hint: "In Korean mythology, a bear (곰) ate mugwort and garlic to become Ungnyeo."
+    },
+    "공주": {
+        kr: "옛날이야기 속의 ___는 높은 성에서 왕자를 기다렸어요.",
+        en: "The ___ (princess) in the fairy tale waited for the prince in a tall castle.",
+        hint: "Means 'princess' (왕 = king, 왕비 = queen, 왕자 = prince)."
+    },
+    "과연": {
+        kr: "소문대로 ___ 그 가수의 콘서트 무대는 정말 훌륭했어요.",
+        en: "___ (As expected / Indeed), just like the rumors, that singer's concert stage was truly wonderful.",
+        hint: "Used to express 'indeed / as expected' or 'really?' in a wondering question."
+    },
+    "괜히": {
+        kr: "안 사도 되는 물건을 ___ 사서 돈만 낭비했어요.",
+        en: "I bought something I didn't need to buy ___ (for no reason / in vain) and just wasted money.",
+        hint: "Colloquial adverb meaning 'pointlessly, in vain, or for no good reason'."
+    },
+    "교사": {
+        kr: "제 꿈은 초등학교 ___가 되어 아이들을 가르치는 것입니다.",
+        en: "My dream is to become an elementary school ___ (teacher) and teach children.",
+        hint: "Formal title for a school instructor/teacher."
+    },
+    "구멍": {
+        kr: "양말 앞부분에 작은 ___이 나서 새로 한 켤레를 샀어요.",
+        en: "A small ___ (hole) wore through the front of my sock, so I bought a new pair.",
+        hint: "구멍이 나다 = 'a hole forms'; 구멍을 뚫다 = 'to punch/drill a hole'."
+    },
+    "구이": {
+        kr: "오늘 저녁 메뉴는 노릇노릇하게 구운 고등어___입니다.",
+        en: "Tonight's dinner menu is golden-brown grilled mackerel ___ (grill/roast).",
+        hint: "Derived from 굽다 ('to roast/grill'), e.g., 삼겹살구이, 생선구이."
+    },
+    "국그릇": {
+        kr: "식탁 위에 밥그릇을 왼쪽에 놓고 ___은 오른쪽에 놓으세요.",
+        en: "On the dining table, place the rice bowl on the left and the ___ (soup bowl) on the right.",
+        hint: "국 (soup) + 그릇 (bowl/vessel)."
+    },
+    "국물": {
+        kr: "추운 겨울날에는 따뜻하고 얼큰한 우동 ___이 생각나요.",
+        en: "On a cold winter day, I crave warm and spicy udon ___ (broth/soup).",
+        hint: "국 (soup) + 물 (liquid/water) = 'soup broth'."
+    },
+    "군대": {
+        kr: "제 남동생은 스무 살이 되던 해에 ___에 입대했어요.",
+        en: "My younger brother enlisted in the ___ (army/military) the year he turned twenty.",
+        hint: "군대에 가다 / 입대하다 = 'to join the military'."
+    },
+    "군데": {
+        kr: "이삿짐을 옮기다가 책상 두어 ___에 흠집이 생겼어요.",
+        en: "While moving luggage, scratches appeared in two or three ___ (places/spots) on the desk.",
+        hint: "Counter noun for places/locations used with native Korean numbers (한 군데, 두 군데)."
+    },
+    "귀신": {
+        kr: "폐가를 탐험하는 공포 영화에서 하얀 소복을 입은 ___이 나타났어요.",
+        en: "In the horror movie exploring an abandoned house, a ___ (ghost) in white robes appeared.",
+        hint: "Also used figuratively for someone uncannily skilled (예: 길 찾는 데 귀신이다)."
+    },
+    "그네": {
+        kr: "아이들이 놀이터에서 신나게 ___를 타며 웃고 있어요.",
+        en: "Children are happily riding the ___ (swing) and laughing at the playground.",
+        hint: "그네를 타다 = 'to ride a swing'."
+    },
+    "그녀": {
+        kr: "소설의 주인공인 ___는 파리에서 피아노를 전공한 음악가였다.",
+        en: "___ (She), the protagonist of the novel, was a musician who majored in piano in Paris.",
+        hint: "Third-person feminine pronoun ('she/her'), mainly used in written Korean and translations."
+    },
+    "그늘": {
+        kr: "여름 햇볕이 너무 뜨거워서 커다란 나무 ___ 아래에서 쉬었어요.",
+        en: "Because the summer sun was so hot, we rested under the ___ (shade) of a big tree.",
+        hint: "나무 그늘 = 'tree shade'."
+    },
+    "그대로": {
+        kr: "선생님이 칠판에 적어 주신 공식을 공책에 ___ 옮겨 적었어요.",
+        en: "I copied the formula the teacher wrote on the board ___ (just as it is) into my notebook.",
+        hint: "그 (that) + 대로 (as/like) = 'as it is, without change'."
+    },
+    "그래도": {
+        kr: "비가 많이 내렸다. ___ 우리는 예정대로 산행을 출발했다.",
+        en: "It rained heavily. ___ (Even so / Still), we departed for the hike as scheduled.",
+        hint: "Concessive conjunction meaning 'still, nevertheless, even so'."
+    },
+    "그래야": {
+        kr: "일찍 자야 해요. ___ 내일 아침 비행기를 놓치지 않아요.",
+        en: "You must go to bed early. ___ (Only then / So that) you won't miss tomorrow morning's flight.",
+        hint: "Connective adverb meaning 'only if you do so / that way'."
+    },
+    "그래프": {
+        kr: "연도별 인구 변화를 막대___로 나타내면 비교하기가 쉽습니다.",
+        en: "If you represent annual population changes as a bar ___ (graph), it is easy to compare.",
+        hint: "Loanword for 'graph/chart' (원그래프 = pie chart, 꺾은선그래프 = line graph)."
+    },
+    "그러니": {
+        kr: "밖이 아주 미끄러워요. ___ 걸어갈 때 넘어지지 않게 조심하세요.",
+        en: "It's very slippery outside. ___ (Therefore), be careful not to fall when walking.",
+        hint: "Conjunction meaning 'therefore / so' when giving advice or drawing a conclusion."
+    },
+    "그러다가": {
+        kr: "아이는 텔레비전을 보며 웃고 있었다. ___ 어느새 스르르 잠이 들었다.",
+        en: "The child was laughing while watching TV. ___ (And then / While doing so), they fell asleep before long.",
+        hint: "Indicates a transition or interruption while an action was ongoing."
+    },
+    "그러므로": {
+        kr: "시간은 다시 되돌릴 수 없다. ___ 매 순간을 소중히 여겨야 한다.",
+        en: "Time cannot be turned back. ___ (Hence / Therefore), we must cherish every moment.",
+        hint: "Formal logical conjunction ('therefore, hence') used in essays and speeches."
+    },
+    "그러자": {
+        kr: "가수가 무대 위로 걸어 나왔다. ___ 관객들이 일제히 환호성을 질렀다.",
+        en: "The singer walked out onto the stage. ___ (Thereupon / Right then), the audience cheered all at once.",
+        hint: "Shows an immediate reaction following the previous sentence's action."
+    },
+    "그루": {
+        kr: "식목일을 맞아 학교 뒷산에 소나무 스무 ___를 심었어요.",
+        en: "For Arbor Day, we planted twenty ___ (trees - counter) of pine on the hill behind the school.",
+        hint: "Counting unit specifically for trees (나무 한 그루)."
+    },
+    "그룹": {
+        kr: "제가 가장 좋아하는 케이팝 아이돌 ___이 다음 달에 새 앨범을 발표해요.",
+        en: "My favorite K-pop idol ___ (group) is releasing a new album next month.",
+        hint: "Used for musical groups, study groups, or corporate conglomerates."
+    },
+    "그리": {
+        kr: "집에서 지하철역까지는 걸어서 ___ 멀지 않아요.",
+        en: "From my house to the subway station, it is not ___ (that / so) far on foot.",
+        hint: "Usually used with negative predicates (그리 크지 않다 = 'not that big')."
+    },
+    "그리하여": {
+        kr: "두 나라는 오랜 협상을 마쳤다. ___ 마침내 평화 조약을 체결했다.",
+        en: "The two nations finished long negotiations. ___ (Thus / And so), they finally signed a peace treaty.",
+        hint: "Literary conjunction meaning 'thus, and so'."
+    },
+    "그저": {
+        kr: "큰 도움을 드리지 못했는데 고마워하시니 ___ 부끄러울 따름입니다.",
+        en: "Since you thank me even though I couldn't help much, I am ___ (merely/simply) embarrassed.",
+        hint: "Adverb meaning 'simply, just, or unchangingly'."
+    },
+    "근데": {
+        kr: "오늘 점심 정말 맛있다! ___ 우리 오후 수업이 몇 시에 시작하지?",
+        en: "Today's lunch is really delicious! ___ (By the way), what time does our afternoon class start?",
+        hint: "Spoken contraction of 그런데 ('by the way / however')."
+    },
+    "글쎄": {
+        kr: "___, 저도 그 소문이 사실인지 아닌지 아직 잘 모르겠어요.",
+        en: "___ (Well / Let me see), I'm not sure yet whether that rumor is true or not either.",
+        hint: "Interjection used when hesitating or unsure how to answer."
+    },
+    "급히": {
+        kr: "갑자기 소나기가 내려서 ___ 가까운 카페 안으로 뛰어 들어갔어요.",
+        en: "Because a sudden rain shower fell, I ___ (urgently/hurriedly) ran into a nearby cafe.",
+        hint: "Adverb derived from 급하다 ('urgent/hasty')."
+    },
+    "기둥": {
+        kr: "전통 한옥의 지붕은 굵고 튼튼한 나무 ___들이 받치고 있습니다.",
+        en: "The roof of a traditional Hanok is supported by thick, sturdy wooden ___ (pillars).",
+        hint: "Means an architectural 'pillar/column' or the mainstay of a family/group."
+    },
+    "기쁨": {
+        kr: "합격 소식을 듣는 순간 온 가족이 눈물을 흘리며 ___을 나누었어요.",
+        en: "The moment we heard the news of passing, the whole family shed tears and shared the ___ (joy).",
+        hint: "Noun derived from 기쁘다 ('to be glad/joyful')."
+    },
+    "기운": {
+        kr: "아침밥을 든든하게 먹었더니 하루 종일 몸에 ___이 넘쳤어요.",
+        en: "Because I ate a hearty breakfast, my body was full of ___ (energy/vitality) all day.",
+        hint: "기운이 나다 = 'to gain energy'; 기운이 없다 = 'to feel weak/listless'."
+    },
+    "김장": {
+        kr: "초겨울이 되면 온 가족이 모여 일 년 동안 먹을 ___을 담급니다.",
+        en: "When early winter comes, the whole family gathers to make ___ (winter Kimchi preparation) for the year.",
+        hint: "김장을 하다 / 담그다 = 'to make large batches of Kimchi for winter'."
+    },
+    "깜빡": {
+        kr: "아침에 급하게 나오느라 우산 챙기는 것을 ___ 잊어버렸어요.",
+        en: "Because I left in a hurry this morning, I ___ (momentarily/completely) forgot to bring my umbrella.",
+        hint: "Mimetic adverb for blinking lights/eyes or momentarily forgetting (깜빡 잊다)."
+    },
+    "깨끗이": {
+        kr: "외출하고 돌아오면 비누로 손을 ___ 씻는 습관을 기릅시다.",
+        en: "When returning from outside, let's build a habit of washing our hands ___ (cleanly) with soap.",
+        hint: "Adverb form of 깨끗하다 ('to be clean')."
+    },
+    "깨소금": {
+        kr: "시금치나물 위에 고소한 ___을 솔솔 뿌려서 식탁에 올렸어요.",
+        en: "I sprinkled nutty ___ (sesame salt) over the seasoned spinach and put it on the table.",
+        hint: "Roasted sesame seeds crushed with salt."
+    },
+    "깻잎": {
+        kr: "삼겹살을 상추와 향긋한 ___에 싸서 맛있게 먹었어요.",
+        en: "I wrapped grilled pork belly in lettuce and fragrant ___ (perilla/sesame leaf) and ate it deliciously.",
+        hint: "깨 (perilla/sesame) + 잎 (leaf), pronounced [깬닙]."
+    },
+    "껍질": {
+        kr: "사과를 깨끗이 씻어서 깎지 않고 ___째 베어 먹었어요.",
+        en: "I washed the apple cleanly and bit into it with the ___ (peel/skin) still on without peeling it.",
+        hint: "Refers to fruit peel, tree bark, or eggshell/crustacean shell."
+    },
+    "꼬리": {
+        kr: "강아지가 주인을 보자 반가워서 ___를 좌우로 흔들었어요.",
+        en: "Seeing its owner, the puppy happily wagged its ___ (tail) from side to side.",
+        hint: "꼬리를 흔들다 = 'to wag a tail'."
+    },
+    "꼬박꼬박": {
+        kr: "그 학생은 한 번도 빠지지 않고 숙제를 ___ 제시간에 제출해요.",
+        en: "That student submits their homework ___ (regularly/faithfully) on time without missing once.",
+        hint: "Adverb describing doing something dutifully without skipping (e.g., paying rent, taking medicine)."
+    },
+    "꼭대기": {
+        kr: "두 시간 동안 열심히 등산해서 마침내 산 ___에 도착했어요.",
+        en: "After hiking hard for two hours, we finally arrived at the mountain ___ (summit/top).",
+        hint: "Refers to the very top of a mountain, building, or tree."
+    },
+    "꼴찌": {
+        kr: "달리기 시합에서 넘어져 ___를 했지만 끝까지 완주해서 뿌듯했어요.",
+        en: "I fell in the running race and came in ___ (last place), but I was proud to finish to the end.",
+        hint: "Opposite of 일등 ('first place')."
+    },
+    "꼼꼼히": {
+        kr: "계약서에 서명하기 전에 작은 글씨까지 ___ 읽어 보아야 합니다.",
+        en: "Before signing a contract, you must read even the fine print ___ (thoroughly/meticulously).",
+        hint: "Adverb form of 꼼꼼하다 ('meticulous/thorough')."
+    },
+    "꽃병": {
+        kr: "어머니 생신에 사 온 장미꽃을 유리 ___에 예쁘게 꽂아 두었어요.",
+        en: "I arranged the roses bought for my mother's birthday prettily in a glass ___ (flower vase).",
+        hint: "꽃 (flower) + 병 (vase/bottle)."
+    },
+    "꽤": {
+        kr: "봄인데도 아침저녁으로 바람이 불어서 날씨가 ___ 쌀쌀하네요.",
+        en: "Even though it is spring, the wind blows morning and night so the weather is ___ (quite/fairly) chilly.",
+        hint: "Degree adverb meaning 'quite, fairly, considerably' (more than expected)."
+    },
+    "꾸준히": {
+        kr: "하루에 단어를 스무 개씩 ___ 외우면 한국어 실력이 금방 늘어요.",
+        en: "If you ___ (steadily) memorize twenty words a day, your Korean skills will improve quickly.",
+        hint: "Adverb derived from 꾸준하다 ('steady, consistent')."
+    },
+    "꿀": {
+        kr: "목이 아플 때는 따뜻한 레몬차에 달콤한 ___을 한 숟가락 넣어 마셔요.",
+        en: "When my throat hurts, I drink warm lemon tea with a spoonful of sweet ___ (honey).",
+        hint: "꿀벌 = honeybee; 벌꿀 = bee honey."
+    },
+    "꿀벌": {
+        kr: "봄꽃이 활짝 피자 노란 ___들이 꿀을 모으러 날아왔어요.",
+        en: "When the spring flowers bloomed wide, yellow ___ (honeybees) flew over to gather nectar.",
+        hint: "꿀 (honey) + 벌 (bee)."
+    },
+    "끈": {
+        kr: "달리기를 시작하기 전에 운동화 ___이 풀리지 않게 단단히 묶었어요.",
+        en: "Before starting the run, I tied my sneaker ___ (laces/strings) tightly so they wouldn't come undone.",
+        hint: "Refers to shoelaces, straps, or strings."
+    },
+    "끝내": {
+        kr: "수많은 실패를 겪었지만 연구팀은 ___ 새로운 백신 개발에 성공했다.",
+        en: "They went through countless failures, but the research team ___ (finally/ultimately) succeeded in developing a new vaccine.",
+        hint: "Adverb meaning 'in the very end / finally'."
+    }
+};
+
+// Word-specific contextual sentence engine that creates a unique sentence for every single word in RAW_TOPIK_2662
+function createContextSentences(id, kr, en, topic) {
+    // 1. Check hand-crafted curated entries first
+    if (CURATED_CONTEXT_BY_KR[kr]) {
+        const curated = CURATED_CONTEXT_BY_KR[kr];
+        return {
+            sentenceKr: curated.kr,
+            sentenceEn: curated.en,
+            uniqueHint: `💡 ${curated.hint} (TOPIK #${id})`
+        };
+    }
+
+    const cleanEn = en.split(/[;/,()]/)[0].replace(/^1\)\s*/, "").trim() || en;
+    const lowerEn = en.toLowerCase();
+
+    // Check final consonant (batchim) of the Korean word for natural particle attachment
+    const lastCharCode = kr.charCodeAt(kr.length - 1);
+    const hasBatchim = (lastCharCode >= 0xAC00 && lastCharCode <= 0xD7A3)
+        ? ((lastCharCode - 0xAC00) % 28 !== 0)
+        : false;
+    const isRieulBatchim = (lastCharCode >= 0xAC00 && lastCharCode <= 0xD7A3)
+        ? ((lastCharCode - 0xAC00) % 28 === 8)
+        : false;
+
+    const pSubj = hasBatchim ? "이" : "가";
+    const pObj = hasBatchim ? "을" : "를";
+    const pTop = hasBatchim ? "은" : "는";
+    const pWith = hasBatchim ? "과" : "와";
+    const pDir = (!hasBatchim || isRieulBatchim) ? "로" : "으로";
+
+    const firstSyllable = kr.charAt(0);
+    const lastSyllable = kr.charAt(kr.length - 1);
+    const wordLengthInfo = kr.length === 1
+        ? `1-syllable word`
+        : `${kr.length}-syllable word ('${firstSyllable}…${lastSyllable}')`;
+
+    const isVerbOrAdj = kr.endsWith("다") && kr.length >= 2 && (lowerEn.startsWith("to ") || lowerEn.startsWith("be ") || lowerEn.startsWith("being "));
+    const isAdjective = isVerbOrAdj && (
+        lowerEn.startsWith("to be ") ||
+        lowerEn.startsWith("be ") ||
+        lowerEn.startsWith("being ") ||
+        kr.endsWith("스럽다") || kr.endsWith("롭다") || kr.endsWith("답다") || kr.endsWith("짢다")
+    );
+
+    // Diverse actors, times, and settings so even words in the same category have completely distinct sentences
+    const ACTORS = [
+        { kr: "동생은", en: "my younger sibling" },
+        { kr: "선생님은", en: "the teacher" },
+        { kr: "수진 씨는", en: "Sujin" },
+        { kr: "민수 씨는", en: "Minsu" },
+        { kr: "할머니는", en: "Grandmother" },
+        { kr: "아버지는", en: "Father" },
+        { kr: "형은", en: "my older brother" },
+        { kr: "언니는", en: "my older sister" },
+        { kr: "지훈 씨는", en: "Jihun" },
+        { kr: "유진 씨는", en: "Yujin" },
+        { kr: "팀장님은", en: "the team leader" },
+        { kr: "교수님은", en: "the professor" },
+        { kr: "어머니는", en: "Mother" },
+        { kr: "선배는", en: "my senior" },
+        { kr: "후배는", en: "my junior" },
+        { kr: "점원은", en: "the store clerk" },
+        { kr: "코치님은", en: "the coach" },
+        { kr: "가이드님은", en: "the tour guide" },
+        { kr: "이웃집 아주머니는", en: "the neighbor lady" },
+        { kr: "단짝 친구는", en: "my best friend" }
+    ];
+    const TIMES = [
+        { kr: "어제 오후에", en: "yesterday afternoon" },
+        { kr: "오늘 아침에", en: "this morning" },
+        { kr: "지난 주말에", en: "last weekend" },
+        { kr: "방금 전에", en: "just a moment ago" },
+        { kr: "퇴근길에", en: "on the way home from work" },
+        { kr: "점심시간에", en: "during lunchtime" },
+        { kr: "수업이 끝난 뒤에", en: "after class ended" },
+        { kr: "이번 방학 동안", en: "during this vacation" },
+        { kr: "출근하기 전에", en: "before going to work" },
+        { kr: "약속 장소에서", en: "at the meeting place" },
+        { kr: "주말 나들이에서", en: "on the weekend outing" },
+        { kr: "저녁 식사 자리에서", en: "at the dinner table" },
+        { kr: "비 오는 날에", en: "on a rainy day" },
+        { kr: "새벽 일찍", en: "early at dawn" },
+        { kr: "쉬는 시간에", en: "during break time" }
+    ];
+
+    const actor = ACTORS[(id * 7 + kr.charCodeAt(0)) % ACTORS.length];
+    const time = TIMES[(id * 11 + kr.length * 3) % TIMES.length];
+
+    // 2. ADJECTIVES / DESCRIPTIVE VERBS
+    if (isAdjective) {
+        const stem = kr.slice(0, -1);
+        const cleanAdjEn = cleanEn.replace(/^(to be |be |being )/, "");
+        let sentenceKr = "";
+        let sentenceEn = "";
+
+        if (lowerEn.includes("weather") || lowerEn.includes("hot") || lowerEn.includes("cold") || lowerEn.includes("warm") || lowerEn.includes("cool") || lowerEn.includes("humid") || lowerEn.includes("dry") || lowerEn.includes("clear") || lowerEn.includes("dark")) {
+            sentenceKr = `${time} 창밖을 보니 날씨가 무척 ___ (${kr}).`;
+            sentenceEn = `Looking outside the window ${time.en}, the weather is very ___ (${cleanAdjEn}).`;
+        } else if (lowerEn.includes("taste") || lowerEn.includes("salty") || lowerEn.includes("sweet") || lowerEn.includes("spicy") || lowerEn.includes("bland") || lowerEn.includes("nutty") || lowerEn.includes("fresh") || lowerEn.includes("soft")) {
+            sentenceKr = `${actor.kr} 새로 만든 요리가 정말 ___ (${kr})고 칭찬했어요.`;
+            sentenceEn = `${actor.en} praised the newly made dish, saying it is really ___ (${cleanAdjEn}).`;
+        } else if (lowerEn.includes("person") || lowerEn.includes("polite") || lowerEn.includes("kind") || lowerEn.includes("diligent") || lowerEn.includes("lazy") || lowerEn.includes("honest") || lowerEn.includes("smart") || lowerEn.includes("clever") || lowerEn.includes("timid") || lowerEn.includes("gentle") || lowerEn.includes("calm") || lowerEn.includes("brave")) {
+            sentenceKr = `우리 반에서 ${actor.kr} 성격이 가장 ___ (${kr})기로 유명해요.`;
+            sentenceEn = `In our class, ${actor.en} is famous for having the most ___ (${cleanAdjEn}) personality.`;
+        } else if (lowerEn.includes("sad") || lowerEn.includes("happy") || lowerEn.includes("lonely") || lowerEn.includes("anxious") || lowerEn.includes("depressed") || lowerEn.includes("afraid") || lowerEn.includes("upset") || lowerEn.includes("painful") || lowerEn.includes("bored") || lowerEn.includes("tedious") || lowerEn.includes("ashamed") || lowerEn.includes("envious")) {
+            sentenceKr = `${time} 그 소식을 들은 ${actor.kr} 마음이 꽤 ___ (${kr}) 보였어요.`;
+            sentenceEn = `Hearing that news ${time.en}, ${actor.en} looked quite ___ (${cleanAdjEn}) at heart.`;
+        } else if (lowerEn.includes("expensive") || lowerEn.includes("cheap") || lowerEn.includes("inexpensive") || lowerEn.includes("valuable") || lowerEn.includes("rare") || lowerEn.includes("common") || lowerEn.includes("abundant") || lowerEn.includes("insufficient") || lowerEn.includes("enough")) {
+            sentenceKr = `이 매장에서 파는 물건은 생각보다 훨씬 ___ (${kr}).`;
+            sentenceEn = `The goods sold at this store are much more ___ (${cleanAdjEn}) than expected.`;
+        } else {
+            const adjFrames = [
+                {
+                    kr: `${time} 확인해 보니 예상보다 상태가 아주 ___ (${kr}).`,
+                    en: `Checking it ${time.en}, the condition is very ___ (${cleanAdjEn}) compared to expectations.`
+                },
+                {
+                    kr: `${actor.kr} 이번 과제의 주제가 참 ___ (${kr})고 말했어요.`,
+                    en: `${actor.en} said that the topic of this assignment is quite ___ (${cleanAdjEn}).`
+                },
+                {
+                    kr: `처음 봤을 때부터 그 디자인이 유난히 ___ (${kr})고 느꼈어요.`,
+                    en: `From the first time I saw it, I felt that the design was particularly ___ (${cleanAdjEn}).`
+                },
+                {
+                    kr: `실제로 경험해 보면 설명으로 듣던 것보다 훨씬 ___ (${kr}).`,
+                    en: `When you actually experience it, it is much more ___ (${cleanAdjEn}) than what you heard in explanations.`
+                }
+            ];
+            const chosen = adjFrames[id % adjFrames.length];
+            sentenceKr = chosen.kr;
+            sentenceEn = chosen.en;
+        }
+
+        return {
+            sentenceKr: sentenceKr.replace(` (${kr})`, ""),
+            sentenceEn,
+            uniqueHint: `💡 Descriptive verb (stem: ${stem}-) meaning "${en}" • ${wordLengthInfo}, TOPIK #${id}`
+        };
+    }
+
+    // 3. ACTION VERBS
+    if (isVerbOrAdj) {
+        const stem = kr.slice(0, -1);
+        const cleanVerbEn = cleanEn.replace(/^to /, "");
+        let sentenceKr = "";
+        let sentenceEn = "";
+
+        if (kr.endsWith("가다") || kr.endsWith("오다") || kr.endsWith("다니다") || kr.endsWith("서다") || kr.endsWith("오르다") || kr.endsWith("내리다")) {
+            sentenceKr = `${time} ${actor.kr} 서둘러 목적지를 향해 ___ 시작했어요.`;
+            sentenceEn = `${time.en}, ${actor.en} hurriedly started to ___ (${cleanVerbEn}) toward the destination.`;
+        } else if (kr.endsWith("주다") || kr.endsWith("드리다") || kr.endsWith("바치다")) {
+            sentenceKr = `${time} ${actor.kr} 친구를 위해 기꺼이 도움을 ___ 했어요.`;
+            sentenceEn = `${time.en}, ${actor.en} gladly decided to ___ (${cleanVerbEn}) for a friend.`;
+        } else if (kr.endsWith("받다") || kr.endsWith("얻다") || kr.endsWith("따다") || kr.endsWith("줍다")) {
+            sentenceKr = `${actor.kr} 오랜 노력 끝에 마침내 원하던 결과를 ___ 수 있었어요.`;
+            sentenceEn = `After a long effort, ${actor.en} was finally able to ___ (${cleanVerbEn}) the desired result.`;
+        } else if (kr.endsWith("하다")) {
+            const nounRoot = kr.slice(0, -2);
+            sentenceKr = `${time} ${actor.kr} 차분한 마음으로 직접 ${nounRoot}을/를 ___기로 했어요.`;
+            sentenceEn = `${time.en}, ${actor.en} decided to ___ (${cleanVerbEn}) with a calm mind.`;
+        } else if (kr.endsWith("지다") || kr.endsWith("나다") || kr.endsWith("되다")) {
+            sentenceKr = `시간이 조금씩 지나면서 주변 상황도 자연스럽게 ___ 시작했어요.`;
+            sentenceEn = `As time passed little by little, the surrounding situation naturally began to ___ (${cleanVerbEn}).`;
+        } else if (kr.endsWith("리다") || kr.endsWith("기다") || kr.endsWith("히다") || kr.endsWith("이다") || kr.endsWith("우다") || kr.endsWith("추다")) {
+            sentenceKr = `${time} ${actor.kr} 실수가 없도록 조심스럽게 ___고 있었어요.`;
+            sentenceEn = `${time.en}, ${actor.en} was carefully trying to ___ (${cleanVerbEn}) without any mistakes.`;
+        } else {
+            const verbFrames = [
+                {
+                    kr: `${time} ${actor.kr} 정성껏 준비해서 직접 ___ 보았어요.`,
+                    en: `${time.en}, ${actor.en} prepared wholeheartedly and tried to ___ (${cleanVerbEn}) firsthand.`
+                },
+                {
+                    kr: `급한 일이 생겨서 ${actor.kr} 예정보다 일찍 ___야 했어요.`,
+                    en: `Because something urgent came up, ${actor.en} had to ___ (${cleanVerbEn}) earlier than scheduled.`
+                },
+                {
+                    kr: `방법을 정확히 배운 뒤에 ${actor.kr} 혼자서도 능숙하게 ___ 수 있게 되었어요.`,
+                    en: `After learning the method accurately, ${actor.en} became able to ___ (${cleanVerbEn}) skillfully alone.`
+                },
+                {
+                    kr: `${time} ${actor.kr} 침착하게 순서대로 ___는 모습을 보여 주었어요.`,
+                    en: `${time.en}, ${actor.en} showed how to ___ (${cleanVerbEn}) calmly in order.`
+                }
+            ];
+            const chosen = verbFrames[id % verbFrames.length];
+            sentenceKr = chosen.kr;
+            sentenceEn = chosen.en;
+        }
+
+        return {
+            sentenceKr,
+            sentenceEn,
+            uniqueHint: `💡 Action verb (stem: ${stem}-) meaning "${en}" • ${wordLengthInfo}, TOPIK #${id}`
+        };
+    }
+
+    // 4. NOUNS, ADVERBS & EXPRESSIONS — Tailored by specific semantic domain & Korean suffix!
+    let sentenceKr = "";
+    let sentenceEn = "";
+    let categoryTip = `Pair with particles ${pSubj}/${pObj}/${pTop}`;
+
+    // 4A. Places, Shops, Rooms, Facilities (-점, -실, -장, -관, -소, -원, -국, -방, -집, -역, -터)
+    if (
+        kr.endsWith("점") || kr.endsWith("실") || kr.endsWith("장") || kr.endsWith("관") ||
+        kr.endsWith("소") || kr.endsWith("원") || kr.endsWith("방") || kr.endsWith("집") ||
+        kr.endsWith("역") || kr.endsWith("터") || kr.endsWith("청") || kr.endsWith("서") && (lowerEn.includes("station") || lowerEn.includes("office")) ||
+        lowerEn.includes("store") || lowerEn.includes("shop") || lowerEn.includes("room") ||
+        lowerEn.includes("hall") || lowerEn.includes("center") || lowerEn.includes("station") ||
+        lowerEn.includes("park") || lowerEn.includes("place") || lowerEn.includes("clinic") ||
+        lowerEn.includes("department") || lowerEn.includes("palace") || lowerEn.includes("beach") ||
+        lowerEn.includes("resort") || lowerEn.includes("school") || lowerEn.includes("market")
+    ) {
+        const placeScenes = [
+            {
+                kr: `${time} ${actor.kr} 볼일을 보러 새로 생긴 ___에 다녀왔어요.`,
+                en: `${time.en}, ${actor.en} went to the newly opened ___ (${cleanEn}) to run an errand.`
+            },
+            {
+                kr: `지도를 검색해서 집에서 가장 가까운 ___의 위치를 찾았어요.`,
+                en: `I searched the map and found the location of the ___ (${cleanEn}) closest to home.`
+            },
+            {
+                kr: `주말이 되자 많은 사람들이 ___ 입구 앞에 길게 줄을 섰어요.`,
+                en: `When the weekend came, many people lined up in a long queue in front of the ___ (${cleanEn}) entrance.`
+            },
+            {
+                kr: `${actor.kr} 친구와 다섯 시에 ___ 앞에서 만나기로 약속했어요.`,
+                en: `${actor.en} promised to meet a friend in front of the ___ (${cleanEn}) at five o'clock.`
+            }
+        ];
+        const pick = placeScenes[id % placeScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+        categoryTip = `Place/Facility noun (used with -에 가다 / -에서)`;
+    }
+    // 4B. People, Occupations, Family, Roles (-사, -가, -자, -원, -인, -생, -객, -장, family terms)
+    else if (
+        kr.endsWith("사") && (lowerEn.includes("teacher") || lowerEn.includes("doctor") || lowerEn.includes("lawyer") || lowerEn.includes("judge") || lowerEn.includes("chef") || lowerEn.includes("cook") || lowerEn.includes("beautician") || lowerEn.includes("pastor") || lowerEn.includes("driver") || lowerEn.includes("nurse")) ||
+        kr.endsWith("가") && (lowerEn.includes("ist") || lowerEn.includes("er") || lowerEn.includes("or") || lowerEn.includes("architect") || lowerEn.includes("writer") || lowerEn.includes("author") || lowerEn.includes("expert") || lowerEn.includes("politician") || lowerEn.includes("businessman")) ||
+        kr.endsWith("자") && (lowerEn.includes("er") || lowerEn.includes("or") || lowerEn.includes("ist") || lowerEn.includes("person") || lowerEn.includes("ant") || lowerEn.includes("ee")) ||
+        kr.endsWith("객") || kr.endsWith("인") && lowerEn.includes("person") ||
+        lowerEn.includes("person") || lowerEn.includes("child") || lowerEn.includes("son") ||
+        lowerEn.includes("daughter") || lowerEn.includes("sister") || lowerEn.includes("brother") ||
+        lowerEn.includes("mother") || lowerEn.includes("father") || lowerEn.includes("wife") ||
+        lowerEn.includes("husband") || lowerEn.includes("spouse") || lowerEn.includes("friend") ||
+        lowerEn.includes("boy") || lowerEn.includes("girl") || lowerEn.includes("lady") ||
+        lowerEn.includes("elder") || lowerEn.includes("senior") || lowerEn.includes("junior") ||
+        lowerEn.includes("worker") || lowerEn.includes("employee") || lowerEn.includes("student") ||
+        lowerEn.includes("teacher") || lowerEn.includes("audience") || lowerEn.includes("passenger") ||
+        lowerEn.includes("tourist") || lowerEn.includes("citizen") || lowerEn.includes("resident") ||
+        lowerEn.includes("author") || lowerEn.includes("director") || lowerEn.includes("host") ||
+        lowerEn.includes("driver") || lowerEn.includes("monk") || lowerEn.includes("king") || lowerEn.includes("queen")
+    ) {
+        const personScenes = [
+            {
+                kr: `${time} 만난 ___${pTop} 누구보다 친절하게 설명해 주셨어요.`,
+                en: `The ___ (${cleanEn}) I met ${time.en} explained things more kindly than anyone else.`
+            },
+            {
+                kr: `이번 행사에는 열정적인 ___들이 많이 참석해서 자리를 빛냈어요.`,
+                en: `Many passionate ___ (${cleanEn})s attended this event and graced the occasion.`
+            },
+            {
+                kr: `${actor.kr} 존경하는 ___에게서 뜻깊은 조언을 들었어요.`,
+                en: `${actor.en} heard meaningful advice from a respected ___ (${cleanEn}).`
+            },
+            {
+                kr: `어려운 상황에서도 ___${pSubj} 침착하게 책임을 다해 주었어요.`,
+                en: `Even in a difficult situation, the ___ (${cleanEn}) calmly fulfilled their responsibility.`
+            }
+        ];
+        const pick = personScenes[id % personScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+        categoryTip = `Person/Role noun (honorific/plural -들 can attach)`;
+    }
+    // 4C. Food, Drinks, Dishes, Ingredients, Meals
+    else if (
+        kr.endsWith("탕") || kr.endsWith("국") && (lowerEn.includes("soup") || lowerEn.includes("broth")) ||
+        kr.endsWith("찌개") || kr.endsWith("면") && lowerEn.includes("noodle") ||
+        kr.endsWith("밥") || kr.endsWith("채") && (lowerEn.includes("vegetable") || lowerEn.includes("noodle")) ||
+        kr.endsWith("유") && (lowerEn.includes("oil") || lowerEn.includes("milk")) ||
+        lowerEn.includes("food") || lowerEn.includes("soup") || lowerEn.includes("stew") ||
+        lowerEn.includes("noodle") || lowerEn.includes("meat") || lowerEn.includes("beef") ||
+        lowerEn.includes("fish") || lowerEn.includes("potato") || lowerEn.includes("cabbage") ||
+        lowerEn.includes("mushroom") || lowerEn.includes("bean") || lowerEn.includes("onion") ||
+        lowerEn.includes("lemon") || lowerEn.includes("peanut") || lowerEn.includes("cheese") ||
+        lowerEn.includes("yogurt") || lowerEn.includes("wine") || lowerEn.includes("soju") ||
+        lowerEn.includes("tea") || lowerEn.includes("water") || lowerEn.includes("drink") ||
+        lowerEn.includes("beverage") || lowerEn.includes("sauce") || lowerEn.includes("vinegar") ||
+        lowerEn.includes("pepper") || lowerEn.includes("seasoning") || lowerEn.includes("dessert") ||
+        lowerEn.includes("breakfast") || lowerEn.includes("lunch") || lowerEn.includes("dumpling") ||
+        lowerEn.includes("candy") || lowerEn.includes("seaweed") || lowerEn.includes("clam") ||
+        lowerEn.includes("tuna") || lowerEn.includes("barley") || lowerEn.includes("grain") ||
+        lowerEn.includes("tempura") || lowerEn.includes("dish") || lowerEn.includes("trotters")
+    ) {
+        const foodScenes = [
+            {
+                kr: `${time} ${actor.kr} 식당에서 맛있는 ___${pObj} 주문해서 먹었어요.`,
+                en: `${time.en}, ${actor.en} ordered and ate delicious ___ (${cleanEn}) at the restaurant.`
+            },
+            {
+                kr: `오늘 저녁 요리를 만들 때 신선한 ___${pObj} 재료로 넣었어요.`,
+                en: `When making dinner tonight, I added fresh ___ (${cleanEn}) as an ingredient.`
+            },
+            {
+                kr: `한국에 여행 온 외국인 친구에게 ___${pObj} 추천해 주었더니 아주 좋아했어요.`,
+                en: `When I recommended ___ (${cleanEn}) to my foreign friend visiting Korea, they loved it.`
+            },
+            {
+                kr: `마트 식품 코너에서 오늘 저녁에 먹을 ___${pObj} 장바구니에 담았어요.`,
+                en: `At the mart's food section, I put ___ (${cleanEn}) for tonight's dinner into my shopping cart.`
+            }
+        ];
+        const pick = foodScenes[id % foodScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+        categoryTip = `Food/Culinary noun (commonly paired with 먹다, 요리하다, 넣다)`;
+    }
+    // 4D. Money, Fees, Tickets, Documents, Cards, Contracts (-비, -료, -금, -권, -증, -서, -표)
+    else if (
+        kr.endsWith("비") && (lowerEn.includes("fee") || lowerEn.includes("cost") || lowerEn.includes("expense")) ||
+        kr.endsWith("료") && (lowerEn.includes("fee") || lowerEn.includes("fare") || lowerEn.includes("charge") || lowerEn.includes("paid") || lowerEn.includes("premium")) ||
+        kr.endsWith("금") && (lowerEn.includes("money") || lowerEn.includes("fee") || lowerEn.includes("pay") || lowerEn.includes("fund") || lowerEn.includes("savings") || lowerEn.includes("tax") || lowerEn.includes("fine")) ||
+        kr.endsWith("권") && (lowerEn.includes("ticket") || lowerEn.includes("pass") || lowerEn.includes("lottery")) ||
+        kr.endsWith("증") && (lowerEn.includes("card") || lowerEn.includes("id") || lowerEn.includes("license") || lowerEn.includes("receipt") || lowerEn.includes("certificate")) ||
+        kr.endsWith("서") && (lowerEn.includes("form") || lowerEn.includes("contract") || lowerEn.includes("bill") || lowerEn.includes("report") || lowerEn.includes("letter") || lowerEn.includes("notice") || lowerEn.includes("slip")) ||
+        kr.endsWith("표") && (lowerEn.includes("ticket") || lowerEn.includes("check") || lowerEn.includes("tag") || lowerEn.includes("table")) ||
+        lowerEn.includes("bank") || lowerEn.includes("account") || lowerEn.includes("payment") ||
+        lowerEn.includes("deposit") || lowerEn.includes("refund") || lowerEn.includes("discount") ||
+        lowerEn.includes("price") || lowerEn.includes("money") || lowerEn.includes("balance") ||
+        lowerEn.includes("interest") || lowerEn.includes("exchange rate") || lowerEn.includes("debt") ||
+        lowerEn.includes("loan") || lowerEn.includes("savings") || lowerEn.includes("budget")
+    ) {
+        const financeDocScenes = [
+            {
+                kr: `${time} 창구에 방문해서 필요한 ___${pObj} 미리 준비해 제출했어요.`,
+                en: `Visiting the counter ${time.en}, I prepared and submitted the required ___ (${cleanEn}) in advance.`
+            },
+            {
+                kr: `모바일 앱을 이용하면 집에서도 간편하게 ___${pObj} 확인할 수 있어요.`,
+                en: `If you use the mobile app, you can conveniently check your ___ (${cleanEn}) from home.`
+            },
+            {
+                kr: `${actor.kr} 마감 기한이 지나기 전에 ___${pObj} 꼼꼼히 챙겼어요.`,
+                en: `${actor.en} carefully took care of the ___ (${cleanEn}) before the deadline passed.`
+            },
+            {
+                kr: `안내 데스크 직원이 ___${pObj} 보여 달라고 정중하게 요청했어요.`,
+                en: `The staff member at the information desk politely asked me to show my ___ (${cleanEn}).`
+            }
+        ];
+        const pick = financeDocScenes[id % financeDocScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+        categoryTip = `Finance/Document noun (paired with 내다, 발급받다, 제출하다, 확인하다)`;
+    }
+    // 4E. Body Parts, Health, Symptoms, Medicine (-병, -약, -제, -통, -증, anatomy)
+    else if (
+        kr.endsWith("약") || kr.endsWith("통") && (lowerEn.includes("ache") || lowerEn.includes("pain")) ||
+        kr.endsWith("증") && (lowerEn.includes("symptom") || lowerEn.includes("insomnia") || lowerEn.includes("depression") || lowerEn.includes("forgetfulness") || lowerEn.includes("pain") || lowerEn.includes("allergy")) ||
+        lowerEn.includes("eye") || lowerEn.includes("hand") || lowerEn.includes("foot") ||
+        lowerEn.includes("head") || lowerEn.includes("hair") || lowerEn.includes("face") ||
+        lowerEn.includes("cheek") || lowerEn.includes("forehead") || lowerEn.includes("lip") ||
+        lowerEn.includes("ankle") || lowerEn.includes("wrist") || lowerEn.includes("bone") ||
+        lowerEn.includes("muscle") || lowerEn.includes("heart") || lowerEn.includes("brain") ||
+        lowerEn.includes("body") || lowerEn.includes("weight") || lowerEn.includes("temperature") ||
+        lowerEn.includes("medicine") || lowerEn.includes("pill") || lowerEn.includes("pain") ||
+        lowerEn.includes("disease") || lowerEn.includes("illness") || lowerEn.includes("flu") ||
+        lowerEn.includes("cancer") || lowerEn.includes("injury") || lowerEn.includes("burn") ||
+        lowerEn.includes("bruise") || lowerEn.includes("acne") || lowerEn.includes("wrinkle") ||
+        lowerEn.includes("vitamin") || lowerEn.includes("nutrient") || lowerEn.includes("nutrition") ||
+        lowerEn.includes("symptom") || lowerEn.includes("prescription") || lowerEn.includes("digestion")
+    ) {
+        const healthScenes = [
+            {
+                kr: `의사 선생님이 건강을 위해 ___ 상태를 세심하게 살펴보셨어요.`,
+                en: `The doctor carefully examined the ___ (${cleanEn}) condition for my health.`
+            },
+            {
+                kr: `${time} 약국에 들러서 약사님과 상담한 뒤에 ___에 대해 설명을 들었어요.`,
+                en: `Stopping by the pharmacy ${time.en}, I consulted the pharmacist and heard an explanation about ___ (${cleanEn}).`
+            },
+            {
+                kr: `평소에 규칙적으로 운동하고 쉬면 ___ 관리에 큰 도움이 됩니다.`,
+                en: `Exercising and resting regularly in daily life helps greatly in managing ___ (${cleanEn}).`
+            }
+        ];
+        const pick = healthScenes[id % healthScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+        categoryTip = `Body/Health/Medical vocabulary`;
+    }
+    // 4F. Clothing, Accessories, Household Items, Machines, Tools (-기, -복, -옷, -신, etc.)
+    else if (
+        kr.endsWith("기") && (lowerEn.includes("machine") || lowerEn.includes("player") || lowerEn.includes("dryer") || lowerEn.includes("humidifier") || lowerEn.includes("copier") || lowerEn.includes("recorder") || lowerEn.includes("razor") || lowerEn.includes("atm") || lowerEn.includes("camera") || lowerEn.includes("extinguisher") || lowerEn.includes("phone")) ||
+        kr.endsWith("복") && (lowerEn.includes("cloth") || lowerEn.includes("suit") || lowerEn.includes("uniform") || lowerEn.includes("dress")) ||
+        kr.endsWith("옷") ||
+        lowerEn.includes("shirt") || lowerEn.includes("dress") || lowerEn.includes("pajama") ||
+        lowerEn.includes("underwear") || lowerEn.includes("shoe") || lowerEn.includes("slipper") ||
+        lowerEn.includes("earring") || lowerEn.includes("bracelet") || lowerEn.includes("belt") ||
+        lowerEn.includes("bag") || lowerEn.includes("backpack") || lowerEn.includes("blanket") ||
+        lowerEn.includes("pillow") || lowerEn.includes("curtain") || lowerEn.includes("carpet") ||
+        lowerEn.includes("wallpaper") || lowerEn.includes("pot") || lowerEn.includes("bowl") ||
+        lowerEn.includes("cup") || lowerEn.includes("basket") || lowerEn.includes("needle") ||
+        lowerEn.includes("hammer") || lowerEn.includes("tool") || lowerEn.includes("battery") ||
+        lowerEn.includes("lamp") || lowerEn.includes("bulb") || lowerEn.includes("outlet") ||
+        lowerEn.includes("microwave") || lowerEn.includes("remote") || lowerEn.includes("earphone") ||
+        lowerEn.includes("speaker") || lowerEn.includes("scanner") || lowerEn.includes("helmet") ||
+        lowerEn.includes("umbrella") || lowerEn.includes("comb") || lowerEn.includes("soap") ||
+        lowerEn.includes("tissue") || lowerEn.includes("toy") || lowerEn.includes("frame")
+    ) {
+        const itemScenes = [
+            {
+                kr: `${time} 백화점에서 디자인이 마음에 드는 ___${pObj} 하나 새로 샀어요.`,
+                en: `${time.en}, I bought a new ___ (${cleanEn}) whose design I liked at the department store.`
+            },
+            {
+                kr: `일상생활에서 ___${pObj} 올바르게 사용하면 오랫동안 깨끗하게 쓸 수 있어요.`,
+                en: `If you use a ___ (${cleanEn}) properly in daily life, you can keep it clean for a long time.`
+            },
+            {
+                kr: `${actor.kr} 외출하기 전에 방 안에 있는 ___${pObj} 제자리에 정리해 두었어요.`,
+                en: `Before going out, ${actor.en} organized the ___ (${cleanEn}) in the room back into its place.`
+            },
+            {
+                kr: `생일 선물로 받은 ___${pSubj} 실용적이고 예뻐서 매일 잘 쓰고 있어요.`,
+                en: `Because the ___ (${cleanEn}) I received as a birthday gift is practical and pretty, I use it well every day.`
+            }
+        ];
+        const pick = itemScenes[id % itemScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+        categoryTip = `Concrete object/appliance/attire noun`;
+    }
+    // 4G. Animals, Plants, Nature, Weather, Geography
+    else if (
+        lowerEn.includes("frog") || lowerEn.includes("whale") || lowerEn.includes("monkey") ||
+        lowerEn.includes("rabbit") || lowerEn.includes("elephant") || lowerEn.includes("deer") ||
+        lowerEn.includes("snake") || lowerEn.includes("mouse") || lowerEn.includes("chick") ||
+        lowerEn.includes("bird") || lowerEn.includes("cuckoo") || lowerEn.includes("swallow") ||
+        lowerEn.includes("dragonfly") || lowerEn.includes("bug") || lowerEn.includes("insect") ||
+        lowerEn.includes("pet") || lowerEn.includes("livestock") || lowerEn.includes("beast") ||
+        lowerEn.includes("flower") || lowerEn.includes("leaf") || lowerEn.includes("root") ||
+        lowerEn.includes("seed") || lowerEn.includes("sprout") || lowerEn.includes("grass") ||
+        lowerEn.includes("lawn") || lowerEn.includes("forest") || lowerEn.includes("river") ||
+        lowerEn.includes("lake") || lowerEn.includes("sea") || lowerEn.includes("wave") ||
+        lowerEn.includes("desert") || lowerEn.includes("cave") || lowerEn.includes("volcano") ||
+        lowerEn.includes("rock") || lowerEn.includes("stone") || lowerEn.includes("soil") ||
+        lowerEn.includes("rain") || lowerEn.includes("snow") || lowerEn.includes("fog") ||
+        lowerEn.includes("rainbow") || lowerEn.includes("lightning") || lowerEn.includes("sun") ||
+        lowerEn.includes("moon") || lowerEn.includes("flood") || lowerEn.includes("drought") ||
+        lowerEn.includes("earthquake") || lowerEn.includes("climate") || lowerEn.includes("dust")
+    ) {
+        const natureScenes = [
+            {
+                kr: `자연 다큐멘터리 방송에서 신비로운 ___의 모습을 자세히 관찰했어요.`,
+                en: `On a nature documentary broadcast, I closely observed the fascinating appearance of ___ (${cleanEn}).`
+            },
+            {
+                kr: `${time} 시골길을 산책하다가 우연히 눈앞에서 ___${pObj} 보았어요.`,
+                en: `While walking along a country road ${time.en}, I happened to see ___ (${cleanEn}) right before my eyes.`
+            },
+            {
+                kr: `아이들은 과학 그림책을 펼치고 ___에 대한 설명을 흥미롭게 읽었어요.`,
+                en: `The children opened the science picture book and read the explanation about ___ (${cleanEn}) with interest.`
+            }
+        ];
+        const pick = natureScenes[id % natureScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+        categoryTip = `Nature, animal, plant, or weather noun`;
+    }
+    // 4H. Sino-Korean -적 (Descriptive / Adjectival Nouns: 긍정적, 적극적, 과학적, etc.)
+    else if (kr.endsWith("적") && (lowerEn.startsWith("being ") || lowerEn.includes("ive") || lowerEn.includes("al") || lowerEn.includes("ic"))) {
+        const cleanJeokEn = cleanEn.replace(/^being /, "");
+        sentenceKr = `${actor.kr} 이번 문제를 해결하기 위해 매우 ___인 방법을 선택했어요.`;
+        sentenceEn = `${actor.en} chose a very ___ (${cleanJeokEn}) method to solve this problem.`;
+        categoryTip = `-적 descriptive noun (attaches -인 before nouns or -으로 as an adverb)`;
+    }
+    // 4I. Adverbs (ending in -히, -리, -이, -껏, -대로, -로, or English ending in -ly)
+    else if (
+        kr.endsWith("히") || kr.endsWith("껏") || kr.endsWith("스로") ||
+        lowerEn.endsWith("ly") || lowerEn.includes("suddenly") || lowerEn.includes("already") ||
+        lowerEn.includes("always") || lowerEn.includes("sometimes") || lowerEn.includes("occasionally") ||
+        lowerEn.includes("gradually") || lowerEn.includes("almost") || lowerEn.includes("together") ||
+        lowerEn.includes("separately") || lowerEn.includes("secretly") || lowerEn.includes("on purpose")
+    ) {
+        sentenceKr = `${time} ${actor.kr} 맡은 일을 ___ 처리해서 모두에게 박수를 받았어요.`;
+        sentenceEn = `${time.en}, ${actor.en} handled the assigned task ___ (${cleanEn}) and received applause from everyone.`;
+        categoryTip = `Adverbial modifier placed directly before a verb or adjective`;
+    }
+    // 4J. Time, Seasons, Days, Holidays, Periods
+    else if (
+        lowerEn.includes("day") || lowerEn.includes("night") || lowerEn.includes("morning") ||
+        lowerEn.includes("month") || lowerEn.includes("year") || lowerEn.includes("season") ||
+        lowerEn.includes("spring") || lowerEn.includes("summer") || lowerEn.includes("autumn") ||
+        lowerEn.includes("winter") || lowerEn.includes("time") || lowerEn.includes("moment") ||
+        lowerEn.includes("anniversary") || lowerEn.includes("birthday") || lowerEn.includes("holiday") ||
+        lowerEn.includes("schedule") || lowerEn.includes("deadline") || lowerEn.includes("future") ||
+        lowerEn.includes("past")
+    ) {
+        sentenceKr = `달력에 다가오는 ___ 일정을 빨간색 펜으로 동그라미 쳐 두었어요.`;
+        sentenceEn = `I circled the upcoming ___ (${cleanEn}) schedule on the calendar with a red pen.`;
+        categoryTip = `Time/Calendar expression`;
+    }
+    // 4K. General Abstract & Action Nouns (Default with rich unique variations per word ID)
+    else {
+        const generalScenes = [
+            {
+                kr: `${time} ${actor.kr} 친구들과 모여 ___에 대해 진지하게 이야기를 나누었어요.`,
+                en: `${time.en}, ${actor.en} gathered with friends and talked seriously about ___ (${cleanEn}).`
+            },
+            {
+                kr: `이번 프로젝트를 성공적으로 마치려면 철저한 ___${pSubj} 반드시 필요합니다.`,
+                en: `To finish this project successfully, thorough ___ (${cleanEn}) is absolutely necessary.`
+            },
+            {
+                kr: `${actor.kr} 책에서 읽은 ___의 중요성을 다시 한번 깊이 깨달았어요.`,
+                en: `${actor.en} deeply realized once again the importance of ___ (${cleanEn}) read about in a book.`
+            },
+            {
+                kr: `전문가들은 올바른 ___${pObj} 통해 더 나은 결과를 얻을 수 있다고 말합니다.`,
+                en: `Experts say that we can achieve better results through proper ___ (${cleanEn}).`
+            },
+            {
+                kr: `${time} 발표된 보고서에는 올해의 ___ 변화가 한눈에 정리되어 있었어요.`,
+                en: `In the report released ${time.en}, this year's ___ (${cleanEn}) changes were summarized at a glance.`
+            },
+            {
+                kr: `일상 속에서 작은 ___${pObj} 실천하는 것만으로도 큰 차이가 생깁니다.`,
+                en: `Just practicing small ___ (${cleanEn}) in daily life makes a big difference.`
+            }
+        ];
+        const pick = generalScenes[id % generalScenes.length];
+        sentenceKr = pick.kr;
+        sentenceEn = pick.en;
+    }
+
+    return {
+        sentenceKr,
+        sentenceEn,
+        uniqueHint: `💡 ${topic} • ${categoryTip}. (${wordLengthInfo}, Meaning: "${en}", TOPIK #${id})`
+    };
+}
+
+function buildAltAnswers(en) {
+    const rawParts = en
+        .replace(/\([0-9]\)/g, "/")
+        .replace(/[0-9]\)/g, "/")
+        .replace(/~|\.\.\./g, "")
+        .split(/[;,\/]|\s+or\s+/i);
+    const alts = new Set();
+    alts.add(en.toLowerCase().trim());
+    rawParts.forEach(p => {
+        const cleaned = p.replace(/\([^)]*\)/g, "").trim().toLowerCase();
+        if (cleaned) {
+            alts.add(cleaned);
+            const noPrefix = cleaned.replace(/^(to be |to |a |an |the )/, "").trim();
+            if (noPrefix) alts.add(noPrefix);
+        }
+    });
+    return Array.from(alts);
+}
+
+const VOCAB_DATABASE = [];
+const LEVEL_META = [];
+const REGULAR_LEVEL_COUNT = 133;
+const REVIEW_INTERVAL = 5;
+const PASS_SCORE = 2000;
+let TOTAL_LEVELS = 159;
+
+(function initializeLevelsWithReviews() {
+    const annotatedWords = RAW_TOPIK_2662.map(([id, kr, en]) => {
+        const { topic, icon } = classifyWordTopic(id, kr, en);
+        const { sentenceKr, sentenceEn, uniqueHint } = createContextSentences(id, kr, en, topic);
+        const primaryShortEn = en.split(/[;,]/)[0].replace(/^1\)\s*/, "").trim();
+        const diffScore = estimateWordDifficulty(id, kr, en);
+        return {
+            id,
+            kr,
+            en: primaryShortEn,
+            fullEn: en,
+            alt: buildAltAnswers(en),
+            notes: `TOPIK #${id} • ${en}`,
+            topic,
+            icon,
+            diffScore,
+            sentenceKr,
+            sentenceEn,
+            uniqueHint
+        };
+    });
+
+    // Group words by topic
+    const topicBuckets = {};
+    annotatedWords.forEach(w => {
+        if (!topicBuckets[w.topic]) topicBuckets[w.topic] = [];
+        topicBuckets[w.topic].push(w);
+    });
+
+    // Sort each topic bucket by estimated difficulty ascending (easiest foundation -> most advanced)
+    Object.values(topicBuckets).forEach(list => list.sort((a, b) => a.diffScore - b.diffScore));
+
+    // Create 133 chunks of 20 words each while keeping topics coherent
+    const rawChunks = [];
+    const overflowPool = [];
+
+    const topicOrder = [
+        "Core Expressions & Logic",
+        "People & Family",
+        "Space, Time & Daily Life",
+        "Core Actions & Movement",
+        "Mind, Emotion & Attitude",
+        "Nature, Body & Health",
+        "Education & Research",
+        "Culture, Media & Art",
+        "Society & Systems",
+        "Economy & Business",
+        "Politics & Law"
+    ];
+
+    topicOrder.forEach(topicName => {
+        const list = topicBuckets[topicName] || [];
+        while (list.length >= 20) {
+            const slice = list.splice(0, 20);
+            rawChunks.push({
+                topic: topicName,
+                icon: slice[0].icon,
+                words: slice,
+                avgDiff: slice.reduce((s, x) => s + x.diffScore, 0) / slice.length
+            });
+        }
+        overflowPool.push(...list);
+    });
+
+    // Sort remaining words by difficulty and group into 20-word chunks up to 133 regular levels
+    overflowPool.sort((a, b) => a.diffScore - b.diffScore);
+    while (overflowPool.length >= 20 && rawChunks.length < REGULAR_LEVEL_COUNT) {
+        const slice = overflowPool.splice(0, 20);
+        const counts = {};
+        slice.forEach(w => { counts[w.topic] = (counts[w.topic] || 0) + 1; });
+        const dominantTopic = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+        const matchingIcon = slice.find(w => w.topic === dominantTopic)?.icon || "ph-sparkle";
+        rawChunks.push({
+            topic: dominantTopic,
+            icon: matchingIcon,
+            words: slice,
+            avgDiff: slice.reduce((s, x) => s + x.diffScore, 0) / slice.length
+        });
+    }
+
+    // Group chunks by topic and number them ascending by difficulty
+    const chunksByTopic = {};
+    rawChunks.forEach(ch => {
+        if (!chunksByTopic[ch.topic]) chunksByTopic[ch.topic] = [];
+        chunksByTopic[ch.topic].push(ch);
+    });
+
+    Object.entries(chunksByTopic).forEach(([tName, chList]) => {
+        chList.sort((a, b) => a.avgDiff - b.avgDiff);
+        const totalForTopic = chList.length;
+        chList.forEach((ch, idx) => {
+            const stepNumber = idx + 1;
+            ch.topicNumber = stepNumber;
+            ch.totalInTopic = totalForTopic;
+            ch.title = `${tName} ${stepNumber}`;
+            const tierLabel = stepNumber === 1
+                ? "Step 1 • Foundation Tier"
+                : (stepNumber === totalForTopic && totalForTopic > 1 ? `Step ${stepNumber} • Advanced Tier` : `Step ${stepNumber} • Intermediate Tier`);
+            ch.tierLabel = tierLabel;
+        });
+    });
+
+    // Sort all 133 regular levels primarily by their step/difficulty number
+    rawChunks.sort((a, b) => {
+        if (a.topicNumber !== b.topicNumber) {
+            return a.topicNumber - b.topicNumber;
+        }
+        if (a.topic === "Core Expressions & Logic" && b.topic !== "Core Expressions & Logic") return -1;
+        if (b.topic === "Core Expressions & Logic" && a.topic !== "Core Expressions & Logic") return 1;
+        return a.avgDiff - b.avgDiff;
+    });
+
+    // Interleave a Milestone Review Level after every 5 regular levels
+    let stageCounter = 1;
+    let recentFiveStageNums = [];
+    let recentFiveWordsPool = [];
+    let reviewBlockCounter = 0;
+
+    rawChunks.forEach((ch, index) => {
+        const currentStageNum = stageCounter++;
+        const regNum = index + 1;
+
+        ch.words.forEach(w => {
+            w.assignedLevel = currentStageNum;
+            VOCAB_DATABASE.push(w);
+        });
+
+        LEVEL_META.push({
+            level: currentStageNum,
+            regularLevelNum: regNum,
+            isReviewLevel: false,
+            title: ch.title,
+            topic: ch.topic,
+            topicNumber: ch.topicNumber,
+            totalInTopic: ch.totalInTopic,
+            tierLabel: ch.tierLabel,
+            subtitle: `20 Words • ${ch.tierLabel}`,
+            icon: ch.icon,
+            words: ch.words
+        });
+
+        recentFiveStageNums.push(currentStageNum);
+        recentFiveWordsPool.push(...ch.words);
+
+        // After every 5 regular levels, insert a Milestone Review Level
+        if (regNum % REVIEW_INTERVAL === 0) {
+            reviewBlockCounter++;
+            const reviewStageNum = stageCounter++;
+            const firstReg = regNum - REVIEW_INTERVAL + 1;
+            const lastReg = regNum;
+            LEVEL_META.push({
+                level: reviewStageNum,
+                isReviewLevel: true,
+                reviewNumber: reviewBlockCounter,
+                sourceStageNums: [...recentFiveStageNums],
+                sourcePoolWords: [...recentFiveWordsPool],
+                title: `Milestone Review ${reviewBlockCounter}`,
+                topic: "Milestone Review",
+                topicNumber: reviewBlockCounter,
+                totalInTopic: Math.floor(REGULAR_LEVEL_COUNT / REVIEW_INTERVAL),
+                tierLabel: `Reviews Topic Levels ${firstReg}–${lastReg}`,
+                subtitle: `A quick review to solidify what you've learned.`,
+                icon: "ph-arrows-clockwise"
+            });
+            recentFiveStageNums = [];
+            recentFiveWordsPool = [];
+        }
+    });
+
+    TOTAL_LEVELS = LEVEL_META.length;
+
+    // Keep any remaining words indexed in VOCAB_DATABASE for synonym lookup
+    overflowPool.forEach(w => {
+        w.assignedLevel = TOTAL_LEVELS;
+        VOCAB_DATABASE.push(w);
+    });
+})();
+
+// Expose globals on window for module scripts
+window.RAW_TOPIK_2662 = RAW_TOPIK_2662;
+window.VOCAB_DATABASE = VOCAB_DATABASE;
+window.LEVEL_META = LEVEL_META;
+window.PASS_SCORE = PASS_SCORE;
+window.TOTAL_LEVELS = TOTAL_LEVELS;
