@@ -144,6 +144,14 @@
             animation: shakeError 0.4s ease-in-out;
         }
 
+        @keyframes wrongGuessCardPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+            30% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0.65); }
+        }
+        .battle-wrong-flash {
+            animation: wrongGuessCardPulse 0.75s ease-out, shakeError 0.35s ease-in-out;
+        }
+
         /* High Contrast & Keyboard Accessibility Focus Styles */
         button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
             outline: 3px solid #facc15 !important;
@@ -1015,17 +1023,7 @@
                         activeAccount: authSession.activeAccount,
                         keepLoggedIn: Boolean(authSession.keepLoggedIn),
                         loginTimestamp: authSession.loginTimestamp || Date.now(),
-                        lastActivityTimestamp: authSession.lastActivityTimestamp || Date.now(),
-                        knownAccounts: (authSession.knownAccounts || []).map(a => ({
-                            uid: a.uid || a.accountKey,
-                            accountKey: a.accountKey || a.uid,
-                            email: a.email || "",
-                            displayName: a.displayName || "",
-                            photoURL: a.photoURL || null,
-                            provider: a.provider || "email-password",
-                            hasPassword: Boolean(a.hasPassword),
-                            gameState: normalizeGameState(a.gameState)
-                        }))
+                        lastActivityTimestamp: authSession.lastActivityTimestamp || Date.now()
                     };
                     localStorage.setItem("k2korean_session_meta_v1", JSON.stringify(payload));
                 } catch (e) {
@@ -1039,13 +1037,6 @@
                     if (!raw) return;
                     const data = safeJsonParse(raw, null);
                     if (!data || typeof data !== "object") return;
-
-                    if (Array.isArray(data.knownAccounts)) {
-                        authSession.knownAccounts = data.knownAccounts.map(a => ({
-                            ...a,
-                            gameState: normalizeGameState(a.gameState)
-                        }));
-                    }
 
                     if (data.activeAccount && data.activeAccount.provider !== "guest") {
                         const now = Date.now();
@@ -1078,7 +1069,6 @@
         let authSession = {
             firebaseUser: null,        // Authenticated cloud user
             activeAccount: null,       // { accountKey, email, displayName, photoURL, provider: 'google-oauth' | 'email-password' | 'guest' }
-            knownAccounts: [],         // List of accounts signed in on this device/cloud profile
             cloudReady: false,
             syncing: false,
             keepLoggedIn: false,       // If true: disables 3h idle timeout & sets 14-day absolute expiry (otherwise 3h idle & 7-day absolute)
@@ -1155,14 +1145,6 @@
             gameState = normalizeGameState(gameState);
             if (authSession.activeAccount && authSession.activeAccount.provider !== "guest") {
                 localProgressStore.saveAccountProgress(authSession.activeAccount, gameState);
-                const idx = authSession.knownAccounts.findIndex(a =>
-                    (authSession.activeAccount.uid && a.uid === authSession.activeAccount.uid) ||
-                    (authSession.activeAccount.accountKey && a.accountKey === authSession.activeAccount.accountKey) ||
-                    (authSession.activeAccount.email && a.email === authSession.activeAccount.email)
-                );
-                if (idx >= 0) {
-                    authSession.knownAccounts[idx].gameState = mergeGameStates(authSession.knownAccounts[idx].gameState, gameState);
-                }
                 localProgressStore.saveSessionMeta();
             }
             updateHeaderStats();
@@ -1537,9 +1519,74 @@
             }
         }
 
+        let pendingGoogleOAuthSetup = null;
+
         function renderAccountModalContent() {
             const bodyEl = document.getElementById("accountModalBody");
             if (!bodyEl) return;
+
+            if (authFormMode === "google_username" && pendingGoogleOAuthSetup) {
+                const suggested = (pendingGoogleOAuthSetup.suggestedUsername || "").replace(/"/g, "&quot;");
+                bodyEl.innerHTML = `
+                    <div class="bg-purple-50/90 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <i class="ph-fill ph-user-circle-plus text-purple-700 text-xl" aria-hidden="true"></i>
+                            <div>
+                                <h3 class="text-sm font-black text-purple-950">Create Your In-Game Username</h3>
+                                <p class="text-[11px] font-semibold text-purple-700">Connected Google Account: <strong>${pendingGoogleOAuthSetup.email}</strong></p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-purple-800 leading-relaxed">
+                            Choose the unique <strong>in-game username</strong> that other players will see in Battle Lobbies, leaderboards, and friend searches. You can also use this username to sign in!
+                        </p>
+
+                        <form id="googleUsernameSetupForm" onsubmit="window.cloudAuthManager.completeGoogleUsernameSetup(event)" class="space-y-3">
+                            <div>
+                                <label for="googleUsernameInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">In-Game Username *</label>
+                                <input
+                                    id="googleUsernameInput"
+                                    type="text"
+                                    required
+                                    minlength="2"
+                                    maxlength="24"
+                                    value="${suggested}"
+                                    placeholder="e.g. MinjiKim"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
+                                />
+                                <p class="text-[10px] font-semibold text-purple-600 mt-1">2–24 characters (letters, numbers, spaces, underscores, or hyphens).</p>
+                            </div>
+
+                            <label for="googleConsentCheckbox" class="flex items-start gap-2 pt-1 cursor-pointer select-none">
+                                <input
+                                    id="googleConsentCheckbox"
+                                    type="checkbox"
+                                    required
+                                    checked
+                                    class="mt-0.5 w-4 h-4 rounded border-purple-400 text-purple-900 focus:ring-purple-700"
+                                />
+                                <span class="text-[11px] font-semibold text-purple-900 leading-tight">
+                                    I agree to the <strong>MooseTea Studios</strong> <button type="button" onclick="openLegalMenuModal('terms')" class="underline font-bold text-purple-800">Terms &amp; Conditions</button> and <button type="button" onclick="openLegalMenuModal('privacy')" class="underline font-bold text-purple-800">Privacy Policy</button>, and consent to storing my necessary game progress data. *
+                                </span>
+                            </label>
+
+                            <div id="authErrorBanner" class="hidden rounded-xl bg-rose-100 border border-rose-400 text-rose-900 px-3 py-2 text-xs font-bold" role="alert"></div>
+
+                            <button type="submit" id="googleUsernameSubmitBtn" class="btn-yellow w-full py-2.5 text-xs flex items-center justify-center gap-1.5">
+                                <i class="ph-bold ph-check-circle" aria-hidden="true"></i>
+                                <span>Save Username &amp; Start Playing</span>
+                            </button>
+                        </form>
+                    </div>
+                `;
+                setTimeout(() => {
+                    const input = document.getElementById("googleUsernameInput");
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
+                }, 50);
+                return;
+            }
 
             const acct = authSession.activeAccount;
             const isSignedIn = acct && acct.provider !== 'guest';
@@ -1554,32 +1601,6 @@
             if (isSignedIn) {
                 return;
             }
-
-            const savedAccountsHtml = (authSession.knownAccounts || []).map((item, idx) => {
-                const isCurrent = acct && acct.accountKey === item.accountKey;
-                const itemScore = Object.values(item.gameState?.levelStats || {}).reduce((acc, s) => acc + (s?.bestScore || 0), 0);
-                const itemUnlocked = item.gameState?.unlockedLevel || 1;
-                const isPwdAccount = item.provider === "email-password" || item.hasPassword;
-                return `
-                    <div class="flex items-center justify-between gap-2 p-2.5 rounded-2xl border-2 ${isCurrent ? 'bg-yellow-100 border-yellow-500' : 'bg-white border-purple-200'}">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-8 h-8 rounded-full bg-purple-800 text-yellow-300 font-black text-xs flex items-center justify-center shrink-0" aria-hidden="true">
-                                ${(item.displayName || item.email || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div class="min-w-0">
-                                <div class="font-extrabold text-xs text-purple-950 truncate flex items-center gap-1">
-                                    <span>${item.displayName}</span>
-                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-bold">${isPwdAccount ? 'Email/Pwd' : 'Google'}</span>
-                                </div>
-                                <div class="text-[11px] text-purple-700 font-semibold truncate">${item.email} • Stage ${itemUnlocked}/${TOTAL_LEVELS} (${itemScore.toLocaleString()} pts)</div>
-                            </div>
-                        </div>
-                        <button type="button" onclick="window.cloudAuthManager.promptSwitchAccountByIndex(${idx})" class="btn-purple px-3 py-1 text-xs shrink-0">
-                            Switch
-                        </button>
-                    </div>
-                `;
-            }).join("");
 
             const isRegister = authFormMode === "register";
             const isReset = authFormMode === "reset";
@@ -1597,27 +1618,27 @@
                             </button>
                         </div>
                         <p class="text-xs text-purple-800 leading-relaxed">
-                            For Email/Password accounts: we will send a Firebase password reset link to your email, <strong>and</strong> allow you to set a new SHA-256 hashed password by verifying your registered Display Name.
+                            For Email/Password accounts: we will send a Firebase password reset link to your email, <strong>and</strong> allow you to set a new SHA-256 hashed password by verifying your registered Username.
                         </p>
 
                         <form id="passwordResetForm" onsubmit="window.cloudAuthManager.handleForgotPasswordSubmit(event)" class="space-y-2.5">
                             <div>
-                                <label for="resetEmailInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">Account Email Address *</label>
+                                <label for="resetEmailInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">Account Email Address or Username *</label>
                                 <input 
                                     id="resetEmailInput"
-                                    type="email"
+                                    type="text"
                                     required
-                                    autocomplete="email"
-                                    placeholder="learner@example.com"
+                                    autocomplete="username"
+                                    placeholder="learner@example.com or your username"
                                     class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
                                 />
                             </div>
                             <div>
-                                <label for="resetDisplayNameInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">Verify Display Name (for instant cloud hash reset)</label>
+                                <label for="resetDisplayNameInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">Verify Username (for instant cloud hash reset)</label>
                                 <input 
                                     id="resetDisplayNameInput"
                                     type="text"
-                                    placeholder="Your registered Display Name (optional if using email link)"
+                                    placeholder="Your registered Username (optional if using email link)"
                                     class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
                                 />
                             </div>
@@ -1665,12 +1686,12 @@
                     </button>
                 </div>
 
-                <!-- Email & Password Authentication Form -->
+                <!-- Email / Username & Password Authentication Form -->
                 <div class="bg-purple-50/90 rounded-2xl p-4 border-2 border-purple-200 space-y-3">
                     <div class="flex items-center justify-between gap-2">
                         <div class="text-xs font-extrabold text-purple-950 flex items-center gap-1.5">
                             <i class="ph-fill ph-envelope-simple-open text-purple-700 text-base" aria-hidden="true"></i>
-                            <span>${isRegister ? 'Create an Account' : 'Sign In with Email'}</span>
+                            <span>${isRegister ? 'Create an Account' : 'Sign In with Email or Username'}</span>
                         </div>
                         <div class="inline-flex rounded-full bg-purple-200/80 p-0.5 border border-purple-300 text-[11px] font-extrabold" role="tablist">
                             <button type="button" onclick="setAuthFormMode('login')" class="px-2.5 py-1 rounded-full transition ${!isRegister ? 'bg-purple-900 text-yellow-300 shadow' : 'text-purple-900 hover:text-purple-950'}">
@@ -1685,16 +1706,18 @@
                     <form id="emailPasswordAuthForm" onsubmit="window.cloudAuthManager.handleEmailPasswordAuth(event, '${authFormMode}')" class="space-y-2.5">
                         ${isRegister ? `
                         <div>
-                            <label for="authDisplayNameInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">Display Name *</label>
+                            <label for="authDisplayNameInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">In-Game Username *</label>
                             <input 
                                 id="authDisplayNameInput"
                                 type="text"
                                 required
-                                placeholder="e.g. Minji Kim"
+                                minlength="2"
+                                maxlength="24"
+                                autocomplete="username"
+                                placeholder="e.g. MinjiKim"
                                 class="w-full px-3.5 py-2 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
                             />
                         </div>
-                        ` : ''}
                         <div>
                             <label for="authEmailInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">Email Address *</label>
                             <input 
@@ -1706,6 +1729,19 @@
                                 class="w-full px-3.5 py-2 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
                             />
                         </div>
+                        ` : `
+                        <div>
+                            <label for="authEmailInput" class="block text-[11px] font-extrabold text-purple-900 mb-1">Email Address or Username *</label>
+                            <input 
+                                id="authEmailInput"
+                                type="text"
+                                required
+                                autocomplete="username"
+                                placeholder="learner@example.com or your username"
+                                class="w-full px-3.5 py-2 rounded-xl border-2 border-purple-300 focus:border-purple-700 focus:outline-none text-xs font-bold text-purple-950 bg-white"
+                            />
+                        </div>
+                        `}
                         <div class="relative">
                             <div class="flex items-center justify-between mb-1">
                                 <label for="authPasswordInput" class="text-[11px] font-extrabold text-purple-900">Password * <span class="text-[10px] font-semibold text-purple-600">(No [ ] ~ { } &lt; &gt; ' " ;)</span></label>
@@ -1784,20 +1820,6 @@
                         </svg>
                         <span>Sign In with Google OAuth</span>
                     </button>
-                </div>
-
-                ${savedAccountsHtml ? `
-                <div class="space-y-2 pt-1">
-                    <div class="text-xs font-extrabold uppercase tracking-wider text-purple-700">Saved Accounts on This Device:</div>
-                    <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
-                        ${savedAccountsHtml}
-                    </div>
-                </div>
-                ` : ''}
-
-                <div class="bg-yellow-50 border border-yellow-400 rounded-xl p-2.5 text-[11px] font-semibold text-purple-950 flex items-center justify-between gap-2">
-                    <span><i class="ph-fill ph-shield-check text-purple-800 mr-1" aria-hidden="true"></i>App Check &amp; SHA-256 Protected • HTTPS Enforced</span>
-                    <span class="text-[10px] font-mono text-purple-700 shrink-0" id="cloudUidBadge">${authSession.firebaseUser ? 'Cloud + App Check Active' : 'Protected'}</span>
                 </div>
             `;
         }
@@ -1886,7 +1908,7 @@
             lobby: "audio/bgm-lobby.mp3",
             battle: "audio/bgm-battle.mp3"
         };
-        let currentBgmTrackKey = "default";
+        let currentBgmTrackKey = "";
 
         function getDesiredBgmTrackKey() {
             if (activeSession.mode === "lobby") {
@@ -1903,10 +1925,11 @@
             const bgmEl = document.getElementById("bgmAudioPlayer");
             if (!bgmEl) return;
             bgmEl.volume = 0.1;
-            if (currentBgmTrackKey !== resolvedKey) {
+            const targetSrc = BGM_TRACKS[resolvedKey];
+            if (currentBgmTrackKey !== resolvedKey || bgmEl.getAttribute("src") !== targetSrc) {
                 currentBgmTrackKey = resolvedKey;
-                bgmEl.src = BGM_TRACKS[resolvedKey];
-                bgmEl.currentTime = 0;
+                bgmEl.setAttribute("src", targetSrc);
+                bgmEl.load();
             }
             ensureBgmVolumeAndState();
         }
@@ -1920,18 +1943,21 @@
             if (!bgmEl) return;
             bgmEl.volume = 0.1; // 10% volume per user setting
             const desiredKey = getDesiredBgmTrackKey();
-            if (currentBgmTrackKey !== desiredKey && BGM_TRACKS[desiredKey]) {
+            const targetSrc = BGM_TRACKS[desiredKey];
+            if (targetSrc && (currentBgmTrackKey !== desiredKey || bgmEl.getAttribute("src") !== targetSrc)) {
                 currentBgmTrackKey = desiredKey;
-                bgmEl.src = BGM_TRACKS[desiredKey];
-                bgmEl.currentTime = 0;
+                bgmEl.setAttribute("src", targetSrc);
+                bgmEl.load();
             }
             const icon = document.getElementById("bgmIcon");
             const label = document.getElementById("bgmBtnLabel");
             const btn = document.getElementById("bgmToggleBtn");
             if (activeSession.bgmEnabled) {
-                bgmEl.play().catch(() => {
-                    // Autoplay waits for first user gesture
-                });
+                if (bgmEl.paused) {
+                    bgmEl.play().catch(() => {
+                        // Autoplay waits for first user gesture
+                    });
+                }
                 if (icon) icon.className = "ph-fill ph-music-notes text-lg text-yellow-300";
                 if (label) label.textContent = "BGM ON";
                 if (btn) btn.className = "px-3 h-10 rounded-full bg-purple-800 hover:bg-purple-700 border-2 border-yellow-400 flex items-center justify-center gap-1.5 text-yellow-300 transition";
@@ -2230,7 +2256,24 @@
             }).join("");
         }
 
+        function clearBattleRoundTimers() {
+            if (activeSession.battleTimerInterval) {
+                clearInterval(activeSession.battleTimerInterval);
+                activeSession.battleTimerInterval = null;
+            }
+            if (activeSession.battleFreezeTimeout) {
+                clearTimeout(activeSession.battleFreezeTimeout);
+                activeSession.battleFreezeTimeout = null;
+            }
+            if (activeSession.battleAdvanceTimeout) {
+                clearTimeout(activeSession.battleAdvanceTimeout);
+                activeSession.battleAdvanceTimeout = null;
+            }
+            activeSession.battleWrongFrozenUntil = 0;
+        }
+
         function showMapScreen() {
+            clearBattleRoundTimers();
             activeSession.mode = "map";
             activeSession.battleLobbyId = null;
             syncBgmForCurrentMode();
@@ -2589,6 +2632,7 @@
                 [pool[i], pool[j]] = [pool[j], pool[i]];
             }
 
+            clearBattleRoundTimers();
             activeSession.mode = "play";
             activeSession.battleLobbyId = null;
             syncBgmForCurrentMode();
@@ -2606,6 +2650,80 @@
             activeSession.currentDirection = Math.random() < 0.5 ? "KR_TO_EN" : "EN_TO_KR";
 
             renderFlashcardArena();
+        }
+
+        function startBattleWordCountdownLoop() {
+            if (activeSession.battleTimerInterval) {
+                clearInterval(activeSession.battleTimerInterval);
+                activeSession.battleTimerInterval = null;
+            }
+            if (!activeSession.battleLobbyId || !window.multiplayerManager) return;
+
+            const BATTLE_WORD_DURATION_MS = 5000;
+            const tick = () => {
+                if (activeSession.mode !== "play" || !activeSession.battleLobbyId || !window.multiplayerManager) {
+                    if (activeSession.battleTimerInterval) {
+                        clearInterval(activeSession.battleTimerInterval);
+                        activeSession.battleTimerInterval = null;
+                    }
+                    return;
+                }
+                const lobby = window.multiplayerManager.currentLobbyData;
+                if (!lobby) return;
+
+                const barEl = document.getElementById("battleWordTimerBar");
+                const labelEl = document.getElementById("battleWordTimerLabel");
+                const statusEl = document.getElementById("battleWordTimerStatus");
+
+                if (lobby.cardState === "resolved") {
+                    if (barEl) {
+                        barEl.style.width = "0%";
+                        barEl.className = "h-full rounded-full transition-all duration-75 bg-purple-400";
+                    }
+                    const nextWaitRem = Math.max(0, ((lobby.nextCardAt || (Date.now() + 500)) - Date.now()) / 1000);
+                    if (labelEl) {
+                        labelEl.textContent = `Next in ${nextWaitRem.toFixed(1)}s`;
+                        labelEl.className = "text-sm font-black text-yellow-300 tabular-nums";
+                    }
+                    if (statusEl) {
+                        statusEl.textContent = lobby.roundReason === "claimed"
+                            ? `⚡ ${lobby.roundWinnerName || "Player"} won Round ${(Number(lobby.currentCardIndex || 0)) + 1}!`
+                            : `⏰ 5.0s Expired — Advancing to next word...`;
+                    }
+                    return;
+                }
+
+                const startedAt = Number(lobby.cardStartedAt || activeSession.battleLocalCardStartedAt || Date.now());
+                const elapsedMs = Math.max(0, Date.now() - startedAt);
+                const remainingMs = Math.max(0, BATTLE_WORD_DURATION_MS - elapsedMs);
+                const remainingSec = remainingMs / 1000;
+                const pct = Math.max(0, Math.min(100, (remainingMs / BATTLE_WORD_DURATION_MS) * 100));
+
+                if (barEl) {
+                    barEl.style.width = `${pct.toFixed(1)}%`;
+                    if (remainingSec <= 1.5) {
+                        barEl.className = "h-full rounded-full transition-all duration-75 bg-rose-500 animate-pulse";
+                    } else if (remainingSec <= 3.0) {
+                        barEl.className = "h-full rounded-full transition-all duration-75 bg-amber-400";
+                    } else {
+                        barEl.className = "h-full rounded-full transition-all duration-75 bg-emerald-400";
+                    }
+                }
+                if (labelEl) {
+                    labelEl.textContent = `${remainingSec.toFixed(1)}s`;
+                    labelEl.className = remainingSec <= 1.5
+                        ? "text-base font-black text-rose-400 tabular-nums animate-pulse"
+                        : "text-base font-black text-yellow-300 tabular-nums";
+                }
+
+                // Trigger 5-second timeout resolution if time expired while round is still active
+                if (remainingMs <= 0 && lobby.cardState === "active") {
+                    window.multiplayerManager.resolveBattleRoundTimeout(activeSession.currentIndex);
+                }
+            };
+
+            tick();
+            activeSession.battleTimerInterval = setInterval(tick, 50);
         }
 
         function renderFlashcardArena() {
@@ -2631,7 +2749,7 @@
 
             container.innerHTML = `
                 <div class="${isBattleMatch ? 'max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-start' : 'max-w-2xl mx-auto w-full flex flex-col gap-5'}">
-                    <div class="${isBattleMatch ? 'lg:col-span-8 flex flex-col gap-5' : 'w-full flex flex-col gap-5'}">
+                    <div class="${isBattleMatch ? 'lg:col-span-8 flex flex-col gap-4' : 'w-full flex flex-col gap-5'}">
                         <!-- Top HUD -->
                         <div class="bubbly-panel-purple p-4 md:p-5 flex flex-wrap items-center justify-between gap-3">
                             <div class="flex items-center gap-3">
@@ -2640,7 +2758,7 @@
                                 </button>
                                 <div>
                                     <div class="text-xs font-black uppercase tracking-wider text-yellow-300">
-                                        Stage ${lvl} • Card ${idx + 1} / ${total}
+                                        Stage ${lvl} • Word ${idx + 1} / ${total}
                                     </div>
                                     <h2 class="text-lg font-black text-white">${meta ? meta.title : `Stage ${lvl}`}</h2>
                                 </div>
@@ -2648,12 +2766,12 @@
 
                             <div class="flex items-center gap-3">
                                 <div class="bg-purple-950/90 px-3.5 py-1.5 rounded-2xl border-2 border-yellow-400 text-right">
-                                    <div class="text-[10px] font-extrabold uppercase text-purple-200">Score (Pass: ${PASS_SCORE.toLocaleString()})</div>
+                                    <div class="text-[10px] font-extrabold uppercase text-purple-200">${isBattleMatch ? 'Battle Points (VP)' : `Score (Pass: ${PASS_SCORE.toLocaleString()})`}</div>
                                     <div id="arenaScoreDisplay" class="text-lg font-black text-yellow-300">${activeSession.score.toLocaleString()}</div>
                                 </div>
                                 <div class="bg-purple-950/90 px-3.5 py-1.5 rounded-2xl border-2 border-purple-400 text-right">
                                     <div class="text-[10px] font-extrabold uppercase text-purple-200">Streak</div>
-                                    <div class="text-lg font-black text-white">🔥 ${activeSession.streak}</div>
+                                    <div id="arenaStreakDisplay" class="text-lg font-black text-white">🔥 ${activeSession.streak}</div>
                                 </div>
                             </div>
                         </div>
@@ -2663,7 +2781,23 @@
                             <div class="h-full bg-gradient-to-r from-yellow-300 to-amber-400 rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
                         </div>
 
-                        ${isBattleMatch ? `<div id="liveBattleProgressStrip" class="bubbly-panel-purple p-3 space-y-1.5"></div>` : ''}
+                        ${isBattleMatch ? `
+                            <!-- 5-Second Synchronized Battle Race Timer -->
+                            <div id="battleWordTimerContainer" class="bubbly-panel-purple px-4 py-3 space-y-2 border-2 border-yellow-400/90">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-yellow-300">
+                                        <i class="ph-fill ph-lightning text-base text-yellow-300"></i>
+                                        <span id="battleWordTimerStatus">5-Second Word Race — First Correct Answer Claims the Points!</span>
+                                    </div>
+                                    <span id="battleWordTimerLabel" class="text-base font-black text-yellow-300 tabular-nums">5.0s</span>
+                                </div>
+                                <div class="w-full h-3.5 bg-purple-950 rounded-full overflow-hidden border border-purple-400/80 p-0.5">
+                                    <div id="battleWordTimerBar" class="h-full rounded-full transition-all duration-75 bg-emerald-400" style="width: 100%"></div>
+                                </div>
+                            </div>
+
+                            <div id="liveBattleProgressStrip" class="bubbly-panel-purple p-3 space-y-1.5"></div>
+                        ` : ''}
 
                         <!-- Active Flashcard -->
                         <div id="arenaFlashcardBox" class="bubbly-card p-7 md:p-10 text-center flex flex-col items-center justify-center gap-4 animate-pop">
@@ -2693,10 +2827,10 @@
                                     autocapitalize="off"
                                     spellcheck="false"
                                     placeholder="${isKrToEn ? 'e.g. meaning in English...' : '예: 한국어 단어 입력...'}"
-                                    class="w-full px-5 py-3.5 rounded-2xl border-4 border-purple-300 focus:border-purple-800 focus:outline-none text-center text-lg font-black text-purple-950 bg-purple-50/60"
+                                    class="w-full px-5 py-3.5 rounded-2xl border-4 border-purple-300 focus:border-purple-800 focus:outline-none text-center text-lg font-black text-purple-950 bg-purple-50/60 transition-colors"
                                 />
                                 <button type="submit" id="arenaSubmitBtn" class="btn-yellow w-full py-3.5 text-base flex items-center justify-center gap-2">
-                                    <span>Submit Answer</span>
+                                    <span>${isBattleMatch ? 'Race Submit (Enter)' : 'Submit Answer'}</span>
                                     <i class="ph-bold ph-paper-plane-right"></i>
                                 </button>
                             </form>
@@ -2710,16 +2844,143 @@
             `;
 
             activeSession.cardStartTime = performance.now();
+            activeSession.battleLocalCardStartedAt = Date.now();
+            activeSession.battleWrongFrozenUntil = 0;
+
+            const inputEl = document.getElementById("arenaAnswerInput");
+            if (inputEl) {
+                inputEl.value = "";
+                inputEl.readOnly = false;
+                inputEl.focus();
+            }
+
             if (isBattleMatch) {
                 window.multiplayerManager.renderLiveBattleStrip();
                 window.multiplayerManager.renderBattleChatMessages();
+                startBattleWordCountdownLoop();
+                if (window.multiplayerManager.currentLobbyData?.cardState === "resolved") {
+                    window.multiplayerManager.handleBattleRoundResolved(window.multiplayerManager.currentLobbyData);
+                }
             }
-            const inputEl = document.getElementById("arenaAnswerInput");
-            if (inputEl) inputEl.focus();
         }
 
         function submitFlashcardAnswer(e) {
             if (e) e.preventDefault();
+            const isBattleMatch = Boolean(activeSession.battleLobbyId && window.multiplayerManager);
+
+            // ---------------- SYNCHRONIZED 5-SECOND BATTLE RACE MODE ----------------
+            if (isBattleMatch) {
+                const lobby = window.multiplayerManager.currentLobbyData;
+                if (!lobby || lobby.cardState === "resolved" || activeSession.awaitingNext) {
+                    return;
+                }
+                if (Date.now() < (activeSession.battleWrongFrozenUntil || 0)) {
+                    return;
+                }
+
+                const inputEl = document.getElementById("arenaAnswerInput");
+                if (!inputEl) return;
+                const rawVal = inputEl.value;
+                if (!rawVal.trim()) return;
+
+                const wordObj = activeSession.words[activeSession.currentIndex];
+                if (!wordObj) return;
+                const isCorrect = checkUserAnswer(wordObj, rawVal, activeSession.currentDirection);
+
+                const feedbackEl = document.getElementById("arenaFeedbackBanner");
+                const cardBox = document.getElementById("arenaFlashcardBox");
+                const submitBtn = document.getElementById("arenaSubmitBtn");
+
+                if (isCorrect) {
+                    const startedAt = Number(lobby.cardStartedAt || activeSession.battleLocalCardStartedAt || Date.now());
+                    const elapsedSec = Math.max(0.15, Math.min(5.0, (Date.now() - startedAt) / 1000));
+                    activeSession.responseTimes.push(elapsedSec);
+
+                    // Lock and clear input immediately while claiming the round win
+                    inputEl.value = "";
+                    inputEl.readOnly = true;
+                    activeSession.awaitingNext = true;
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = `<span>Claiming Points...</span> <i class="ph-bold ph-lightning"></i>`;
+                    }
+
+                    window.multiplayerManager.claimBattleRoundWin(activeSession.currentIndex, elapsedSec, wordObj);
+                } else {
+                    // WRONG GUESS IN BATTLE MODE:
+                    // 1. Do NOT advance to next word
+                    // 2. Do NOT reset player's streak (streak only resets if another player claims the word before them!)
+                    // 3. Auto-clear input box immediately so player can type a fresh attempt
+                    // 4. Apply 0.5-second freeze to prevent button mashing and broadcast live wrong-guess flash
+                    playSound('wrong');
+                    if (!gameState.missedWordCounts) gameState.missedWordCounts = {};
+                    gameState.missedWordCounts[wordObj.id] = (gameState.missedWordCounts[wordObj.id] || 0) + 1;
+
+                    inputEl.value = "";
+                    inputEl.readOnly = true;
+                    inputEl.placeholder = "0.5s freeze — Get ready to try again!";
+                    inputEl.classList.remove("border-purple-300", "focus:border-purple-800");
+                    inputEl.classList.add("border-rose-500", "bg-rose-50");
+
+                    activeSession.battleWrongFrozenUntil = Date.now() + 500;
+
+                    if (cardBox) {
+                        cardBox.classList.remove("animate-shake");
+                        void cardBox.offsetWidth;
+                        cardBox.classList.add("animate-shake");
+                    }
+
+                    if (feedbackEl) {
+                        feedbackEl.className = "w-full max-w-md rounded-2xl p-3.5 border-2 bg-rose-100 border-rose-500 text-rose-950 text-sm font-bold";
+                        feedbackEl.innerHTML = `
+                            <div class="text-sm font-black flex items-center justify-center gap-1.5">
+                                <i class="ph-fill ph-x-circle text-rose-700 text-lg"></i>
+                                <span>Wrong guess! Try again! (0.5s freeze)</span>
+                            </div>
+                            <div class="text-xs mt-0.5 text-rose-800">
+                                ${activeSession.streak > 0 ? `Your 🔥 ${activeSession.streak} streak is still safe unless someone else answers first!` : 'Word is still live — type another guess!'}
+                            </div>
+                        `;
+                    }
+
+                    window.multiplayerManager.recordBattleWrongGuess();
+
+                    if (activeSession.battleFreezeTimeout) {
+                        clearTimeout(activeSession.battleFreezeTimeout);
+                    }
+                    const frozenRoundIdx = activeSession.currentIndex;
+                    activeSession.battleFreezeTimeout = setTimeout(() => {
+                        activeSession.battleFreezeTimeout = null;
+                        activeSession.battleWrongFrozenUntil = 0;
+                        const currentLobby = window.multiplayerManager?.currentLobbyData;
+                        if (
+                            activeSession.mode !== "play" ||
+                            !activeSession.battleLobbyId ||
+                            activeSession.currentIndex !== frozenRoundIdx ||
+                            currentLobby?.cardState === "resolved"
+                        ) {
+                            return;
+                        }
+                        const liveInput = document.getElementById("arenaAnswerInput");
+                        const isKrToEnNow = activeSession.currentDirection === "KR_TO_EN";
+                        if (liveInput) {
+                            liveInput.readOnly = false;
+                            liveInput.placeholder = isKrToEnNow ? "Try again in English..." : "다시 한국어 단어 입력...";
+                            liveInput.classList.remove("border-rose-500", "bg-rose-50");
+                            liveInput.classList.add("border-purple-300", "focus:border-purple-800");
+                            liveInput.focus();
+                        }
+                        const liveFeedback = document.getElementById("arenaFeedbackBanner");
+                        if (liveFeedback && currentLobby?.cardState !== "resolved") {
+                            liveFeedback.className = "w-full max-w-md rounded-2xl p-2.5 border-2 bg-amber-50 border-amber-400 text-amber-950 text-xs font-extrabold";
+                            liveFeedback.innerHTML = `<span>⚡ Ready! Type another guess before the 5s timer runs out!</span>`;
+                        }
+                    }, 500);
+                }
+                return;
+            }
+
+            // ---------------- SOLO STAGE FLASHCARD MODE ----------------
             if (activeSession.awaitingNext) {
                 if (!rateLimiter.check('arena_next_card', 180, 90, true)) return;
                 advanceToNextFlashcard();
@@ -2784,49 +3045,21 @@
 
             const scoreDisplay = document.getElementById("arenaScoreDisplay");
             if (scoreDisplay) scoreDisplay.textContent = activeSession.score.toLocaleString();
+            const streakDisplay = document.getElementById("arenaStreakDisplay");
+            if (streakDisplay) streakDisplay.textContent = `🔥 ${activeSession.streak}`;
 
             const isLastCard = activeSession.currentIndex >= activeSession.words.length - 1;
-            if (activeSession.battleLobbyId && window.multiplayerManager) {
-                window.multiplayerManager.updateMyBattleProgress(
-                    activeSession.currentIndex + 1,
-                    activeSession.score,
-                    activeSession.correctCount,
-                    false
-                );
-            }
-
             if (submitBtn) {
                 submitBtn.innerHTML = isLastCard
-                    ? `<span>${activeSession.battleLobbyId ? 'Finish Battle & Claim VP!' : 'Finish Stage'} (Press Enter)</span> <i class="ph-bold ph-flag-checkered"></i>`
+                    ? `<span>Finish Stage (Press Enter)</span> <i class="ph-bold ph-flag-checkered"></i>`
                     : `<span>Next Card (Press Enter)</span> <i class="ph-bold ph-arrow-right"></i>`;
-            }
-
-            if (isLastCard && activeSession.battleLobbyId) {
-                const finishedLobbyId = activeSession.battleLobbyId;
-                setTimeout(() => {
-                    if (activeSession.mode === "play" && activeSession.awaitingNext && activeSession.battleLobbyId === finishedLobbyId) {
-                        advanceToNextFlashcard();
-                    }
-                }, 850);
             }
         }
 
         function advanceToNextFlashcard() {
             activeSession.awaitingNext = false;
             activeSession.currentIndex++;
-
-            if (activeSession.battleLobbyId && window.multiplayerManager) {
-                const sharedDirs = activeSession.battleDirections || [];
-                activeSession.currentDirection = sharedDirs[activeSession.currentIndex] || "KR_TO_EN";
-                window.multiplayerManager.updateMyBattleProgress(
-                    activeSession.currentIndex,
-                    activeSession.score,
-                    activeSession.correctCount,
-                    false
-                );
-            } else {
-                activeSession.currentDirection = Math.random() < 0.5 ? "KR_TO_EN" : "EN_TO_KR";
-            }
+            activeSession.currentDirection = Math.random() < 0.5 ? "KR_TO_EN" : "EN_TO_KR";
 
             if (activeSession.currentIndex >= activeSession.words.length) {
                 finishFlashcardLevel();
@@ -2844,6 +3077,7 @@
         }
 
         function finishFlashcardLevel() {
+            clearBattleRoundTimers();
             activeSession.mode = "results";
             const lvl = activeSession.level;
             const total = activeSession.words.length || 20;
@@ -3080,15 +3314,41 @@
             showMapScreen();
             startSessionExpiryMonitor();
             const bgmEl = document.getElementById("bgmAudioPlayer");
-            if (bgmEl) bgmEl.volume = 0.1;
-            const unlockBgmOnGesture = () => {
-                if (activeSession.bgmEnabled) {
-                    ensureBgmVolumeAndState();
-                }
+            if (bgmEl) {
+                bgmEl.volume = 0.1;
+                bgmEl.addEventListener("canplay", () => {
+                    if (activeSession.bgmEnabled && bgmEl.paused) {
+                        bgmEl.play().catch(() => {});
+                    }
+                }, { once: true });
+            }
+            syncBgmForCurrentMode();
+            const removeBgmGestureListeners = () => {
+                window.removeEventListener("pointerdown", unlockBgmOnGesture);
                 window.removeEventListener("click", unlockBgmOnGesture);
                 window.removeEventListener("keydown", unlockBgmOnGesture);
                 window.removeEventListener("touchstart", unlockBgmOnGesture);
             };
+            const unlockBgmOnGesture = () => {
+                if (!activeSession.bgmEnabled) {
+                    removeBgmGestureListeners();
+                    return;
+                }
+                const el = document.getElementById("bgmAudioPlayer");
+                if (!el) return;
+                el.volume = 0.1;
+                if (!el.paused) {
+                    removeBgmGestureListeners();
+                    return;
+                }
+                const playPromise = el.play();
+                if (playPromise && typeof playPromise.then === "function") {
+                    playPromise.then(() => {
+                        removeBgmGestureListeners();
+                    }).catch(() => {});
+                }
+            };
+            window.addEventListener("pointerdown", unlockBgmOnGesture, { passive: true });
             window.addEventListener("click", unlockBgmOnGesture, { passive: true });
             window.addEventListener("keydown", unlockBgmOnGesture, { passive: true });
             window.addEventListener("touchstart", unlockBgmOnGesture, { passive: true });
@@ -3135,6 +3395,7 @@
             onSnapshot,
             updateDoc,
             deleteDoc,
+            runTransaction,
             limit
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -3207,10 +3468,159 @@
             return normalizeGameState(rawState, rootDocData);
         }
 
+        const USERNAME_MAP_STORAGE_KEY = "k2korean_username_email_map_v1";
+
         const cloudAuthManager = {
             isReady: true,
             hasLoadedCloudState: false,
             userDocUnsubscribe: null,
+            isHandlingGooglePopup: false,
+
+            cacheUsernameEmailLocally(username, email) {
+                const uLower = (username || "").trim().toLowerCase();
+                const eLower = (email || "").trim().toLowerCase();
+                if (!uLower || !eLower || !eLower.includes("@")) return;
+                try {
+                    const raw = localStorage.getItem(USERNAME_MAP_STORAGE_KEY);
+                    const map = raw ? safeJsonParse(raw, {}) : {};
+                    map[uLower] = eLower;
+                    localStorage.setItem(USERNAME_MAP_STORAGE_KEY, JSON.stringify(map));
+                } catch (e) {}
+            },
+
+            getLocalCachedEmailForUsername(username) {
+                const uLower = (username || "").trim().toLowerCase();
+                if (!uLower) return null;
+                try {
+                    const raw = localStorage.getItem(USERNAME_MAP_STORAGE_KEY);
+                    const map = raw ? safeJsonParse(raw, {}) : {};
+                    return map[uLower] || null;
+                } catch (e) {
+                    return null;
+                }
+            },
+
+            async saveUsernameMapping(uid, username, email) {
+                const cleanUsername = sanitizeTextInput(username).slice(0, 24);
+                const uLower = cleanUsername.toLowerCase();
+                const eLower = (email || "").trim().toLowerCase();
+                if (!cleanUsername || !eLower) return;
+                this.cacheUsernameEmailLocally(cleanUsername, eLower);
+                try {
+                    await setDoc(doc(primaryDb, "usernames", uLower), {
+                        uid,
+                        username: cleanUsername,
+                        usernameLower: uLower,
+                        email: eLower,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                } catch (e) {}
+            },
+
+            async isUsernameTaken(username, excludeUid = null) {
+                const cleanUsername = sanitizeTextInput(username).slice(0, 24);
+                const uLower = cleanUsername.toLowerCase();
+                if (!uLower) return false;
+                try {
+                    const uSnap = await getDoc(doc(primaryDb, "usernames", uLower));
+                    if (uSnap.exists()) {
+                        const data = uSnap.data();
+                        if (data?.uid && data.uid !== excludeUid) return true;
+                    }
+                } catch (e) {}
+                try {
+                    const q1 = query(collection(primaryDb, "users"), where("usernameLower", "==", uLower), limit(5));
+                    const s1 = await getDocs(q1);
+                    let conflict = false;
+                    s1.forEach(d => {
+                        const data = d.data();
+                        if ((data.uid || d.id) !== excludeUid) conflict = true;
+                    });
+                    if (conflict) return true;
+                } catch (e) {}
+                try {
+                    const q2 = query(collection(primaryDb, "users"), where("displayName", "==", cleanUsername), limit(5));
+                    const s2 = await getDocs(q2);
+                    let conflict = false;
+                    s2.forEach(d => {
+                        const data = d.data();
+                        if ((data.uid || d.id) !== excludeUid) conflict = true;
+                    });
+                    if (conflict) return true;
+                } catch (e) {}
+                return false;
+            },
+
+            async resolveIdentifierToEmail(identifier) {
+                const trimmed = (identifier || "").trim();
+                if (!trimmed) return null;
+                if (trimmed.includes("@")) {
+                    return trimmed.toLowerCase();
+                }
+
+                const cleanUsername = sanitizeTextInput(trimmed);
+                const uLower = cleanUsername.toLowerCase();
+
+                // 1. Check dedicated usernames/{usernameLower} lookup doc
+                try {
+                    const uSnap = await getDoc(doc(primaryDb, "usernames", uLower));
+                    if (uSnap.exists() && uSnap.data()?.email) {
+                        const foundEmail = String(uSnap.data().email).toLowerCase().trim();
+                        this.cacheUsernameEmailLocally(cleanUsername, foundEmail);
+                        return foundEmail;
+                    }
+                } catch (e) {}
+
+                // 2. Check users collection by usernameLower
+                try {
+                    const q1 = query(collection(primaryDb, "users"), where("usernameLower", "==", uLower), limit(1));
+                    const s1 = await getDocs(q1);
+                    let foundEmail = null;
+                    s1.forEach(d => {
+                        const data = d.data();
+                        if (data?.email) foundEmail = String(data.email).toLowerCase().trim();
+                    });
+                    if (foundEmail) {
+                        this.cacheUsernameEmailLocally(cleanUsername, foundEmail);
+                        return foundEmail;
+                    }
+                } catch (e) {}
+
+                // 3. Check users collection by exact displayName
+                try {
+                    const q2 = query(collection(primaryDb, "users"), where("displayName", "==", cleanUsername), limit(1));
+                    const s2 = await getDocs(q2);
+                    let foundEmail = null;
+                    s2.forEach(d => {
+                        const data = d.data();
+                        if (data?.email) foundEmail = String(data.email).toLowerCase().trim();
+                    });
+                    if (foundEmail) {
+                        this.cacheUsernameEmailLocally(cleanUsername, foundEmail);
+                        return foundEmail;
+                    }
+                } catch (e) {}
+
+                // 4. Case-insensitive fallback scan across users collection
+                try {
+                    const sAll = await getDocs(query(collection(primaryDb, "users"), limit(100)));
+                    let foundEmail = null;
+                    sAll.forEach(d => {
+                        const data = d.data();
+                        const candidateName = String(data?.username || data?.displayName || "").trim().toLowerCase();
+                        if (candidateName === uLower && data?.email) {
+                            foundEmail = String(data.email).toLowerCase().trim();
+                        }
+                    });
+                    if (foundEmail) {
+                        this.cacheUsernameEmailLocally(cleanUsername, foundEmail);
+                        return foundEmail;
+                    }
+                } catch (e) {}
+
+                // 5. Fallback to local device username-email cache
+                return this.getLocalCachedEmailForUsername(cleanUsername);
+            },
 
             subscribeToUserProgress(uid) {
                 if (this.userDocUnsubscribe) {
@@ -3222,6 +3632,15 @@
                 this.userDocUnsubscribe = onSnapshot(userDocRef, (snap) => {
                     if (!snap.exists()) return;
                     const data = snap.data();
+                    if (data.displayName && data.email) {
+                        this.cacheUsernameEmailLocally(data.displayName, data.email);
+                    }
+                    if (authSession.activeAccount && data.displayName && authSession.activeAccount.displayName !== data.displayName) {
+                        authSession.activeAccount.displayName = data.displayName;
+                        authSession.activeAccount.username = data.username || data.displayName;
+                        localProgressStore.saveSessionMeta();
+                        updateAccountHeaderUI();
+                    }
                     const cloudState = sanitizeGameState(data?.gameState || data, data);
                     const merged = mergeGameStates(gameState, cloudState);
                     const changed = JSON.stringify(merged) !== JSON.stringify(normalizeGameState(gameState));
@@ -3287,20 +3706,21 @@
                         if (st && st.bestScore) totalScore += st.bestScore;
                     });
 
-                    // Update in-memory knownAccounts entry
-                    const existingIdx = authSession.knownAccounts.findIndex(a =>
-                        a.uid === currentUser.uid || (acct && a.accountKey === acct.accountKey)
-                    );
-                    if (existingIdx >= 0) {
-                        authSession.knownAccounts[existingIdx].gameState = cleanState;
-                    }
                     localProgressStore.saveSessionMeta();
+
+                    const resolvedName = acct?.displayName || currentUser.displayName || (currentUser.email || "").split("@")[0];
+                    const resolvedEmail = (currentUser.email || acct?.email || "").toLowerCase();
+                    if (resolvedName && resolvedEmail) {
+                        this.cacheUsernameEmailLocally(resolvedName, resolvedEmail);
+                    }
 
                     await setDoc(userDocRef, {
                         uid: currentUser.uid,
                         accountKey: currentUser.uid,
-                        email: (currentUser.email || acct?.email || "").toLowerCase(),
-                        displayName: currentUser.displayName || acct?.displayName || (currentUser.email || "").split("@")[0],
+                        email: resolvedEmail,
+                        displayName: resolvedName,
+                        username: resolvedName,
+                        usernameLower: resolvedName.toLowerCase().trim(),
                         provider: acct?.provider || "email-password",
                         totalScore,
                         victoryPoints: Number(cleanState.victoryPoints || 0),
@@ -3339,6 +3759,14 @@
                     const snap = await getDoc(userDocRef);
                     if (snap.exists()) {
                         const data = snap.data();
+                        if (data.displayName && authSession.activeAccount) {
+                            authSession.activeAccount.displayName = data.displayName;
+                            authSession.activeAccount.username = data.username || data.displayName;
+                            updateAccountHeaderUI();
+                        }
+                        if (data.displayName && data.email) {
+                            this.cacheUsernameEmailLocally(data.displayName, data.email);
+                        }
                         const loadedState = data?.gameState ? data.gameState : data;
                         const cloudState = sanitizeGameState(loadedState, data);
                         const mergedState = mergeGameStates(gameState, cloudState);
@@ -3389,21 +3817,8 @@
                 authSession.loginTimestamp = authSession.loginTimestamp || Date.now();
                 authSession.lastActivityTimestamp = Date.now();
 
-                const existingIdx = authSession.knownAccounts.findIndex(a =>
-                    a.accountKey === accountObj.accountKey || (accountObj.uid && a.uid === accountObj.uid)
-                );
-                if (existingIdx >= 0) {
-                    const prevKnownState = authSession.knownAccounts[existingIdx].gameState;
-                    if (prevKnownState) {
-                        gameState = mergeGameStates(gameState, prevKnownState);
-                    }
-                    authSession.knownAccounts[existingIdx] = {
-                        ...authSession.knownAccounts[existingIdx],
-                        ...accountObj,
-                        gameState: sanitizeGameState(gameState)
-                    };
-                } else {
-                    authSession.knownAccounts.push({ ...accountObj, gameState: sanitizeGameState(gameState) });
+                if (accountObj.displayName && accountObj.email) {
+                    this.cacheUsernameEmailLocally(accountObj.displayName, accountObj.email);
                 }
 
                 localProgressStore.saveAccountProgress(accountObj, gameState);
@@ -3420,20 +3835,31 @@
                 if (event) event.preventDefault();
                 if (!window.rateLimiter?.check("auth_submit", 2000, 8)) return;
 
-                const emailInput = document.getElementById("authEmailInput");
+                const emailOrUsernameInput = document.getElementById("authEmailInput");
                 const pwdInput = document.getElementById("authPasswordInput");
                 const nameInput = document.getElementById("authDisplayNameInput");
                 const keepCheckbox = document.getElementById("keepLoggedInCheckbox");
                 const consentCheckbox = document.getElementById("formConsentCheckbox");
 
-                const email = (emailInput?.value || "").trim().toLowerCase();
+                const rawIdentifier = (emailOrUsernameInput?.value || "").trim();
                 const password = pwdInput?.value || "";
-                const rawDisplayName = nameInput ? sanitizeTextInput(nameInput.value) : "";
+                const rawDisplayName = nameInput ? sanitizeTextInput(nameInput.value).slice(0, 24) : "";
                 const keepLoggedIn = Boolean(keepCheckbox?.checked);
 
-                if (!email || !email.includes("@")) {
-                    showAuthError("Please enter a valid email address.");
+                if (!rawIdentifier) {
+                    showAuthError(mode === "register" ? "Please enter a valid email address." : "Please enter your email address or username.");
                     return;
+                }
+
+                if (mode === "register") {
+                    if (!rawIdentifier.includes("@")) {
+                        showAuthError("Please enter a valid email address to register.");
+                        return;
+                    }
+                    if (!rawDisplayName || rawDisplayName.length < 2) {
+                        showAuthError("Please choose an in-game username (at least 2 characters).");
+                        return;
+                    }
                 }
 
                 // Enforce strict password validation (no [], ~, {}, <>, quotes, ;, \, =, $, --, /* */)
@@ -3452,10 +3878,18 @@
                 if (submitBtn) submitBtn.disabled = true;
 
                 try {
-                    const passwordHash = await hashPasswordSha256(email, password);
-
                     if (mode === "register") {
+                        const email = rawIdentifier.toLowerCase();
                         const displayName = rawDisplayName || email.split("@")[0];
+
+                        const taken = await this.isUsernameTaken(displayName);
+                        if (taken) {
+                            showAuthError(`The username "${displayName}" is already taken. Please choose another username.`);
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+
+                        const passwordHash = await hashPasswordSha256(email, password);
                         let cred = null;
                         try {
                             cred = await createUserWithEmailAndPassword(primaryAuth, email, password);
@@ -3490,6 +3924,9 @@
                             accountKey: uid,
                             email,
                             displayName,
+                            username: displayName,
+                            usernameLower: displayName.toLowerCase().trim(),
+                            usernameSet: true,
                             passwordHash, // Stored as salted SHA-256 hash, never plain text
                             provider: "email-password",
                             gameState: initialGameState,
@@ -3498,23 +3935,33 @@
                             updatedAt: Date.now()
                         }, { merge: true });
 
+                        await this.saveUsernameMapping(uid, displayName, email);
+
                         this.activateAuthenticatedUser({
                             uid,
                             accountKey: uid,
                             email,
                             displayName,
+                            username: displayName,
                             provider: "email-password",
                             hasPassword: true
                         }, keepLoggedIn);
 
                         showToast(`Welcome to 2K2KOREAN!, ${displayName}!`, "ph-sparkle");
                     } else {
-                        // Sign In flow using Firebase Auth so request.auth.uid is populated
+                        // Sign In flow: resolve email OR username
+                        const resolvedEmail = await this.resolveIdentifierToEmail(rawIdentifier);
+                        if (!resolvedEmail || !resolvedEmail.includes("@")) {
+                            showAuthError(`No account found matching username "${rawIdentifier}". Please check your username or sign in with your email address.`);
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+
                         let cred = null;
                         try {
-                            cred = await signInWithEmailAndPassword(primaryAuth, email, password);
+                            cred = await signInWithEmailAndPassword(primaryAuth, resolvedEmail, password);
                         } catch (sdkErr) {
-                            showAuthError("Incorrect email or password. Use 'Forgot Password?' if you need to reset it.");
+                            showAuthError("Incorrect email/username or password. Use 'Forgot Password?' if you need to reset it.");
                             if (submitBtn) submitBtn.disabled = false;
                             return;
                         }
@@ -3533,8 +3980,8 @@
                         const targetAcct = {
                             uid,
                             accountKey: uid,
-                            email,
-                            displayName: currentUser.displayName || email.split("@")[0],
+                            email: resolvedEmail,
+                            displayName: currentUser.displayName || (!rawIdentifier.includes("@") ? sanitizeTextInput(rawIdentifier) : resolvedEmail.split("@")[0]),
                             provider: "email-password",
                             hasPassword: true
                         };
@@ -3542,7 +3989,9 @@
 
                         if (snap.exists()) {
                             const data = snap.data();
-                            targetAcct.displayName = data.displayName || targetAcct.displayName;
+                            targetAcct.displayName = data.username || data.displayName || targetAcct.displayName;
+                            targetAcct.username = targetAcct.displayName;
+                            await this.saveUsernameMapping(uid, targetAcct.displayName, resolvedEmail);
                             const loadedState = data?.gameState ? data.gameState : data;
                             const cloudState = sanitizeGameState(loadedState, data);
                             gameState = cachedLocal ? mergeGameStates(cloudState, cachedLocal) : cloudState;
@@ -3550,11 +3999,12 @@
                             this.activateAuthenticatedUser(targetAcct, keepLoggedIn);
                             showToast(`Welcome back, ${targetAcct.displayName}!`, "ph-check-circle");
                         } else {
+                            await this.saveUsernameMapping(uid, targetAcct.displayName, resolvedEmail);
                             gameState = cachedLocal ? sanitizeGameState(cachedLocal) : getDefaultGameState();
                             this.hasLoadedCloudState = true;
                             this.activateAuthenticatedUser(targetAcct, keepLoggedIn);
                             await this.saveCurrentAccountProgress(gameState);
-                            showToast(`Signed in as ${email}!`, "ph-check-circle");
+                            showToast(`Signed in as ${targetAcct.displayName}!`, "ph-check-circle");
                         }
                     }
                 } catch (err) {
@@ -3567,12 +4017,13 @@
             async handleForgotPasswordSubmit(event) {
                 if (event) event.preventDefault();
                 if (!window.rateLimiter?.check("auth_reset", 2500, 5)) return;
-                const email = (document.getElementById("resetEmailInput")?.value || "").trim().toLowerCase();
+                const rawInput = (document.getElementById("resetEmailInput")?.value || "").trim();
                 const verifyName = sanitizeTextInput(document.getElementById("resetDisplayNameInput")?.value || "");
                 const newPwd = document.getElementById("resetNewPasswordInput")?.value || "";
 
+                const email = await this.resolveIdentifierToEmail(rawInput);
                 if (!email || !email.includes("@")) {
-                    showAuthError("Please enter your registered account email address.");
+                    showAuthError("Please enter a valid registered email address or username.");
                     return;
                 }
 
@@ -3581,7 +4032,7 @@
                 // 1. Trigger Firebase Auth Password Reset Email for SDK users
                 try {
                     await sendPasswordResetEmail(primaryAuth, email);
-                    resetStatusMessages.push(`Firebase password reset link sent to ${email}.`);
+                    resetStatusMessages.push(`Password reset link sent to ${email}.`);
                 } catch (sdkErr) {
                     console.warn("Firebase sendPasswordResetEmail note:", sdkErr);
                 }
@@ -3624,39 +4075,142 @@
                 if (!window.rateLimiter?.check("auth_google", 2000, 8)) return;
                 const keepCheckbox = document.getElementById("keepLoggedInCheckbox");
                 const keepLoggedIn = Boolean(keepCheckbox?.checked);
+                this.isHandlingGooglePopup = true;
                 try {
                     const provider = new GoogleAuthProvider();
                     const result = await signInWithPopup(primaryAuth, provider);
                     if (result && result.user) {
                         const u = result.user;
                         const email = (u.email || u.providerData?.[0]?.email || `${u.uid}@google.user`).toLowerCase();
-                        const displayName = u.displayName || u.providerData?.[0]?.displayName || email.split("@")[0];
+                        const googleDisplayName = u.displayName || u.providerData?.[0]?.displayName || email.split("@")[0];
                         const photoURL = u.photoURL || u.providerData?.[0]?.photoURL || null;
+
+                        let existingUserData = null;
+                        try {
+                            const snap = await getDoc(doc(primaryDb, "users", u.uid));
+                            if (snap.exists()) {
+                                existingUserData = snap.data();
+                            }
+                        } catch (e) {}
+
+                        const isNewGoogleAccount = !existingUserData || !existingUserData.usernameSet;
+
+                        if (isNewGoogleAccount) {
+                            const suggestedUsername = sanitizeTextInput(existingUserData?.displayName || googleDisplayName || email.split("@")[0]).slice(0, 24);
+                            pendingGoogleOAuthSetup = {
+                                uid: u.uid,
+                                email,
+                                suggestedUsername,
+                                photoURL,
+                                keepLoggedIn,
+                                existingUserData
+                            };
+                            authFormMode = "google_username";
+                            const modal = document.getElementById("accountModalOverlay");
+                            if (modal) modal.classList.remove("hidden");
+                            renderAccountModalContent();
+                            return;
+                        }
+
+                        const finalUsername = existingUserData.username || existingUserData.displayName || googleDisplayName;
+                        await this.saveUsernameMapping(u.uid, finalUsername, email);
 
                         this.activateAuthenticatedUser({
                             accountKey: u.uid,
                             uid: u.uid,
                             email,
-                            displayName,
+                            displayName: finalUsername,
+                            username: finalUsername,
                             photoURL,
                             provider: "google-oauth"
                         }, keepLoggedIn);
 
-                        showToast(`Signed in with Google as ${displayName}!`, "ph-check-circle");
+                        showToast(`Signed in with Google as ${finalUsername}!`, "ph-check-circle");
                     }
                 } catch (err) {
-                    showAuthError(`Google Sign-In failed (${err?.code || "popup blocked"}). You can also sign in with Email & Password above.`);
+                    showAuthError(`Google Sign-In failed (${err?.code || "popup blocked"}). You can also sign in with Email or Username above.`);
+                } finally {
+                    this.isHandlingGooglePopup = false;
                 }
             },
 
-            promptSwitchAccountByIndex(idx) {
-                const target = authSession.knownAccounts[idx];
-                if (!target) return;
-                if (target.gameState) {
-                    gameState = sanitizeGameState(target.gameState);
+            async completeGoogleUsernameSetup(event) {
+                if (event) event.preventDefault();
+                if (!pendingGoogleOAuthSetup) return;
+
+                const inputEl = document.getElementById("googleUsernameInput");
+                const consentCheckbox = document.getElementById("googleConsentCheckbox");
+                const submitBtn = document.getElementById("googleUsernameSubmitBtn");
+
+                const chosenUsername = sanitizeTextInput(inputEl?.value || "").slice(0, 24);
+                if (!chosenUsername || chosenUsername.length < 2) {
+                    showAuthError("Please enter an in-game username (2 to 24 characters).");
+                    return;
                 }
-                this.activateAuthenticatedUser(target, authSession.keepLoggedIn);
-                showToast(`Switched to ${target.displayName || target.email}`, "ph-user-switch");
+                if (consentCheckbox && !consentCheckbox.checked) {
+                    showAuthError("Please agree to the MooseTea Studios Terms & Privacy Policy to continue.");
+                    return;
+                }
+
+                if (submitBtn) submitBtn.disabled = true;
+                try {
+                    const { uid, email, photoURL, keepLoggedIn, existingUserData } = pendingGoogleOAuthSetup;
+
+                    const taken = await this.isUsernameTaken(chosenUsername, uid);
+                    if (taken) {
+                        showAuthError(`The username "${chosenUsername}" is already taken. Please choose another one.`);
+                        if (submitBtn) submitBtn.disabled = false;
+                        return;
+                    }
+
+                    if (primaryAuth.currentUser && primaryAuth.currentUser.uid === uid) {
+                        try {
+                            await updateProfile(primaryAuth.currentUser, { displayName: chosenUsername });
+                        } catch (e) {}
+                    }
+
+                    const initialGameState = existingUserData
+                        ? mergeGameStates(sanitizeGameState(existingUserData.gameState || existingUserData, existingUserData), gameState)
+                        : sanitizeGameState(gameState);
+                    gameState = initialGameState;
+
+                    await setDoc(doc(primaryDb, "users", uid), {
+                        uid,
+                        accountKey: uid,
+                        email,
+                        displayName: chosenUsername,
+                        username: chosenUsername,
+                        usernameLower: chosenUsername.toLowerCase().trim(),
+                        usernameSet: true,
+                        photoURL: photoURL || null,
+                        provider: "google-oauth",
+                        gameState: initialGameState,
+                        ...initialGameState,
+                        createdAt: existingUserData?.createdAt || Date.now(),
+                        updatedAt: Date.now()
+                    }, { merge: true });
+
+                    await this.saveUsernameMapping(uid, chosenUsername, email);
+
+                    pendingGoogleOAuthSetup = null;
+                    authFormMode = "login";
+                    this.hasLoadedCloudState = true;
+
+                    this.activateAuthenticatedUser({
+                        accountKey: uid,
+                        uid,
+                        email,
+                        displayName: chosenUsername,
+                        username: chosenUsername,
+                        photoURL,
+                        provider: "google-oauth"
+                    }, keepLoggedIn);
+
+                    showToast(`Welcome to 2K2KOREAN!, ${chosenUsername}!`, "ph-sparkle");
+                } catch (err) {
+                    showAuthError(err?.message || "Could not save username. Please try again.");
+                    if (submitBtn) submitBtn.disabled = false;
+                }
             },
 
             async signOutToGuest(openLoginAfter = false) {
@@ -3672,6 +4226,8 @@
                 try {
                     await signOut(primaryAuth);
                 } catch (e) {}
+                pendingGoogleOAuthSetup = null;
+                authFormMode = "login";
                 authSession.activeAccount = null;
                 authSession.keepLoggedIn = false;
                 this.hasLoadedCloudState = false;
@@ -3691,24 +4247,49 @@
         window.cloudAuthManager = cloudAuthManager;
 
         // Listen for Firebase Auth state changes automatically
-        onAuthStateChanged(primaryAuth, (user) => {
+        onAuthStateChanged(primaryAuth, async (user) => {
             authSession.firebaseUser = user || null;
-            const badge = document.getElementById("cloudUidBadge");
-            if (badge) {
-                badge.textContent = user ? "Cloud Connected" : "Ready";
+            if (cloudAuthManager.isHandlingGooglePopup || authFormMode === "google_username") {
+                return;
             }
             if (user && (!authSession.activeAccount || authSession.activeAccount.provider === "guest" || authSession.activeAccount.uid !== user.uid)) {
                 const email = (user.email || user.providerData?.[0]?.email || `${user.uid}@user.k2korean`).toLowerCase();
-                const displayName = user.displayName || user.providerData?.[0]?.displayName || email.split("@")[0];
+                const isGoogle = user.providerData?.[0]?.providerId === "google.com";
+                let displayName = user.displayName || user.providerData?.[0]?.displayName || email.split("@")[0];
                 const photoURL = user.photoURL || user.providerData?.[0]?.photoURL || null;
+
+                if (isGoogle) {
+                    try {
+                        const snap = await getDoc(doc(primaryDb, "users", user.uid));
+                        if (!snap.exists() || !snap.data()?.usernameSet) {
+                            const existingData = snap.exists() ? snap.data() : null;
+                            pendingGoogleOAuthSetup = {
+                                uid: user.uid,
+                                email,
+                                suggestedUsername: sanitizeTextInput(existingData?.displayName || displayName).slice(0, 24),
+                                photoURL,
+                                keepLoggedIn: authSession.keepLoggedIn,
+                                existingUserData: existingData
+                            };
+                            authFormMode = "google_username";
+                            const modal = document.getElementById("accountModalOverlay");
+                            if (modal) modal.classList.remove("hidden");
+                            renderAccountModalContent();
+                            return;
+                        } else if (snap.data()?.displayName) {
+                            displayName = snap.data().username || snap.data().displayName;
+                        }
+                    } catch (e) {}
+                }
 
                 cloudAuthManager.activateAuthenticatedUser({
                     accountKey: user.uid,
                     uid: user.uid,
                     email,
                     displayName,
+                    username: displayName,
                     photoURL,
-                    provider: user.providerData?.[0]?.providerId === "google.com" ? "google-oauth" : "email-password"
+                    provider: isGoogle ? "google-oauth" : "email-password"
                 }, authSession.keepLoggedIn);
             }
         });
@@ -4258,9 +4839,39 @@
             },
 
             // ---------------- 4-PLAYER BATTLE LOBBY & INVITES ----------------
+            getPlayerUnlockedLevel(playerObj) {
+                if (!playerObj) return 1;
+                let maxLvl = Number(playerObj.unlockedLevel || 1);
+                const currentUid = primaryAuth.currentUser?.uid;
+                if (currentUid && playerObj.uid === currentUid) {
+                    maxLvl = Math.max(maxLvl, Number(gameState.unlockedLevel || 1));
+                }
+                const cachedFriend = (this.cachedFriends || []).find(f => f && f.uid === playerObj.uid);
+                if (cachedFriend) {
+                    maxLvl = Math.max(maxLvl, Number(cachedFriend.unlockedLevel || cachedFriend.gameState?.unlockedLevel || 1));
+                }
+                const cachedOnline = (this.cachedOnlineUsers || []).find(o => o && o.uid === playerObj.uid);
+                if (cachedOnline) {
+                    maxLvl = Math.max(maxLvl, Number(cachedOnline.unlockedLevel || cachedOnline.gameState?.unlockedLevel || 1));
+                }
+                return Math.min(TOTAL_LEVELS, Math.max(1, maxLvl));
+            },
+
+            getCollectiveUnlockedLevel(lobby = this.currentLobbyData) {
+                const playersList = Object.values(lobby?.players || {});
+                if (playersList.length === 0) {
+                    return Math.min(TOTAL_LEVELS, Math.max(1, Number(gameState.unlockedLevel || 1)));
+                }
+                const levels = playersList.map(p => this.getPlayerUnlockedLevel(p));
+                return Math.min(TOTAL_LEVELS, Math.max(1, ...levels));
+            },
+
             getLobbyStructureKey(lobby) {
                 if (!lobby) return "";
-                const pKeys = Object.keys(lobby.players || {}).sort().join(",");
+                const pKeys = Object.values(lobby.players || {})
+                    .sort((a, b) => String(a.uid).localeCompare(String(b.uid)))
+                    .map(p => `${p.uid}:${this.getPlayerUnlockedLevel(p)}`)
+                    .join(",");
                 return `${lobby.status}|${lobby.hostUid}|${lobby.selectedLevel}|${pKeys}`;
             },
 
@@ -4281,6 +4892,7 @@
 
                 const lobbyId = "lobby_" + u.uid.slice(0, 6) + "_" + Date.now().toString(36);
                 const myName = authSession.activeAccount?.displayName || u.displayName || "Host";
+                const myUnlockedLevel = Math.min(TOTAL_LEVELS, Math.max(1, Number(gameState.unlockedLevel || 1)));
 
                 const initialLobby = {
                     lobbyId,
@@ -4303,6 +4915,7 @@
                         [u.uid]: {
                             uid: u.uid,
                             displayName: myName,
+                            unlockedLevel: myUnlockedLevel,
                             joinedAt: Date.now(),
                             progressIndex: 0,
                             score: 0,
@@ -4354,6 +4967,13 @@
                         return;
                     }
 
+                    // If match finished across all 20 words while we are still in 'play' mode, finish and enter podium
+                    if (data.status === "finished" && activeSession.mode === "play" && activeSession.battleLobbyId === lobbyId) {
+                        this.syncLocalPlayerStatsFromLobby(data);
+                        finishFlashcardLevel();
+                        return;
+                    }
+
                     // Live-refresh UI without interrupting chat input focus
                     if (activeSession.mode === "lobby") {
                         if (structChanged || !document.getElementById("battleChatMessagesContainer")) {
@@ -4362,6 +4982,7 @@
                             this.renderBattleChatMessages();
                         }
                     } else if (activeSession.mode === "play" && activeSession.battleLobbyId) {
+                        this.syncBattleRoundFromSnapshot(data);
                         this.renderLiveBattleStrip();
                         this.renderBattleChatMessages();
                     } else if (activeSession.mode === "battle_waiting") {
@@ -4390,30 +5011,59 @@
             renderLiveBattleStrip() {
                 const stripEl = document.getElementById("liveBattleProgressStrip");
                 if (!stripEl || !this.currentLobbyData) return;
-                const rankedPlayers = this.getPlayersSortedByPoints(this.currentLobbyData.players);
+                const lobby = this.currentLobbyData;
+                const rankedPlayers = this.getPlayersSortedByPoints(lobby.players);
                 const rankMedals = ["🥇 #1", "🥈 #2", "🥉 #3", "#4"];
+                const now = Date.now();
+                const currentWordNum = Math.min(20, Number(lobby.currentCardIndex || 0) + 1);
 
                 stripEl.innerHTML = `
                     <div class="text-[10px] font-black uppercase tracking-wider text-yellow-300 flex items-center justify-between">
-                        <span><i class="ph-fill ph-swords mr-1"></i>Live Battle Standings (Ranked by Most Points)</span>
+                        <span><i class="ph-fill ph-swords mr-1"></i>Live Battle Standings • Word ${currentWordNum} / 20</span>
                         <span>${rankedPlayers.length} Player${rankedPlayers.length === 1 ? '' : 's'}</span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         ${rankedPlayers.map((p, idx) => {
-                            const pct = Math.min(100, Math.round(((p.progressIndex || 0) / 20) * 100));
+                            const isRecentWrong = Boolean(p.lastWrongAt && (now - Number(p.lastWrongAt)) < 950);
+                            const isRoundWinner = Boolean(lobby.cardState === "resolved" && lobby.roundWinnerUid === p.uid);
+                            const pStreak = Number(p.streak || 0);
+                            const borderClass = isRecentWrong
+                                ? 'border-rose-500 bg-rose-950/90 battle-wrong-flash'
+                                : isRoundWinner
+                                    ? 'border-emerald-400 bg-emerald-950/85'
+                                    : (idx === 0 && (p.score || 0) > 0 ? 'border-yellow-400 bg-purple-950/80' : 'border-purple-600 bg-purple-950/80');
                             return `
-                                <div class="bg-purple-950/80 px-3 py-1.5 rounded-xl border ${idx === 0 && (p.score || 0) > 0 ? 'border-yellow-400' : 'border-purple-600'} flex items-center justify-between gap-2">
-                                    <span class="text-[10px] font-black text-yellow-300 shrink-0">${rankMedals[idx] || `#${idx + 1}`}</span>
-                                    <span class="text-xs font-extrabold text-white truncate max-w-[90px]">${p.displayName}</span>
-                                    <div class="flex-1 h-2 bg-purple-900 rounded-full overflow-hidden">
-                                        <div class="h-full ${p.finished ? 'bg-emerald-400' : 'bg-yellow-400'} transition-all duration-300" style="width: ${pct}%"></div>
+                                <div class="px-3 py-2 rounded-xl border-2 ${borderClass} flex items-center justify-between gap-2 transition-colors">
+                                    <div class="flex items-center gap-1.5 min-w-0">
+                                        <span class="text-[10px] font-black text-yellow-300 shrink-0">${rankMedals[idx] || `#${idx + 1}`}</span>
+                                        <span class="text-xs font-extrabold text-white truncate max-w-[95px]">${p.displayName}</span>
+                                        ${pStreak > 0 ? `<span class="px-1.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-400 text-[10px] font-black text-amber-300 shrink-0">🔥${pStreak}</span>` : ''}
                                     </div>
-                                    <span class="text-[11px] font-black text-yellow-300 shrink-0">${(p.score || 0).toLocaleString()} PTS (${p.progressIndex || 0}/20)</span>
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        ${isRecentWrong ? `
+                                            <span class="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-tight animate-bounce">
+                                                ✗ WRONG TRY!
+                                            </span>
+                                        ` : isRoundWinner ? `
+                                            <span class="px-2 py-0.5 rounded-full bg-emerald-400 text-purple-950 text-[10px] font-black uppercase tracking-tight">
+                                                ⚡ +${lobby.roundPoints || 0}
+                                            </span>
+                                        ` : ''}
+                                        <span class="text-[11px] font-black text-yellow-300">${(p.score || 0).toLocaleString()} PTS (${p.correctCount || 0}✓)</span>
+                                    </div>
                                 </div>
                             `;
                         }).join("")}
                     </div>
                 `;
+
+                if (rankedPlayers.some(p => p.lastWrongAt && (now - Number(p.lastWrongAt)) < 950)) {
+                    setTimeout(() => {
+                        if (activeSession.mode === "play" && activeSession.battleLobbyId) {
+                            this.renderLiveBattleStrip();
+                        }
+                    }, 960);
+                }
             },
 
             async invitePlayerToLobby(targetUid, targetName) {
@@ -4496,9 +5146,11 @@
                     }
 
                     const myName = authSession.activeAccount?.displayName || u.displayName || "Player";
+                    const myUnlockedLevel = Math.min(TOTAL_LEVELS, Math.max(1, Number(gameState.unlockedLevel || 1)));
                     players[u.uid] = {
                         uid: u.uid,
                         displayName: myName,
+                        unlockedLevel: myUnlockedLevel,
                         joinedAt: Date.now(),
                         progressIndex: 0,
                         score: 0,
@@ -4547,8 +5199,11 @@
                 if (!window.rateLimiter?.check("lobby_level_change", 500, 30)) return;
                 const u = primaryAuth.currentUser;
                 if (!u || this.currentLobbyData.hostUid !== u.uid) return;
+                const collectiveMax = this.getCollectiveUnlockedLevel(this.currentLobbyData);
+                const clampedLevel = Math.min(collectiveMax, Math.max(1, Number(newLevel) || 1));
+                this.currentLobbyData.selectedLevel = clampedLevel;
                 await updateDoc(doc(primaryDb, "lobbies", this.currentLobbyId), {
-                    selectedLevel: Number(newLevel),
+                    selectedLevel: clampedLevel,
                     updatedAt: Date.now()
                 });
             },
@@ -4574,7 +5229,14 @@
                                 await deleteDoc(ref);
                             } else {
                                 const nextHostUid = data.hostUid === u.uid ? Object.keys(players)[0] : data.hostUid;
-                                await updateDoc(ref, { players, hostUid: nextHostUid, updatedAt: Date.now() });
+                                const remainingMax = this.getCollectiveUnlockedLevel({ ...data, players });
+                                const nextSelectedLevel = Math.min(remainingMax, Math.max(1, Number(data.selectedLevel || 1)));
+                                await updateDoc(ref, {
+                                    players,
+                                    hostUid: nextHostUid,
+                                    selectedLevel: nextSelectedLevel,
+                                    updatedAt: Date.now()
+                                });
                             }
                         }
                     } catch (e) {}
@@ -4590,8 +5252,31 @@
                 const u = primaryAuth.currentUser;
                 if (!container || !lobby || !u) return;
 
+                // Keep current user's unlockedLevel synced in local lobby state
+                if (lobby.players && lobby.players[u.uid]) {
+                    const myUnlocked = Math.min(TOTAL_LEVELS, Math.max(1, Number(gameState.unlockedLevel || 1)));
+                    if ((lobby.players[u.uid].unlockedLevel || 1) < myUnlocked) {
+                        lobby.players[u.uid].unlockedLevel = myUnlocked;
+                        if (this.currentLobbyId) {
+                            updateDoc(doc(primaryDb, "lobbies", this.currentLobbyId), {
+                                [`players.${u.uid}.unlockedLevel`]: myUnlocked
+                            }).catch(() => {});
+                        }
+                    }
+                }
+
                 const isHost = lobby.hostUid === u.uid;
                 const playersList = Object.values(lobby.players || {}).sort((a, b) => a.joinedAt - b.joinedAt);
+                const collectiveUnlockedLevel = this.getCollectiveUnlockedLevel(lobby);
+                const effectiveSelectedLevel = Math.min(collectiveUnlockedLevel, Math.max(1, Number(lobby.selectedLevel || 1)));
+
+                if (isHost && Number(lobby.selectedLevel) !== effectiveSelectedLevel && this.currentLobbyId) {
+                    lobby.selectedLevel = effectiveSelectedLevel;
+                    updateDoc(doc(primaryDb, "lobbies", this.currentLobbyId), {
+                        selectedLevel: effectiveSelectedLevel,
+                        updatedAt: Date.now()
+                    }).catch(() => {});
+                }
 
                 // Build 4 player slots (with + button on empty slots to open the Friends/Online drawer)
                 let slotsHtml = "";
@@ -4599,12 +5284,14 @@
                     const p = playersList[i];
                     if (p) {
                         const isSlotHost = p.uid === lobby.hostUid;
+                        const pUnlocked = this.getPlayerUnlockedLevel(p);
                         slotsHtml += `
                             <div class="bubbly-card p-5 flex flex-col items-center justify-center text-center gap-2 border-4 border-yellow-400">
                                 <div class="w-16 h-16 rounded-3xl bg-purple-900 text-yellow-300 font-black text-3xl flex items-center justify-center border-2 border-yellow-400 shadow">
                                     ${(p.displayName || "P").charAt(0).toUpperCase()}
                                 </div>
                                 <div class="font-black text-base text-purple-950 truncate max-w-full">${p.displayName}</div>
+                                <div class="text-[11px] font-extrabold text-purple-700">Unlocked: Stage ${pUnlocked}</div>
                                 <span class="px-3 py-0.5 rounded-full text-[11px] font-black uppercase ${isSlotHost ? 'bg-yellow-400 text-purple-950' : 'bg-emerald-100 text-emerald-900'}">
                                     ${isSlotHost ? '👑 Lobby Host' : '✓ Ready to Battle'}
                                 </span>
@@ -4623,11 +5310,16 @@
                     }
                 }
 
-                const levelOptionsHtml = LEVEL_META.map(m => `
-                    <option value="${m.level}" ${Number(lobby.selectedLevel) === m.level ? 'selected' : ''}>
+                const unlockedStagesList = LEVEL_META.filter(m => m.level <= collectiveUnlockedLevel);
+                const levelOptionsHtml = unlockedStagesList.map(m => `
+                    <option value="${m.level}" ${effectiveSelectedLevel === m.level ? 'selected' : ''}>
                         Stage ${m.level}: ${m.title} (${m.isReviewLevel ? 'Review' : m.topic})
                     </option>
                 `).join("");
+
+                const stageRangeLabel = collectiveUnlockedLevel === 1
+                    ? "Stage 1 Collectively Unlocked by Lobby"
+                    : `Stages 1–${collectiveUnlockedLevel} Collectively Unlocked by Lobby`;
 
                 container.innerHTML = `
                     <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-pop">
@@ -4651,7 +5343,7 @@
                             <!-- Stage Selector & Host Start Controls -->
                             <div class="bubbly-card p-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                                 <div class="flex-1">
-                                    <label class="block text-xs font-black uppercase text-purple-700 mb-1">Battle Stage (All 159 Stages Available in Friendly Battles!)</label>
+                                    <label class="block text-xs font-black uppercase text-purple-700 mb-1">Battle Stage (${stageRangeLabel})</label>
                                     <select
                                         ${!isHost ? 'disabled' : ''}
                                         onchange="window.multiplayerManager.changeLobbyLevel(this.value)"
@@ -4689,7 +5381,8 @@
             async hostStartBattle() {
                 if (!this.currentLobbyId || !this.currentLobbyData) return;
                 if (!window.rateLimiter?.check("host_start_battle", 2000, 10)) return;
-                const lvl = Number(this.currentLobbyData.selectedLevel || 1);
+                const collectiveMax = this.getCollectiveUnlockedLevel(this.currentLobbyData);
+                const lvl = Math.min(collectiveMax, Math.max(1, Number(this.currentLobbyData.selectedLevel || 1)));
                 const pool = [...getWordsForLevel(lvl)];
 
                 // Shuffle once on host so all players receive the exact same 20-word order and KR<->EN directions
@@ -4700,6 +5393,7 @@
                 const wordIds = pool.map(w => w.id);
                 const directions = wordIds.map(() => (Math.random() < 0.5 ? "KR_TO_EN" : "EN_TO_KR"));
 
+                const now = Date.now();
                 const resetPlayers = {};
                 Object.entries(this.currentLobbyData.players || {}).forEach(([uid, p]) => {
                     resetPlayers[uid] = {
@@ -4707,6 +5401,9 @@
                         progressIndex: 0,
                         score: 0,
                         correctCount: 0,
+                        wrongCount: 0,
+                        streak: 0,
+                        lastWrongAt: 0,
                         accuracy: 0,
                         avgSpeedSec: 0,
                         finished: false,
@@ -4714,25 +5411,33 @@
                     };
                 });
 
-                const updatedLobby = {
-                    ...this.currentLobbyData,
+                const battlePayload = {
                     status: "playing",
                     wordIds,
                     directions,
                     players: resetPlayers,
-                    startedAt: Date.now(),
-                    updatedAt: Date.now()
+                    currentCardIndex: 0,
+                    cardStartedAt: now,
+                    cardState: "active",
+                    roundWinnerUid: null,
+                    roundWinnerName: null,
+                    roundPoints: 0,
+                    roundStreak: 0,
+                    roundAnswer: "",
+                    roundReason: null,
+                    resolvedAt: 0,
+                    nextCardAt: 0,
+                    startedAt: now,
+                    updatedAt: now
+                };
+
+                const updatedLobby = {
+                    ...this.currentLobbyData,
+                    ...battlePayload
                 };
                 this.currentLobbyData = updatedLobby;
                 try {
-                    await updateDoc(doc(primaryDb, "lobbies", this.currentLobbyId), {
-                        status: "playing",
-                        wordIds,
-                        directions,
-                        players: resetPlayers,
-                        startedAt: Date.now(),
-                        updatedAt: Date.now()
-                    });
+                    await updateDoc(doc(primaryDb, "lobbies", this.currentLobbyId), battlePayload);
                 } catch (e) {
                     console.warn("Host start battle fallback:", e);
                 }
@@ -4742,30 +5447,421 @@
             },
 
             launchSynchronizedBattle(lobbyData) {
+                clearBattleRoundTimers();
                 playSound('fanfare');
                 const lvl = Number(lobbyData.selectedLevel || 1);
                 const sharedWords = (lobbyData.wordIds || [])
                     .map(id => VOCAB_DATABASE.find(w => w.id === Number(id)))
                     .filter(Boolean);
 
+                const startIdx = Math.max(0, Number(lobbyData.currentCardIndex || 0));
                 activeSession.mode = "play";
                 activeSession.level = lvl;
                 activeSession.words = sharedWords.length > 0 ? sharedWords : getWordsForLevel(lvl);
-                activeSession.currentIndex = 0;
+                activeSession.currentIndex = startIdx;
                 activeSession.score = 0;
                 activeSession.correctCount = 0;
                 activeSession.streak = 0;
                 activeSession.startTime = performance.now();
                 activeSession.cardStartTime = performance.now();
+                activeSession.battleLocalCardStartedAt = Number(lobbyData.cardStartedAt || Date.now());
                 activeSession.responseTimes = [];
                 activeSession.awaitingNext = false;
+                activeSession.battleLastHandledResolvedIdx = -1;
                 activeSession.battleLobbyId = lobbyData.lobbyId || this.currentLobbyId;
                 if (typeof syncBgmForCurrentMode === "function") syncBgmForCurrentMode();
                 activeSession.vpAwardedForBattle = false;
                 activeSession.battleDirections = lobbyData.directions || [];
-                activeSession.currentDirection = activeSession.battleDirections[0] || "KR_TO_EN";
+                activeSession.currentDirection = activeSession.battleDirections[startIdx] || "KR_TO_EN";
 
                 renderFlashcardArena();
+            },
+
+            syncLocalPlayerStatsFromLobby(lobbyData) {
+                const u = primaryAuth.currentUser;
+                if (!u || !lobbyData?.players?.[u.uid]) return;
+                const me = lobbyData.players[u.uid];
+                activeSession.score = Number(me.score || 0);
+                activeSession.correctCount = Number(me.correctCount || 0);
+                activeSession.streak = Number(me.streak || 0);
+                const scoreDisplay = document.getElementById("arenaScoreDisplay");
+                if (scoreDisplay) scoreDisplay.textContent = activeSession.score.toLocaleString();
+                const streakDisplay = document.getElementById("arenaStreakDisplay");
+                if (streakDisplay) streakDisplay.textContent = `🔥 ${activeSession.streak}`;
+            },
+
+            syncBattleRoundFromSnapshot(lobbyData) {
+                if (!lobbyData || activeSession.mode !== "play" || !activeSession.battleLobbyId) return;
+                this.syncLocalPlayerStatsFromLobby(lobbyData);
+
+                const remoteIdx = Number(lobbyData.currentCardIndex || 0);
+                if (remoteIdx >= (activeSession.words.length || 20)) {
+                    finishFlashcardLevel();
+                    return;
+                }
+
+                // Did the lobby advance to a new word?
+                if (remoteIdx !== activeSession.currentIndex) {
+                    if (activeSession.battleFreezeTimeout) {
+                        clearTimeout(activeSession.battleFreezeTimeout);
+                        activeSession.battleFreezeTimeout = null;
+                    }
+                    activeSession.battleWrongFrozenUntil = 0;
+                    activeSession.currentIndex = remoteIdx;
+                    activeSession.awaitingNext = false;
+                    activeSession.battleLastHandledResolvedIdx = -1;
+                    activeSession.battleLocalCardStartedAt = Number(lobbyData.cardStartedAt || Date.now());
+                    const sharedDirs = activeSession.battleDirections || lobbyData.directions || [];
+                    activeSession.currentDirection = sharedDirs[remoteIdx] || "KR_TO_EN";
+                    playSound('pop');
+                    renderFlashcardArena();
+                    return;
+                }
+
+                // Is the current word resolved (claimed by someone or timed out)?
+                if (lobbyData.cardState === "resolved") {
+                    this.handleBattleRoundResolved(lobbyData);
+                }
+            },
+
+            handleBattleRoundResolved(lobbyData) {
+                if (!lobbyData) return;
+                const roundIdx = Number(lobbyData.currentCardIndex || 0);
+                this.syncLocalPlayerStatsFromLobby(lobbyData);
+
+                // Cancel any active 0.5s wrong-guess freeze immediately
+                if (activeSession.battleFreezeTimeout) {
+                    clearTimeout(activeSession.battleFreezeTimeout);
+                    activeSession.battleFreezeTimeout = null;
+                }
+                activeSession.battleWrongFrozenUntil = 0;
+                activeSession.awaitingNext = true;
+
+                // CRITICAL: Immediately delete any half-typed answer from the input box when an opponent claims the word (or timer expires)
+                const inputEl = document.getElementById("arenaAnswerInput");
+                if (inputEl) {
+                    inputEl.value = "";
+                    inputEl.readOnly = true;
+                    inputEl.placeholder = "Round complete — preparing next word...";
+                    inputEl.classList.remove("border-rose-500", "bg-rose-50");
+                    inputEl.classList.add("border-purple-300");
+                }
+                const submitBtn = document.getElementById("arenaSubmitBtn");
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = `<span>Next Word Incoming...</span> <i class="ph-bold ph-hourglass-high"></i>`;
+                }
+
+                // Play sound and show 1.2s reveal banner once per resolved round
+                const u = primaryAuth.currentUser;
+                const isFirstTimeHandling = activeSession.battleLastHandledResolvedIdx !== roundIdx;
+                if (isFirstTimeHandling) {
+                    activeSession.battleLastHandledResolvedIdx = roundIdx;
+                    if (lobbyData.roundReason === "claimed") {
+                        if (u && lobbyData.roundWinnerUid === u.uid) {
+                            playSound('correct');
+                        } else {
+                            playSound('pop');
+                        }
+                    } else {
+                        playSound('wrong');
+                    }
+                }
+
+                const wordObj = activeSession.words[roundIdx];
+                const answerLabel = lobbyData.roundAnswer || (wordObj ? `${wordObj.kr} = ${wordObj.fullEn}` : "");
+                const feedbackEl = document.getElementById("arenaFeedbackBanner");
+                if (feedbackEl) {
+                    if (lobbyData.roundReason === "claimed") {
+                        const iWon = Boolean(u && lobbyData.roundWinnerUid === u.uid);
+                        feedbackEl.className = iWon
+                            ? "w-full max-w-md rounded-2xl p-4 border-2 bg-emerald-100 border-emerald-500 text-emerald-950 text-sm font-bold animate-pop"
+                            : "w-full max-w-md rounded-2xl p-4 border-2 bg-amber-100 border-amber-500 text-amber-950 text-sm font-bold animate-pop";
+                        feedbackEl.innerHTML = `
+                            <div class="text-base font-black flex items-center justify-center gap-1.5">
+                                <i class="ph-fill ph-lightning ${iWon ? 'text-emerald-700' : 'text-amber-700'} text-xl"></i>
+                                <span>${iWon ? `You got it first! +${lobbyData.roundPoints || 0} PTS (🔥 ${lobbyData.roundStreak || activeSession.streak})` : `${lobbyData.roundWinnerName || 'Opponent'} got it first! (+${lobbyData.roundPoints || 0} PTS)`}</span>
+                            </div>
+                            <div class="text-xs mt-1">Answer: <strong>${answerLabel}</strong></div>
+                        `;
+                    } else {
+                        feedbackEl.className = "w-full max-w-md rounded-2xl p-4 border-2 bg-rose-100 border-rose-500 text-rose-950 text-sm font-bold animate-pop";
+                        feedbackEl.innerHTML = `
+                            <div class="text-base font-black flex items-center justify-center gap-1.5">
+                                <i class="ph-fill ph-timer text-rose-700 text-xl"></i>
+                                <span>Time's Up! (5.0s) — Nobody Scored</span>
+                            </div>
+                            <div class="text-xs mt-1">Answer: <strong>${answerLabel}</strong></div>
+                        `;
+                    }
+                }
+
+                this.scheduleNextBattleWordTransition(roundIdx, lobbyData.nextCardAt);
+            },
+
+            scheduleNextBattleWordTransition(roundIdx, nextCardAtMs) {
+                if (activeSession.battleAdvanceTimeout) {
+                    clearTimeout(activeSession.battleAdvanceTimeout);
+                    activeSession.battleAdvanceTimeout = null;
+                }
+                const u = primaryAuth.currentUser;
+                const lobby = this.currentLobbyData;
+                const isHost = Boolean(u && lobby && lobby.hostUid === u.uid);
+                const iWonRound = Boolean(u && lobby && lobby.roundWinnerUid === u.uid);
+                // Winner or Host drives the transition right at 1.2s; other players act as automatic backup (+300ms)
+                const baseDelay = nextCardAtMs ? Math.max(80, Number(nextCardAtMs) - Date.now()) : 1200;
+                const delayMs = (isHost || iWonRound) ? baseDelay : (baseDelay + 300);
+
+                activeSession.battleAdvanceTimeout = setTimeout(() => {
+                    activeSession.battleAdvanceTimeout = null;
+                    this.advanceBattleRoundIfNeeded(roundIdx);
+                }, delayMs);
+            },
+
+            async claimBattleRoundWin(roundIdx, elapsedSec, wordObj) {
+                const u = primaryAuth.currentUser;
+                if (!u || !this.currentLobbyId) return;
+                const myName = authSession.activeAccount?.displayName || u.displayName || "Player";
+                const answerSummary = wordObj ? `${wordObj.kr} = ${wordObj.fullEn}` : "";
+                const lobbyRef = doc(primaryDb, "lobbies", this.currentLobbyId);
+                const now = Date.now();
+
+                try {
+                    await runTransaction(primaryDb, async (tx) => {
+                        const snap = await tx.get(lobbyRef);
+                        if (!snap.exists()) return;
+                        const data = snap.data();
+                        if (Number(data.currentCardIndex || 0) !== Number(roundIdx) || data.cardState === "resolved") {
+                            return;
+                        }
+                        const players = { ...(data.players || {}) };
+                        const me = players[u.uid] || {
+                            uid: u.uid,
+                            displayName: myName,
+                            score: activeSession.score || 0,
+                            correctCount: activeSession.correctCount || 0,
+                            streak: activeSession.streak || 0
+                        };
+
+                        const newStreak = Number(me.streak || 0) + 1;
+                        const speedBonus = Math.max(0, Math.round(((5.0 - Math.min(5.0, elapsedSec)) / 5.0) * 80));
+                        const streakBonus = Math.min(120, newStreak * 20);
+                        const pointsEarned = 100 + speedBonus + streakBonus;
+
+                        // Update all players: winner increments score, correctCount, and streak;
+                        // all other players have their streak reset to 0 because another player answered before them!
+                        Object.keys(players).forEach((pid) => {
+                            if (pid === u.uid) {
+                                players[pid] = {
+                                    ...players[pid],
+                                    score: Number(me.score || 0) + pointsEarned,
+                                    correctCount: Number(me.correctCount || 0) + 1,
+                                    streak: newStreak,
+                                    progressIndex: roundIdx + 1
+                                };
+                            } else {
+                                players[pid] = {
+                                    ...players[pid],
+                                    streak: 0,
+                                    progressIndex: roundIdx + 1
+                                };
+                            }
+                        });
+
+                        tx.update(lobbyRef, {
+                            players,
+                            cardState: "resolved",
+                            roundReason: "claimed",
+                            roundWinnerUid: u.uid,
+                            roundWinnerName: myName,
+                            roundPoints: pointsEarned,
+                            roundStreak: newStreak,
+                            roundAnswer: answerSummary,
+                            resolvedAt: now,
+                            nextCardAt: now + 1200,
+                            updatedAt: now
+                        });
+                    });
+                } catch (err) {
+                    // Fallback for local/offline mode if transaction fails
+                    const lobby = this.currentLobbyData;
+                    if (lobby && Number(lobby.currentCardIndex || 0) === Number(roundIdx) && lobby.cardState !== "resolved") {
+                        const players = { ...(lobby.players || {}) };
+                        const me = players[u.uid] || { score: activeSession.score, correctCount: activeSession.correctCount, streak: activeSession.streak };
+                        const newStreak = Number(me.streak || 0) + 1;
+                        const speedBonus = Math.max(0, Math.round(((5.0 - Math.min(5.0, elapsedSec)) / 5.0) * 80));
+                        const streakBonus = Math.min(120, newStreak * 20);
+                        const pointsEarned = 100 + speedBonus + streakBonus;
+                        Object.keys(players).forEach((pid) => {
+                            players[pid] = pid === u.uid
+                                ? { ...players[pid], score: Number(me.score || 0) + pointsEarned, correctCount: Number(me.correctCount || 0) + 1, streak: newStreak, progressIndex: roundIdx + 1 }
+                                : { ...players[pid], streak: 0, progressIndex: roundIdx + 1 };
+                        });
+                        const fallbackPatch = {
+                            players,
+                            cardState: "resolved",
+                            roundReason: "claimed",
+                            roundWinnerUid: u.uid,
+                            roundWinnerName: myName,
+                            roundPoints: pointsEarned,
+                            roundStreak: newStreak,
+                            roundAnswer: answerSummary,
+                            resolvedAt: now,
+                            nextCardAt: now + 1200,
+                            updatedAt: now
+                        };
+                        Object.assign(this.currentLobbyData, fallbackPatch);
+                        this.handleBattleRoundResolved(this.currentLobbyData);
+                        this.renderLiveBattleStrip();
+                    }
+                }
+            },
+
+            async recordBattleWrongGuess() {
+                const u = primaryAuth.currentUser;
+                if (!u || !this.currentLobbyId) return;
+                const now = Date.now();
+                if (this.currentLobbyData?.players?.[u.uid]) {
+                    this.currentLobbyData.players[u.uid].lastWrongAt = now;
+                    this.currentLobbyData.players[u.uid].wrongCount = Number(this.currentLobbyData.players[u.uid].wrongCount || 0) + 1;
+                    this.renderLiveBattleStrip();
+                }
+                try {
+                    await updateDoc(doc(primaryDb, "lobbies", this.currentLobbyId), {
+                        [`players.${u.uid}.lastWrongAt`]: now,
+                        [`players.${u.uid}.wrongCount`]: Number(this.currentLobbyData?.players?.[u.uid]?.wrongCount || 1),
+                        updatedAt: now
+                    });
+                } catch (e) {}
+            },
+
+            async resolveBattleRoundTimeout(roundIdx) {
+                const u = primaryAuth.currentUser;
+                if (!u || !this.currentLobbyId || !this.currentLobbyData) return;
+                if (Number(this.currentLobbyData.currentCardIndex || 0) !== Number(roundIdx) || this.currentLobbyData.cardState === "resolved") {
+                    return;
+                }
+                if (this.resolvingTimeoutIdx === roundIdx) return;
+                this.resolvingTimeoutIdx = roundIdx;
+
+                const wordObj = activeSession.words[roundIdx];
+                const answerSummary = wordObj ? `${wordObj.kr} = ${wordObj.fullEn}` : "";
+                const now = Date.now();
+                const lobbyRef = doc(primaryDb, "lobbies", this.currentLobbyId);
+
+                try {
+                    await runTransaction(primaryDb, async (tx) => {
+                        const snap = await tx.get(lobbyRef);
+                        if (!snap.exists()) return;
+                        const data = snap.data();
+                        if (Number(data.currentCardIndex || 0) !== Number(roundIdx) || data.cardState === "resolved") {
+                            return;
+                        }
+                        const players = { ...(data.players || {}) };
+                        Object.keys(players).forEach((pid) => {
+                            players[pid] = {
+                                ...players[pid],
+                                progressIndex: roundIdx + 1
+                            };
+                        });
+                        tx.update(lobbyRef, {
+                            players,
+                            cardState: "resolved",
+                            roundReason: "timeout",
+                            roundWinnerUid: null,
+                            roundWinnerName: null,
+                            roundPoints: 0,
+                            roundStreak: 0,
+                            roundAnswer: answerSummary,
+                            resolvedAt: now,
+                            nextCardAt: now + 1200,
+                            updatedAt: now
+                        });
+                    });
+                } catch (err) {
+                    if (this.currentLobbyData && Number(this.currentLobbyData.currentCardIndex || 0) === Number(roundIdx) && this.currentLobbyData.cardState !== "resolved") {
+                        Object.assign(this.currentLobbyData, {
+                            cardState: "resolved",
+                            roundReason: "timeout",
+                            roundWinnerUid: null,
+                            roundWinnerName: null,
+                            roundPoints: 0,
+                            roundStreak: 0,
+                            roundAnswer: answerSummary,
+                            resolvedAt: now,
+                            nextCardAt: now + 1200,
+                            updatedAt: now
+                        });
+                        this.handleBattleRoundResolved(this.currentLobbyData);
+                    }
+                } finally {
+                    this.resolvingTimeoutIdx = -1;
+                }
+            },
+
+            async advanceBattleRoundIfNeeded(resolvedRoundIdx) {
+                if (!this.currentLobbyId || !this.currentLobbyData) return;
+                if (Number(this.currentLobbyData.currentCardIndex || 0) !== Number(resolvedRoundIdx) || this.currentLobbyData.cardState !== "resolved") {
+                    return;
+                }
+                const nextIdx = Number(resolvedRoundIdx) + 1;
+                const totalWords = (activeSession.words && activeSession.words.length) || 20;
+                const now = Date.now();
+                const lobbyRef = doc(primaryDb, "lobbies", this.currentLobbyId);
+
+                try {
+                    await runTransaction(primaryDb, async (tx) => {
+                        const snap = await tx.get(lobbyRef);
+                        if (!snap.exists()) return;
+                        const data = snap.data();
+                        if (Number(data.currentCardIndex || 0) !== Number(resolvedRoundIdx) || data.cardState !== "resolved") {
+                            return;
+                        }
+                        if (nextIdx >= totalWords) {
+                            tx.update(lobbyRef, {
+                                currentCardIndex: nextIdx,
+                                status: "finished",
+                                updatedAt: now
+                            });
+                        } else {
+                            tx.update(lobbyRef, {
+                                currentCardIndex: nextIdx,
+                                cardState: "active",
+                                cardStartedAt: now,
+                                roundWinnerUid: null,
+                                roundWinnerName: null,
+                                roundPoints: 0,
+                                roundStreak: 0,
+                                roundAnswer: "",
+                                roundReason: null,
+                                resolvedAt: 0,
+                                nextCardAt: 0,
+                                updatedAt: now
+                            });
+                        }
+                    });
+                } catch (err) {
+                    if (nextIdx >= totalWords) {
+                        this.currentLobbyData.status = "finished";
+                        finishFlashcardLevel();
+                    } else {
+                        Object.assign(this.currentLobbyData, {
+                            currentCardIndex: nextIdx,
+                            cardState: "active",
+                            cardStartedAt: now,
+                            roundWinnerUid: null,
+                            roundWinnerName: null,
+                            roundPoints: 0,
+                            roundStreak: 0,
+                            roundAnswer: "",
+                            roundReason: null,
+                            resolvedAt: 0,
+                            nextCardAt: 0,
+                            updatedAt: now
+                        });
+                        this.syncBattleRoundFromSnapshot(this.currentLobbyData);
+                    }
+                }
             },
 
             async updateMyBattleProgress(progressIndex, score, correctCount, finished = false) {

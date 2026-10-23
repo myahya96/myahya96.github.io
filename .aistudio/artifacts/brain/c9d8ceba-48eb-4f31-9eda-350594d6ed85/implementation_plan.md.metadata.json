@@ -1,0 +1,6 @@
+{
+  "summary":  "Updated implementation plan so that a player's streak is NOT reset on a wrong guess; a player's streak only resets to 0 if another player claims the correct answer before them.",
+  "updatedAt":  "2026-10-23T05:06:29.219878330Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
