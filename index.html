@@ -2659,7 +2659,7 @@
             }
             if (!activeSession.battleLobbyId || !window.multiplayerManager) return;
 
-            const BATTLE_WORD_DURATION_MS = 5000;
+            const BATTLE_WORD_DURATION_MS = 15000;
             const tick = () => {
                 if (activeSession.mode !== "play" || !activeSession.battleLobbyId || !window.multiplayerManager) {
                     if (activeSession.battleTimerInterval) {
@@ -2688,7 +2688,7 @@
                     if (statusEl) {
                         statusEl.textContent = lobby.roundReason === "claimed"
                             ? `⚡ ${lobby.roundWinnerName || "Player"} won Round ${(Number(lobby.currentCardIndex || 0)) + 1}!`
-                            : `⏰ 5.0s Expired — Advancing to next word...`;
+                            : `⏰ 15.0s Expired — Advancing to next word...`;
                     }
                     return;
                 }
@@ -2701,9 +2701,9 @@
 
                 if (barEl) {
                     barEl.style.width = `${pct.toFixed(1)}%`;
-                    if (remainingSec <= 1.5) {
+                    if (remainingSec <= 3.0) {
                         barEl.className = "h-full rounded-full transition-all duration-75 bg-rose-500 animate-pulse";
-                    } else if (remainingSec <= 3.0) {
+                    } else if (remainingSec <= 7.0) {
                         barEl.className = "h-full rounded-full transition-all duration-75 bg-amber-400";
                     } else {
                         barEl.className = "h-full rounded-full transition-all duration-75 bg-emerald-400";
@@ -2711,12 +2711,12 @@
                 }
                 if (labelEl) {
                     labelEl.textContent = `${remainingSec.toFixed(1)}s`;
-                    labelEl.className = remainingSec <= 1.5
+                    labelEl.className = remainingSec <= 3.0
                         ? "text-base font-black text-rose-400 tabular-nums animate-pulse"
                         : "text-base font-black text-yellow-300 tabular-nums";
                 }
 
-                // Trigger 5-second timeout resolution if time expired while round is still active
+                // Trigger 15-second timeout resolution if time expired while round is still active
                 if (remainingMs <= 0 && lobby.cardState === "active") {
                     window.multiplayerManager.resolveBattleRoundTimeout(activeSession.currentIndex);
                 }
@@ -2782,14 +2782,14 @@
                         </div>
 
                         ${isBattleMatch ? `
-                            <!-- 5-Second Synchronized Battle Race Timer -->
+                            <!-- 15-Second Synchronized Battle Race Timer -->
                             <div id="battleWordTimerContainer" class="bubbly-panel-purple px-4 py-3 space-y-2 border-2 border-yellow-400/90">
                                 <div class="flex items-center justify-between gap-2">
                                     <div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-yellow-300">
                                         <i class="ph-fill ph-lightning text-base text-yellow-300"></i>
-                                        <span id="battleWordTimerStatus">5-Second Word Race — First Correct Answer Claims the Points!</span>
+                                        <span id="battleWordTimerStatus">15-Second Word Race — First Correct Answer Claims the Points!</span>
                                     </div>
-                                    <span id="battleWordTimerLabel" class="text-base font-black text-yellow-300 tabular-nums">5.0s</span>
+                                    <span id="battleWordTimerLabel" class="text-base font-black text-yellow-300 tabular-nums">15.0s</span>
                                 </div>
                                 <div class="w-full h-3.5 bg-purple-950 rounded-full overflow-hidden border border-purple-400/80 p-0.5">
                                     <div id="battleWordTimerBar" class="h-full rounded-full transition-all duration-75 bg-emerald-400" style="width: 100%"></div>
@@ -2893,7 +2893,7 @@
 
                 if (isCorrect) {
                     const startedAt = Number(lobby.cardStartedAt || activeSession.battleLocalCardStartedAt || Date.now());
-                    const elapsedSec = Math.max(0.15, Math.min(5.0, (Date.now() - startedAt) / 1000));
+                    const elapsedSec = Math.max(0.15, Math.min(15.0, (Date.now() - startedAt) / 1000));
                     activeSession.responseTimes.push(elapsedSec);
 
                     // Lock and clear input immediately while claiming the round win
@@ -2973,7 +2973,7 @@
                         const liveFeedback = document.getElementById("arenaFeedbackBanner");
                         if (liveFeedback && currentLobby?.cardState !== "resolved") {
                             liveFeedback.className = "w-full max-w-md rounded-2xl p-2.5 border-2 bg-amber-50 border-amber-400 text-amber-950 text-xs font-extrabold";
-                            liveFeedback.innerHTML = `<span>⚡ Ready! Type another guess before the 5s timer runs out!</span>`;
+                            liveFeedback.innerHTML = `<span>⚡ Ready! Type another guess before the 15s timer runs out!</span>`;
                         }
                     }, 500);
                 }
@@ -5589,7 +5589,7 @@
                         feedbackEl.innerHTML = `
                             <div class="text-base font-black flex items-center justify-center gap-1.5">
                                 <i class="ph-fill ph-timer text-rose-700 text-xl"></i>
-                                <span>Time's Up! (5.0s) — Nobody Scored</span>
+                                <span>Time's Up! (15.0s) — Nobody Scored</span>
                             </div>
                             <div class="text-xs mt-1">Answer: <strong>${answerLabel}</strong></div>
                         `;
@@ -5644,7 +5644,7 @@
                         };
 
                         const newStreak = Number(me.streak || 0) + 1;
-                        const speedBonus = Math.max(0, Math.round(((5.0 - Math.min(5.0, elapsedSec)) / 5.0) * 80));
+                        const speedBonus = Math.max(0, Math.round(((15.0 - Math.min(15.0, elapsedSec)) / 15.0) * 80));
                         const streakBonus = Math.min(120, newStreak * 20);
                         const pointsEarned = 100 + speedBonus + streakBonus;
 
@@ -5689,7 +5689,7 @@
                         const players = { ...(lobby.players || {}) };
                         const me = players[u.uid] || { score: activeSession.score, correctCount: activeSession.correctCount, streak: activeSession.streak };
                         const newStreak = Number(me.streak || 0) + 1;
-                        const speedBonus = Math.max(0, Math.round(((5.0 - Math.min(5.0, elapsedSec)) / 5.0) * 80));
+                        const speedBonus = Math.max(0, Math.round(((15.0 - Math.min(15.0, elapsedSec)) / 15.0) * 80));
                         const streakBonus = Math.min(120, newStreak * 20);
                         const pointsEarned = 100 + speedBonus + streakBonus;
                         Object.keys(players).forEach((pid) => {
