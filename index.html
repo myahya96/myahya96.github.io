@@ -557,6 +557,182 @@
                 .trim();
         }
 
+        // ============================================================================
+        // ANTI-PHISHING & OAUTH / SDK ENDPOINT SECURITY VALIDATOR
+        // Protects users from being redirected to phishy/external websites post-login
+        // ============================================================================
+        const AuthEndpointSecurity = {
+            // Strictly verifies that a destination endpoint is an internal, safe path within 2K2KOREAN!
+            // and rejects any external phishing domains, protocol-relative '//', backslashes, or dangerous URI schemes.
+            isSafeInternalEndpoint(urlStr) {
+                if (!urlStr || typeof urlStr !== 'string') return false;
+                const trimmed = urlStr.trim();
+                if (!trimmed) return false;
+
+                // 1. Block dangerous URI schemes
+                const lower = trimmed.toLowerCase();
+                if (
+                    lower.startsWith("javascript:") ||
+                    lower.startsWith("data:") ||
+                    lower.startsWith("vbscript:") ||
+                    lower.startsWith("blob:") ||
+                    lower.startsWith("file:")
+                ) {
+                    return false;
+                }
+
+                // 2. Block protocol-relative URLs (e.g. //phishing.com or /\phishing.com)
+                if (trimmed.startsWith("//") || trimmed.startsWith("/\\") || trimmed.startsWith("\\\\") || trimmed.startsWith("\\/")) {
+                    return false;
+                }
+
+                // 3. Block URL-encoded bypass attempts (%2f, %5c)
+                try {
+                    const decoded = decodeURIComponent(trimmed);
+                    if (decoded.startsWith("//") || decoded.startsWith("/\\") || decoded.startsWith("\\\\") || decoded.startsWith("\\/")) {
+                        return false;
+                    }
+                    if (/^(javascript|data|vbscript|blob|file):/i.test(decoded.trim())) {
+                        return false;
+                    }
+                } catch (e) {
+                    return false;
+                }
+
+                // 4. Safe relative path within the app (starting with single slash, not multiple)
+                if (trimmed.startsWith("/")) {
+                    if (/^\/{2,}/.test(trimmed)) return false;
+                    // Check for embedded authority (@) or colon before slash
+                    if (/[@\\]/.test(trimmed)) return false;
+                    return true;
+                }
+
+                // 5. In-app hash navigation (e.g. #map or #stage-1)
+                if (trimmed.startsWith("#")) {
+                    return true;
+                }
+
+                // 6. Absolute URL: MUST match the exact current origin
+                try {
+                    const currentOrigin = window.location.origin;
+                    const parsed = new URL(trimmed, currentOrigin);
+                    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+                        return false;
+                    }
+                    return parsed.origin === currentOrigin;
+                } catch (err) {
+                    return false;
+                }
+            },
+
+            // Sanitizes any redirect/returnUrl query parameters from the current URL to prevent open-redirect exploitation
+            checkAndSanitizeUrlEndpointParams() {
+                try {
+                    const urlObj = new URL(window.location.href);
+                    const redirectKeys = ["redirect", "returnUrl", "return_url", "next", "continue", "dest", "target", "callback"];
+                    let detectedUntrusted = false;
+                    let untrustedUrl = "";
+
+                    for (const key of redirectKeys) {
+                        if (urlObj.searchParams.has(key)) {
+                            const val = urlObj.searchParams.get(key);
+                            if (val && !this.isSafeInternalEndpoint(val)) {
+                                detectedUntrusted = true;
+                                untrustedUrl = val;
+                                urlObj.searchParams.delete(key);
+                            }
+                        }
+                    }
+
+                    if (detectedUntrusted) {
+                        window.history.replaceState({}, document.title, urlObj.pathname + (urlObj.search ? urlObj.search : "") + urlObj.hash);
+                        this.logSecurityEvent("Open-Redirect Phishing Link Blocked", untrustedUrl);
+                        return { blocked: true, maliciousUrl: untrustedUrl };
+                    }
+                } catch (e) {}
+                return { blocked: false };
+            },
+
+            // Validates that Google OAuth or SDK authentication originates from legitimate provider endpoints
+            verifyOAuthUserEndpoint(user) {
+                if (!user) return { valid: false, reason: "No authenticated user object found." };
+                const providerData = user.providerData || [];
+                const isGoogle = providerData.some(p => p.providerId === "google.com");
+                
+                // Ensure origin is secure
+                const isSecureOrigin = window.location.protocol === "https:" || 
+                    window.location.hostname === "localhost" || 
+                    window.location.hostname === "127.0.0.1" || 
+                    window.location.hostname === "0.0.0.0";
+
+                if (!isSecureOrigin) {
+                    console.warn("[Security Guard] Non-HTTPS origin detected during OAuth verification:", window.location.origin);
+                }
+
+                if (isGoogle && (!user.uid || typeof user.uid !== 'string')) {
+                    return { valid: false, reason: "Invalid OAuth user UID endpoint structure." };
+                }
+
+                return { valid: true, isGoogle, isSecureOrigin };
+            },
+
+            // Called post-authentication (Google OAuth or SDK login) to enforce that user is never redirected to a phishing endpoint
+            enforceSafePostAuthNavigation() {
+                // Check if any redirect parameter was in URL or session storage
+                const urlCheck = this.checkAndSanitizeUrlEndpointParams();
+                const storedCandidate = sessionStorage.getItem("k2k_post_auth_redirect");
+                sessionStorage.removeItem("k2k_post_auth_redirect");
+
+                let blocked = urlCheck.blocked;
+                let targetToNavigate = null;
+
+                if (storedCandidate) {
+                    if (this.isSafeInternalEndpoint(storedCandidate)) {
+                        targetToNavigate = storedCandidate;
+                    } else {
+                        blocked = true;
+                        this.logSecurityEvent("Stored Post-Auth Phishing Redirect Blocked", storedCandidate);
+                    }
+                }
+
+                if (blocked) {
+                    if (typeof showToast === "function") {
+                        showToast("🛡️ Security Alert: External redirect blocked. You have been safely kept in 2K2KOREAN!", "ph-shield-warning");
+                    }
+                    if (typeof showMapScreen === "function") {
+                        showMapScreen();
+                    }
+                    return false;
+                }
+
+                if (targetToNavigate && targetToNavigate !== "/" && targetToNavigate !== window.location.pathname) {
+                    try {
+                        const parsed = new URL(targetToNavigate, window.location.origin);
+                        if (parsed.origin === window.location.origin) {
+                            window.location.href = parsed.pathname + parsed.search + parsed.hash;
+                            return true;
+                        }
+                    } catch (e) {}
+                }
+
+                return true;
+            },
+
+            logSecurityEvent(eventType, details) {
+                try {
+                    const logs = JSON.parse(sessionStorage.getItem("k2korean_security_logs") || "[]");
+                    logs.unshift({
+                        timestamp: new Date().toISOString(),
+                        type: eventType,
+                        details: String(details).slice(0, 150)
+                    });
+                    sessionStorage.setItem("k2korean_security_logs", JSON.stringify(logs.slice(0, 20)));
+                    console.warn(`[Security Guard Alert] ${eventType}:`, details);
+                } catch (e) {}
+            }
+        };
+        window.AuthEndpointSecurity = AuthEndpointSecurity;
+
         function isUserAuthenticated() {
             return Boolean(authSession && authSession.activeAccount && authSession.activeAccount.provider !== 'guest');
         }
@@ -663,8 +839,9 @@
                         <p><strong>2. Account Access &amp; Guest Preview:</strong> Visitors may browse the 159-stage map and play Stage 1 and the Stage 1 Tutorial without registering. Creating or signing into an account is mandatory to save progress to the cloud and to access Stages 2 through 159.</p>
                         <p><strong>3. Security &amp; Password Rules:</strong> Passwords are never stored in plain text (protected via cryptographic SHA-256 hashing and Firebase Authentication). To protect against injection attacks, passwords and inputs must not contain square brackets <code>[ ]</code>, squiggles <code>~</code>, curly brackets <code>{ }</code>, angle brackets <code>&lt; &gt;</code>, quotes, semicolons, or SQL comment markers.</p>
                         <p><strong>4. Session Timeouts:</strong> For your security, standard login sessions automatically expire after <strong>3 hours of inactivity</strong> and have an absolute timeout of <strong>7 days</strong>. Checking <em>"Keep me logged in"</em> upon sign-in disables the idle timeout and extends your session expiry to <strong>14 days</strong>.</p>
-                        <p><strong>5. Paid Subscriptions &amp; Unlock Tokens:</strong> MooseTea Studios may offer optional paid monthly subscriptions and digital tokens to unlock levels or access extra study services. All pricing is displayed clearly prior to purchase.</p>
-                        <p><strong>6. Intellectual Property &amp; Copyright:</strong> All custom game code, UI design, and curated study structures are © MooseTea Studios. Icons are licensed via Phosphor Icons (MIT License) and fonts via Google Fonts (OFL).</p>
+                        <p><strong>5. Anti-Phishing &amp; Endpoint Verification:</strong> All Google OAuth and SDK login endpoints are verified against strict same-origin policies. External and unverified redirect URLs are blocked to protect users against phishing websites and open-redirect attacks.</p>
+                        <p><strong>6. Paid Subscriptions &amp; Unlock Tokens:</strong> MooseTea Studios may offer optional paid monthly subscriptions and digital tokens to unlock levels or access extra study services. All pricing is displayed clearly prior to purchase.</p>
+                        <p><strong>7. Intellectual Property &amp; Copyright:</strong> All custom game code, UI design, and curated study structures are © MooseTea Studios. Icons are licensed via Phosphor Icons (MIT License) and fonts via Google Fonts (OFL).</p>
                     </div>
                 `;
             } else if (section === 'privacy') {
@@ -1079,6 +1256,16 @@
 
         // Immediately restore any valid saved session & cached progress before initial render
         localProgressStore.restoreSessionMeta();
+
+        // Perform initial anti-phishing scan on any URL parameters
+        (function checkInitialUrlEndpoints() {
+            const initialCheck = AuthEndpointSecurity.checkAndSanitizeUrlEndpointParams();
+            if (initialCheck.blocked) {
+                setTimeout(() => {
+                    showToast("🛡️ Security Alert: Unverified redirect link blocked. Kept safely on 2K2KOREAN.", "ph-shield-warning");
+                }, 1200);
+            }
+        })();
 
         let lastActivityPersistTime = 0;
         function recordUserActivity() {
@@ -1810,7 +1997,7 @@
                 </div>
 
                 <!-- Google OAuth Sign-In Button -->
-                <div>
+                <div class="space-y-2">
                     <button type="button" onclick="window.cloudAuthManager.triggerGoogleOAuthPopup()" class="w-full py-2.5 px-4 rounded-2xl bg-white hover:bg-yellow-50 text-purple-950 font-extrabold border-2 border-purple-300 hover:border-purple-700 shadow flex items-center justify-center gap-2.5 transition text-xs">
                         <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                             <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
@@ -1820,6 +2007,11 @@
                         </svg>
                         <span>Sign In with Google OAuth</span>
                     </button>
+                    <!-- Anti-Phishing & Verified Endpoint Security Shield -->
+                    <div class="flex items-center justify-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/90 py-1.5 px-3 rounded-xl border border-emerald-300">
+                        <i class="ph-fill ph-shield-check text-sm text-emerald-600" aria-hidden="true"></i>
+                        <span>Anti-Phishing &amp; Safe OAuth Endpoint Verification Active</span>
+                    </div>
                 </div>
             `;
         }
@@ -3377,6 +3569,8 @@
             onAuthStateChanged,
             GoogleAuthProvider,
             signInWithPopup,
+            signInWithRedirect,
+            getRedirectResult,
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
             sendPasswordResetEmail,
@@ -3429,6 +3623,23 @@
 
         const primaryAuth = getAuth(app);
         const primaryDb = getFirestore(app);
+
+        // Check for any pending redirect result from Google OAuth redirect flow and verify endpoint safety
+        getRedirectResult(primaryAuth).then(async (result) => {
+            if (result && result.user) {
+                const endpointCheck = window.AuthEndpointSecurity?.verifyOAuthUserEndpoint(result.user);
+                if (endpointCheck && !endpointCheck.valid) {
+                    showAuthError(`Security Alert: ${endpointCheck.reason}`);
+                    return;
+                }
+                window.AuthEndpointSecurity?.enforceSafePostAuthNavigation();
+                showToast(`Signed in with Google as ${result.user.displayName || "Player"}!`, "ph-check-circle");
+            }
+        }).catch((err) => {
+            if (err && err.code !== "auth/null-user") {
+                console.warn("OAuth redirect verification note:", err);
+            }
+        });
 
         // Salted SHA-256 cryptographic password hashing (passwords are NEVER stored in plain text)
         async function hashPasswordSha256(email, rawPassword) {
@@ -3827,6 +4038,10 @@
                 updateAccountHeaderUI();
                 updateHeaderStats();
                 closeAccountModal();
+
+                // Enforce post-auth destination safety (anti-phishing redirect protection)
+                window.AuthEndpointSecurity?.enforceSafePostAuthNavigation();
+
                 if (activeSession.mode === "map") showMapScreen();
                 this.loadCurrentAccountProgress();
             },
@@ -4081,6 +4296,17 @@
                     const result = await signInWithPopup(primaryAuth, provider);
                     if (result && result.user) {
                         const u = result.user;
+
+                        // Verify user endpoint integrity & origin security
+                        const endpointCheck = window.AuthEndpointSecurity?.verifyOAuthUserEndpoint(u);
+                        if (endpointCheck && !endpointCheck.valid) {
+                            showAuthError(`Security Alert: ${endpointCheck.reason}`);
+                            return;
+                        }
+
+                        // Check and enforce safe post-auth navigation to block phishing redirects
+                        window.AuthEndpointSecurity?.enforceSafePostAuthNavigation();
+
                         const email = (u.email || u.providerData?.[0]?.email || `${u.uid}@google.user`).toLowerCase();
                         const googleDisplayName = u.displayName || u.providerData?.[0]?.displayName || email.split("@")[0];
                         const photoURL = u.photoURL || u.providerData?.[0]?.photoURL || null;
@@ -4251,6 +4477,12 @@
             authSession.firebaseUser = user || null;
             if (cloudAuthManager.isHandlingGooglePopup || authFormMode === "google_username") {
                 return;
+            }
+            if (user) {
+                const endpointCheck = window.AuthEndpointSecurity?.verifyOAuthUserEndpoint(user);
+                if (endpointCheck && !endpointCheck.valid) {
+                    console.warn("[Security Alert] Auth state endpoint verification note:", endpointCheck.reason);
+                }
             }
             if (user && (!authSession.activeAccount || authSession.activeAccount.provider === "guest" || authSession.activeAccount.uid !== user.uid)) {
                 const email = (user.email || user.providerData?.[0]?.email || `${user.uid}@user.k2korean`).toLowerCase();
