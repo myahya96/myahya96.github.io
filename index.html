@@ -19,6 +19,152 @@
                 console.warn("HTTPS check skipped in sandboxed frame.");
             }
         })();
+
+        // ============================================================================
+        // PRIOR-CONSENT COOKIE & TRACKING MANAGER (UK PECR & GDPR COMPLIANT)
+        // Strictly blocks all tracking cookies and analytics until an explicit choice is made.
+        // ============================================================================
+        (function initCookieConsentGuard() {
+            const STORAGE_KEY = "k2korean_cookie_consent";
+            let consentState = "pending";
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved === "all" || saved === "essential") {
+                    consentState = saved;
+                }
+            } catch (e) {
+                consentState = "pending";
+            }
+
+            // Common tracking, analytics, and advertising cookie identifiers
+            const TRACKING_COOKIE_PATTERNS = [
+                /^_ga/i, /^_gid/i, /^_gat/i, /^_gac/i, /^__utm/i,
+                /^_fbp/i, /^_fbc/i, /^_clarity/i, /^mp_/i, /^ajs_/i,
+                /^amplitude/i, /^trk_/i, /^analytics/i, /^_pin/i,
+                /^_tt/i, /^_linkedin/i, /^test_cookie/i, /^IDE$/i
+            ];
+
+            function isTrackingCookieName(name) {
+                if (!name) return false;
+                const trimmed = name.trim();
+                return TRACKING_COOKIE_PATTERNS.some(p => p.test(trimmed));
+            }
+
+            // Intercept document.cookie write operations to block tracking cookies until consent is given
+            try {
+                const proto = Document.prototype;
+                const originalDescriptor = Object.getOwnPropertyDescriptor(proto, 'cookie') ||
+                                           Object.getOwnPropertyDescriptor(HTMLDocument.prototype, 'cookie');
+
+                if (originalDescriptor && originalDescriptor.configurable) {
+                    Object.defineProperty(document, 'cookie', {
+                        get() {
+                            return originalDescriptor.get.call(document);
+                        },
+                        set(val) {
+                            const cookieString = String(val);
+                            const cookieName = cookieString.split('=')[0]?.trim();
+
+                            // Block tracking cookies if consent is 'pending' (no choice made yet) or 'essential'
+                            if (consentState !== "all" && isTrackingCookieName(cookieName)) {
+                                console.info(`[Cookie Policy Guard] Intercepted & dropped tracking cookie "${cookieName}" (Consent Status: ${consentState}).`);
+                                return;
+                            }
+                            originalDescriptor.set.call(document, val);
+                        },
+                        configurable: true
+                    });
+                }
+            } catch (err) {
+                console.warn("Cookie descriptor guard note:", err);
+            }
+
+            const pendingTrackingQueue = [];
+
+            window.CookieConsentManager = {
+                STORAGE_KEY,
+                getState() {
+                    return consentState;
+                },
+                isSelectionMade() {
+                    return consentState === "all" || consentState === "essential";
+                },
+                canTrack() {
+                    // True ONLY when user has made an explicit choice and selected 'all'
+                    return consentState === "all";
+                },
+                canUseFunctional() {
+                    return consentState !== "pending";
+                },
+                setConsent(choice) {
+                    const normalized = (choice === "all" || choice === "essential") ? choice : "essential";
+                    consentState = normalized;
+                    try {
+                        localStorage.setItem(STORAGE_KEY, normalized);
+                    } catch (e) {}
+
+                    window.dispatchEvent(new CustomEvent("cookieConsentChanged", { detail: { state: normalized } }));
+
+                    if (normalized === "all") {
+                        this.flushTrackingQueue();
+                    } else {
+                        this.purgeTrackingCookies();
+                        pendingTrackingQueue.length = 0;
+                    }
+
+                    const banner = document.getElementById("cookieConsentBanner");
+                    if (banner) banner.classList.add("hidden");
+
+                    if (typeof showToast === "function") {
+                        if (normalized === "all") {
+                            showToast("All cookies and analytics enabled.", "ph-check-circle");
+                        } else {
+                            showToast("Essential only: Non-essential tracking cookies disabled.", "ph-shield-check");
+                        }
+                    }
+                },
+                trackEvent(eventName, params = {}) {
+                    if (consentState === "all") {
+                        this.sendToAnalytics(eventName, params);
+                    } else if (consentState === "pending") {
+                        if (pendingTrackingQueue.length < 50) {
+                            pendingTrackingQueue.push({ eventName, params, timestamp: Date.now() });
+                        }
+                    }
+                },
+                flushTrackingQueue() {
+                    while (pendingTrackingQueue.length > 0) {
+                        const item = pendingTrackingQueue.shift();
+                        this.sendToAnalytics(item.eventName, item.params);
+                    }
+                },
+                sendToAnalytics(eventName, params) {
+                    if (window.firebaseAnalyticsInstance && typeof window.firebaseAnalyticsInstance.logEvent === "function") {
+                        try {
+                            window.firebaseAnalyticsInstance.logEvent(eventName, params);
+                        } catch (e) {}
+                    }
+                },
+                purgeTrackingCookies() {
+                    try {
+                        const cookies = document.cookie ? document.cookie.split(';') : [];
+                        for (const cookie of cookies) {
+                            const name = cookie.split('=')[0]?.trim();
+                            if (isTrackingCookieName(name)) {
+                                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+                            }
+                        }
+                    } catch (e) {}
+                },
+                openConsentBanner() {
+                    const banner = document.getElementById("cookieConsentBanner");
+                    if (banner) {
+                        banner.classList.remove("hidden");
+                        banner.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    }
+                }
+            };
+        })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
@@ -290,6 +436,8 @@
                 <span>•</span>
                 <button type="button" onclick="openLegalMenuModal('cookies')" class="hover:text-yellow-300 underline">Cookies Policy</button>
                 <span>•</span>
+                <button type="button" onclick="window.CookieConsentManager?.openConsentBanner()" class="hover:text-yellow-300 underline text-amber-300 font-extrabold">Cookie Settings</button>
+                <span>•</span>
                 <button type="button" onclick="openLegalMenuModal('refund')" class="hover:text-yellow-300 underline">Refund Policy</button>
                 <span>•</span>
                 <button type="button" onclick="openLegalMenuModal('support')" class="hover:text-yellow-300 underline">Support / Contact</button>
@@ -364,29 +512,32 @@
             </div>
         </div>
 
-        <!-- Cookie Consent Banner (UK PECR / GDPR Compliant) -->
-        <div id="cookieConsentBanner" class="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-lg z-40 hidden">
+        <!-- Cookie Consent Banner (UK PECR / GDPR Prior-Consent Compliant) -->
+        <div id="cookieConsentBanner" class="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-lg z-40 hidden" role="region" aria-label="Cookie and Tracking Consent">
             <div class="bg-purple-950/95 text-white p-5 rounded-3xl border-4 border-yellow-400 shadow-2xl space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-yellow-400 text-purple-950 flex items-center justify-center text-2xl shrink-0 font-black" aria-hidden="true">
                         <i class="ph-fill ph-cookie"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-black text-yellow-300">Cookie &amp; Essential Storage Consent</h3>
+                        <div class="inline-flex items-center gap-1.5 bg-amber-400 text-purple-950 text-[10px] font-black px-2.5 py-0.5 rounded-full mb-1">
+                            <i class="ph-fill ph-shield-check"></i> TRACKING OFF BY DEFAULT
+                        </div>
+                        <h3 class="text-sm font-black text-white">Cookie &amp; Tracking Consent</h3>
                         <p class="text-xs text-purple-100 mt-1 leading-relaxed">
-                            <strong>MooseTea Studios</strong> uses strictly necessary authentication tokens and functional storage to secure your login session and sync your 2K2KOREAN! level progress. We do not use invasive third-party ad trackers.
+                            Under UK PECR &amp; GDPR rules, <strong>no cookies track you until you make a choice below</strong>. Strictly necessary tokens keep your login and level progress secure. Choose your preference:
                         </p>
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
                     <button type="button" onclick="openLegalMenuModal('cookies')" class="px-3 py-1.5 rounded-full bg-purple-800 hover:bg-purple-700 text-purple-100 text-xs font-bold border border-purple-500 transition">
-                        Read Cookies Policy
+                        Read Policy
                     </button>
-                    <button type="button" onclick="acceptCookieConsent('essential')" class="px-3.5 py-1.5 rounded-full bg-purple-700 hover:bg-purple-600 text-white text-xs font-extrabold border border-purple-400 transition">
-                        Essential Only
+                    <button type="button" onclick="acceptCookieConsent('essential')" class="px-3.5 py-1.5 rounded-full bg-purple-700 hover:bg-rose-700 text-white text-xs font-extrabold border border-purple-400 transition" title="Reject all tracking; allow only essential login & progress storage">
+                        Essential Only (Keep Tracking Off)
                     </button>
-                    <button type="button" onclick="acceptCookieConsent('all')" class="btn-yellow px-4 py-1.5 text-xs">
-                        Accept &amp; Continue
+                    <button type="button" onclick="acceptCookieConsent('all')" class="btn-yellow px-4 py-1.5 text-xs font-black" title="Allow analytics and functional cookies">
+                        Accept All &amp; Enable
                     </button>
                 </div>
             </div>
@@ -856,15 +1007,56 @@
                     </div>
                 `;
             } else if (section === 'cookies') {
+                const currentStatus = window.CookieConsentManager ? window.CookieConsentManager.getState() : (cookieConsentState || "pending");
+                let statusBadgeHtml = '';
+                if (currentStatus === 'all') {
+                    statusBadgeHtml = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300"><i class="ph-fill ph-check-circle"></i> All Cookies &amp; Analytics Allowed</span>';
+                } else if (currentStatus === 'essential') {
+                    statusBadgeHtml = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-100 text-purple-900 border border-purple-300"><i class="ph-fill ph-shield-check"></i> Strictly Essential Only — Tracking Blocked</span>';
+                } else {
+                    statusBadgeHtml = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-400"><i class="ph-fill ph-clock-countdown"></i> Selection Pending — Zero Tracking Active</span>';
+                }
+
                 body.innerHTML = `
-                    <div class="space-y-3 text-xs leading-relaxed">
-                        <h3 class="text-base font-black text-purple-950">Cookies &amp; Session Storage Policy</h3>
-                        <p><strong>1. Essential Authentication &amp; Security Tokens:</strong> We use strictly necessary browser storage (IndexedDB / session metadata) to maintain your Firebase authentication state and enforce our security timeouts (3-hour idle log-out and 7-day / 14-day absolute session expiry).</p>
-                        <p><strong>2. Functional Preferences:</strong> We store your cookie consent choice and audio mute preferences so you don't have to reset them on every visit.</p>
-                        <p><strong>3. Managing Consent:</strong> You can review or update your cookie consent preferences at any time below:</p>
-                        <div class="pt-2 flex gap-2">
-                            <button type="button" onclick="acceptCookieConsent('all');closeLegalMenuModal();" class="btn-yellow px-4 py-2 text-xs">Accept Essential &amp; Functional Storage</button>
-                            <button type="button" onclick="acceptCookieConsent('essential');closeLegalMenuModal();" class="btn-purple px-4 py-2 text-xs">Strictly Essential Only</button>
+                    <div class="space-y-4 text-xs leading-relaxed">
+                        <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-purple-200">
+                            <div>
+                                <h3 class="text-base font-black text-purple-950">Cookies &amp; Tracking Consent Policy</h3>
+                                <p class="text-purple-600 font-semibold">UK PECR &amp; GDPR Prior-Consent Standard</p>
+                            </div>
+                            <div>${statusBadgeHtml}</div>
+                        </div>
+
+                        <div class="bg-purple-50 rounded-2xl p-4 border border-purple-200 space-y-2">
+                            <h4 class="font-black text-purple-950 flex items-center gap-1.5">
+                                <i class="ph-fill ph-shield-check text-purple-800"></i>
+                                <span>Prior-Consent Guarantee: Zero Tracking by Default</span>
+                            </h4>
+                            <p class="text-purple-900">
+                                In accordance with UK Privacy and Electronic Communications Regulations (PECR) and UK GDPR, <strong>no cookies or tracking scripts run or track your activity until you have made an explicit selection</strong>. If no selection is made, tracking remains completely off.
+                            </p>
+                        </div>
+
+                        <div>
+                            <p><strong>1. Strictly Necessary Authentication &amp; Security Tokens:</strong> We use essential browser storage (IndexedDB and secure session storage) to authenticate your user account, enforce our 3-hour idle and 7-day/14-day security timeouts, and store your level progress.</p>
+                        </div>
+
+                        <div>
+                            <p><strong>2. Non-Essential Analytics &amp; Tracking:</strong> These cookies (such as performance analytics) are only loaded if you explicitly choose "Accept All". If you select "Essential Only", non-essential tracking cookies are intercepted and blocked by our policy guard.</p>
+                        </div>
+
+                        <div class="pt-2 border-t border-purple-200">
+                            <p class="font-bold text-purple-950 mb-2">Change or Revoke Your Cookie Choice Anytime:</p>
+                            <div class="flex flex-wrap gap-2.5">
+                                <button type="button" onclick="acceptCookieConsent('essential');openLegalMenuModal('cookies');" class="px-4 py-2 rounded-full bg-purple-700 hover:bg-rose-700 text-white font-extrabold text-xs transition border border-purple-400">
+                                    <i class="ph-bold ph-shield-check mr-1"></i>
+                                    <span>Keep Essential Only (Block Tracking)</span>
+                                </button>
+                                <button type="button" onclick="acceptCookieConsent('all');openLegalMenuModal('cookies');" class="btn-yellow px-4 py-2 text-xs font-black">
+                                    <i class="ph-bold ph-check mr-1"></i>
+                                    <span>Accept All Cookies &amp; Analytics</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -889,20 +1081,24 @@
         }
 
         let cookieConsentState = (function() {
-            try {
-                return localStorage.getItem("k2korean_cookie_consent") || "pending";
-            } catch (e) {
-                return "pending";
-            }
+            return window.CookieConsentManager ? window.CookieConsentManager.getState() : (localStorage.getItem("k2korean_cookie_consent") || "pending");
         })();
+
         function acceptCookieConsent(level) {
-            cookieConsentState = level;
-            try {
-                localStorage.setItem("k2korean_cookie_consent", level);
-            } catch (e) {}
-            const banner = document.getElementById("cookieConsentBanner");
-            if (banner) banner.classList.add("hidden");
-            showToast("Cookie preferences saved.", "ph-check-circle");
+            if (window.CookieConsentManager) {
+                window.CookieConsentManager.setConsent(level);
+                cookieConsentState = window.CookieConsentManager.getState();
+            } else {
+                cookieConsentState = level;
+                try {
+                    localStorage.setItem("k2korean_cookie_consent", level);
+                } catch (e) {}
+                const banner = document.getElementById("cookieConsentBanner");
+                if (banner) banner.classList.add("hidden");
+                if (typeof showToast === "function") {
+                    showToast(level === "all" ? "All cookies enabled." : "Essential only selected.", "ph-check-circle");
+                }
+            }
         }
 
         // Client-Side Rate Limiter & Abuse Protection
@@ -3605,6 +3801,37 @@
         };
 
         const app = initializeApp(firebaseConfig);
+
+        // Prior-Consent Analytics Gating: strictly gated on affirmative user cookie consent
+        async function conditionallyInitAnalytics() {
+            if (window.CookieConsentManager && window.CookieConsentManager.canTrack()) {
+                try {
+                    const { getAnalytics, isSupported } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js");
+                    const supported = await isSupported();
+                    if (supported) {
+                        window.firebaseAnalyticsInstance = getAnalytics(app);
+                        console.info("[Analytics] Initialized following user affirmative consent.");
+                        if (window.CookieConsentManager.flushTrackingQueue) {
+                            window.CookieConsentManager.flushTrackingQueue();
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Analytics initialization note:", e);
+                }
+            } else {
+                window.firebaseAnalyticsInstance = null;
+            }
+        }
+
+        window.addEventListener("cookieConsentChanged", (e) => {
+            if (e.detail?.state === "all") {
+                conditionallyInitAnalytics();
+            } else {
+                window.firebaseAnalyticsInstance = null;
+            }
+        });
+
+        conditionallyInitAnalytics();
 
         // Optional App Check: only initialize if explicitly enabled with a full 40-char reCAPTCHA Enterprise key
         // (Initializing AppCheck with an incomplete key blocks Firestore getDoc/setDoc requests)

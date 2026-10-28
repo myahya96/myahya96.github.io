@@ -78,6 +78,10 @@ This repository incorporates defense-in-depth protections:
    - All rendered user input (usernames, display names) is stripped of delimiter syntax and dangerous characters.
 5. **App Check Ready**:
    - Codebase supports Firebase App Check with reCAPTCHA Enterprise to block automated bots and unauthorized callers.
+6. **Prior-Consent Cookie & Tracking Privacy Guard (UK PECR / GDPR)**:
+   - Zero tracking cookies, analytics events, or marketing tokens run until an affirmative choice is selected on the cookie consent banner.
+   - `CookieConsentManager` intercepts `document.cookie` writes to drop non-essential tracking cookies when consent is `pending` or `essential`.
+   - Firebase Analytics is conditionally loaded and initialized strictly upon explicit user opt-in (`all`).
 
 ---
 
